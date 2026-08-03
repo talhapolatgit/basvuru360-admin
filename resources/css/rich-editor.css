@@ -1,0 +1,100 @@
+/* Rich text editor (KVKK / aydınlatma) */
+.rich-editor {
+    border: 1px solid #e4e6ef;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.rich-editor.is-invalid {
+    border-color: #f1416c;
+}
+
+.rich-editor__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    border-bottom: 1px solid #eef0f4;
+    background: #f9fafc;
+}
+
+.rich-editor__toolbar button {
+    appearance: none;
+    border: 1px solid #e4e6ef;
+    background: #fff;
+    color: #3f4254;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.rich-editor__toolbar button:hover {
+    background: #f3f6f9;
+}
+
+.rich-editor__font-size {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 2px;
+}
+
+.rich-editor__font-size select {
+    appearance: none;
+    border: 1px solid #e4e6ef;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237e8299' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+    color: #3f4254;
+    border-radius: 6px;
+    padding: 4px 28px 4px 8px;
+    font-size: 12px;
+    line-height: 1.2;
+    cursor: pointer;
+    min-width: 5.5rem;
+}
+
+.rich-editor__font-size select:hover {
+    background-color: #f3f6f9;
+}
+
+.rich-editor__font-size select:focus {
+    outline: none;
+    border-color: #3699ff;
+    box-shadow: 0 0 0 3px rgba(54, 153, 255, 0.15);
+}
+
+.rich-editor__surface {
+    min-height: 160px;
+    max-height: 360px;
+    overflow: auto;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #181c32;
+    outline: none;
+}
+
+.rich-editor__surface:empty::before {
+    content: "Metni buraya yazın…";
+    color: #a1a5b7;
+}
+
+.rich-editor__surface p {
+    margin: 0 0 0.65em;
+}
+
+.rich-editor__surface ul,
+.rich-editor__surface ol {
+    margin: 0 0 0.65em;
+    padding-left: 1.25rem;
+}
+
+.rich-editor[data-rich-editor-disabled] .rich-editor__toolbar {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.rich-editor[data-rich-editor-disabled] .rich-editor__surface {
+    background: #f9fafc;
+}

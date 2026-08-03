@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2970" height="2100" viewBox="0 0 2970 2100">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbf8f1"/>
+      <stop offset="50%" stop-color="#f7f1e4"/>
+      <stop offset="100%" stop-color="#f3ead8"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c9a227"/>
+      <stop offset="50%" stop-color="#e8c547"/>
+      <stop offset="100%" stop-color="#c9a227"/>
+    </linearGradient>
+    <radialGradient id="seal" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e8c547"/>
+      <stop offset="70%" stop-color="#b8860b"/>
+      <stop offset="100%" stop-color="#8a6508"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="2970" height="2100" fill="url(#bg)"/>
+
+  <!-- Outer frame -->
+  <rect x="60" y="60" width="2850" height="1980" fill="none" stroke="#1e3a5f" stroke-width="10"/>
+  <rect x="85" y="85" width="2800" height="1930" fill="none" stroke="url(#gold)" stroke-width="6"/>
+  <rect x="110" y="110" width="2750" height="1880" fill="none" stroke="#1e3a5f" stroke-width="2"/>
+
+  <!-- Corner ornaments -->
+  <g fill="none" stroke="#b8860b" stroke-width="3">
+    <path d="M160 220 V160 H220"/>
+    <path d="M2750 160 H2810 V220"/>
+    <path d="M160 1880 V1940 H220"/>
+    <path d="M2750 1940 H2810 V1880"/>
+  </g>
+  <g fill="#b8860b">
+    <circle cx="160" cy="160" r="8"/>
+    <circle cx="2810" cy="160" r="8"/>
+    <circle cx="160" cy="1940" r="8"/>
+    <circle cx="2810" cy="1940" r="8"/>
+  </g>
+
+  <!-- Top decorative line -->
+  <line x1="700" y1="480" x2="2270" y2="480" stroke="url(#gold)" stroke-width="2"/>
+  <circle cx="1485" cy="480" r="7" fill="#b8860b"/>
+
+  <!-- Bottom decorative line -->
+  <line x1="700" y1="1550" x2="2270" y2="1550" stroke="url(#gold)" stroke-width="2"/>
+  <circle cx="1485" cy="1550" r="7" fill="#b8860b"/>
+
+  <!-- Side flourishes -->
+  <path d="M220 900 Q280 1050 220 1200" fill="none" stroke="#1e3a5f" stroke-width="1.5" opacity="0.35"/>
+  <path d="M2750 900 Q2690 1050 2750 1200" fill="none" stroke="#1e3a5f" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- Decorative seal (bottom center, under signatures) -->
+  <g transform="translate(1485 1720)">
+    <circle r="55" fill="url(#seal)" opacity="0.9"/>
+    <circle r="45" fill="none" stroke="#fbf8f1" stroke-width="2"/>
+    <circle r="35" fill="none" stroke="#fbf8f1" stroke-width="1"/>
+    <path d="M0 -22 L6 -6 L24 -6 L10 4 L15 20 L0 10 L-15 20 L-10 4 L-24 -6 L-6 -6 Z" fill="#fbf8f1"/>
+  </g>
+</svg>
