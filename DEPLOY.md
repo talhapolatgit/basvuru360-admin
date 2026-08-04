@@ -17,9 +17,10 @@ Laravel admin panel + `/api/v1` API. Portal (`basvuru360-portal`) is a separate 
 ## 2. Create the application
 
 1. Coolify → **New Resource** → **Application** → GitHub → `basvuru360-admin`
-2. Build pack: **Dockerfile** (auto-detected)
-3. Port: **8080** (serversideup/php listens on 8080; Coolify proxies HTTPS)
-4. Persistent volumes (important for uploads):
+2. Build pack: Coolify defaults to **Nixpacks** — open the build pack dropdown and select **Dockerfile** manually (it is not auto-detected). `Dockerfile` lives at the repo root.
+3. Base Directory: `/` (repo root)
+4. Port: **8080** (serversideup/php listens on 8080; Coolify proxies HTTPS — do not leave the default 3000)
+5. Persistent volumes (important for uploads):
 
 | Container path | Purpose |
 |----------------|---------|
@@ -27,7 +28,7 @@ Laravel admin panel + `/api/v1` API. Portal (`basvuru360-portal`) is a separate 
 | `/var/www/html/storage/logs` | Application logs (optional) |
 | `/var/www/html/public/uploads` | Genel / portal sayfa / sertifika görselleri |
 
-5. Domain: leave empty or use Coolify’s temporary URL for now; add a real domain later and set `APP_URL` to match.
+6. Domain: leave empty or use Coolify’s temporary URL for now; add a real domain later and set `APP_URL` to match.
 
 ## 3. Environment variables
 
