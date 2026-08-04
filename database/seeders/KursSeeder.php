@@ -73,7 +73,7 @@ class KursSeeder extends Seeder
         }
 
         if ($ogretmenler->isEmpty()) {
-            $ogretmenRolId = \App\Models\Rol::query()->where('kod', 'ogretmen')->value('id');
+            $ogretmenRolId = Rol::query()->where('kod', 'ogretmen')->value('id');
             $ogretmenler = collect([
                 ['ad' => 'Ahmet', 'soyad' => 'Yılmaz', 'email' => 'ogretmen1@basvuru360.test'],
                 ['ad' => 'Ayşe', 'soyad' => 'Demir', 'email' => 'ogretmen2@basvuru360.test'],
