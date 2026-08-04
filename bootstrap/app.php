@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Coolify/Traefik terminates TLS; trust X-Forwarded-* so asset()/url() stay https.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'yetki' => \App\Http\Middleware\CheckYetki::class,
             'kurs.kapsam' => \App\Http\Middleware\CheckKursKapsami::class,

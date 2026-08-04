@@ -79,8 +79,11 @@ EMAIL_DRIVER=log
 MAIL_MAILER=log
 
 RUN_MIGRATIONS=true
+# Container listens HTTP behind Coolify TLS proxy — keep off
 SSL_MODE=off
 ```
+
+`APP_URL` must be `https://...` (not `http://`). Otherwise Vite CSS/JS URLs become mixed content in the browser.
 
 When the portal domain is known, set e.g.:
 
@@ -109,9 +112,10 @@ For production you may prefer a minimal custom seeder or `php artisan tinker` in
 
 ## 5. Domain later
 
-1. Coolify → application → Domains → add domain + SSL
-2. Update `APP_URL=https://your-domain`
-3. Redeploy (or restart) so config cache picks up the new URL
+1. Coolify → application → Domains → `https://admin.example.com:8080` (container port 8080)
+2. Set `APP_URL=https://admin.example.com` (must be https — fixes mixed content on CSS/JS)
+3. Redeploy (or restart) so `config:cache` picks up the new URL
+4. Laravel trusts Coolify/Traefik `X-Forwarded-*` headers (`bootstrap/app.php`) so generated URLs stay https behind the proxy
 
 ## Health check
 
