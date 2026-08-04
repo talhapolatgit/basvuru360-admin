@@ -104,6 +104,7 @@ class PortalSayfaServisi
                 'slug' => $slug,
                 'sistem' => false,
                 'menude_goster' => (bool) ($data['menude_goster'] ?? true),
+                'sadece_giris' => (bool) ($data['sadece_giris'] ?? false),
                 'sira' => $maxSira + 1,
             ]);
 
@@ -123,6 +124,7 @@ class PortalSayfaServisi
             $sayfa->aciklama = $this->normalizeAciklama($data['aciklama'] ?? null);
             $sayfa->menu_aciklama = $this->normalizeAciklama($data['menu_aciklama'] ?? null);
             $sayfa->menude_goster = (bool) ($data['menude_goster'] ?? $sayfa->menude_goster);
+            $sayfa->sadece_giris = (bool) ($data['sadece_giris'] ?? $sayfa->sadece_giris);
             $sayfa->anasayfa_logo = $this->guncelleYukleme(
                 $sayfa->anasayfa_logo,
                 $data['anasayfa_logo'] ?? null,

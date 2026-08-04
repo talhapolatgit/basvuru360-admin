@@ -21,6 +21,7 @@ class PortalSayfa extends Model
         'slug',
         'sistem',
         'menude_goster',
+        'sadece_giris',
         'sira',
     ];
 
@@ -29,6 +30,7 @@ class PortalSayfa extends Model
         return [
             'sistem' => 'boolean',
             'menude_goster' => 'boolean',
+            'sadece_giris' => 'boolean',
             'sira' => 'integer',
         ];
     }

@@ -80,6 +80,7 @@ class PortalAyarController extends Controller
             'baslik' => $portalSayfa->baslik,
             'slug' => $portalSayfa->slug,
             'menude_goster' => $portalSayfa->menude_goster,
+            'sadece_giris' => $portalSayfa->sadece_giris,
         ];
 
         $sayfa = $servis->guncelle($portalSayfa, $validated);
@@ -93,6 +94,7 @@ class PortalAyarController extends Controller
                 'baslik' => $sayfa->baslik,
                 'slug' => $sayfa->slug,
                 'menude_goster' => $sayfa->menude_goster,
+                'sadece_giris' => $sayfa->sadece_giris,
             ],
             konuAdi: $sayfa->baslik,
         );
@@ -154,7 +156,7 @@ class PortalAyarController extends Controller
     }
 
     /**
-     * @return array{baslik: string, slug?: string|null, menude_goster: bool, kurallar: list<array{kaynak: string, secim_tipi: string, hedef_id?: int|null}>}
+     * @return array{baslik: string, slug?: string|null, menude_goster: bool, sadece_giris: bool, kurallar: list<array{kaynak: string, secim_tipi: string, hedef_id?: int|null}>}
      */
     private function validateSayfa(Request $request): array
     {
@@ -164,6 +166,7 @@ class PortalAyarController extends Controller
             'menu_aciklama' => ['nullable', 'string', 'max:500'],
             'slug' => ['nullable', 'string', 'max:120'],
             'menude_goster' => ['nullable', 'boolean'],
+            'sadece_giris' => ['nullable', 'boolean'],
             'anasayfa_logo' => ['nullable', 'file', 'max:5120', 'extensions:png,jpg,jpeg,svg,webp'],
             'anasayfa_logo_kaldir' => ['nullable', 'boolean'],
             'anasayfa_menu_arkaplan' => ['nullable', 'file', 'max:5120', 'extensions:png,jpg,jpeg,svg,webp'],
@@ -189,6 +192,7 @@ class PortalAyarController extends Controller
         ]);
 
         $validated['menude_goster'] = $request->boolean('menude_goster');
+        $validated['sadece_giris'] = $request->boolean('sadece_giris');
         $validated['anasayfa_logo_kaldir'] = $request->boolean('anasayfa_logo_kaldir');
         $validated['anasayfa_menu_arkaplan_kaldir'] = $request->boolean('anasayfa_menu_arkaplan_kaldir');
         $validated['sidebar_ikon_kaldir'] = $request->boolean('sidebar_ikon_kaldir');

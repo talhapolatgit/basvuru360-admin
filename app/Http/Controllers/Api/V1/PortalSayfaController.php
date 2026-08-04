@@ -15,12 +15,14 @@ use App\Models\KursGun;
 use App\Models\KursTipi;
 use App\Models\Merkez;
 use App\Models\PortalSayfa;
+use App\Services\Jwt\JwtTokenServisi;
 use App\Services\PortalSayfaServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use UnexpectedValueException;
 
 class PortalSayfaController extends ApiController
 {
@@ -78,11 +80,15 @@ class PortalSayfaController extends ApiController
      * Sayfa kapsamındaki kayıtlarla dolu filtre seçenekleri.
      * Branş listesi isteğe bağlı alan_id ile daraltılır.
      */
-    public function filtreler(string $slug, Request $request, PortalSayfaServisi $servis): JsonResponse
+    public function filtreler(string $slug, Request $request, PortalSayfaServisi $servis, JwtTokenServisi $jwt): JsonResponse
     {
         $sayfa = $servis->findBySlug($slug);
         if (! $sayfa) {
             return $this->error('Sayfa bulunamadı.', 404);
+        }
+
+        if ($denied = $this->sadeceGirisEngeli($sayfa, $request, $jwt)) {
+            return $denied;
         }
 
         $validated = $request->validate([
@@ -154,11 +160,14 @@ class PortalSayfaController extends ApiController
         ]);
     }
 
-    public function kurslar(string $slug, Request $request, PortalSayfaServisi $servis): JsonResponse
+    public function kurslar(string $slug, Request $request, PortalSayfaServisi $servis, JwtTokenServisi $jwt): JsonResponse
     {
         $sayfa = $servis->findBySlug($slug);
         if (! $sayfa) {
             return $this->error('Sayfa bulunamadı.', 404);
+        }
+        if ($denied = $this->sadeceGirisEngeli($sayfa, $request, $jwt)) {
+            return $denied;
         }
         if ($sayfa->isAuthSayfa() || ! $sayfa->hasKurs()) {
             return $this->error('Bu sayfada kurs içeriği yok.', 404);
@@ -242,11 +251,14 @@ class PortalSayfaController extends ApiController
         ]);
     }
 
-    public function etkinlikler(string $slug, Request $request, PortalSayfaServisi $servis): JsonResponse
+    public function etkinlikler(string $slug, Request $request, PortalSayfaServisi $servis, JwtTokenServisi $jwt): JsonResponse
     {
         $sayfa = $servis->findBySlug($slug);
         if (! $sayfa) {
             return $this->error('Sayfa bulunamadı.', 404);
+        }
+        if ($denied = $this->sadeceGirisEngeli($sayfa, $request, $jwt)) {
+            return $denied;
         }
         if ($sayfa->isAuthSayfa() || ! $sayfa->hasEtkinlik()) {
             return $this->error('Bu sayfada etkinlik içeriği yok.', 404);
@@ -320,7 +332,7 @@ class PortalSayfaController extends ApiController
     }
 
     /**
-     * @return array{id: int, kod: string|null, baslik: string, aciklama: string|null, anasayfa_logo_url: string|null, sidebar_ikon_url: string|null, slug: string, path: string, sistem: bool, has_kurs: bool, has_etkinlik: bool}
+     * @return array{id: int, kod: string|null, baslik: string, aciklama: string|null, anasayfa_logo_url: string|null, sidebar_ikon_url: string|null, slug: string, path: string, sistem: bool, sadece_giris: bool, has_kurs: bool, has_etkinlik: bool}
      */
     private function serializeSayfa(PortalSayfa $sayfa, PortalSayfaServisi $servis): array
     {
@@ -341,9 +353,34 @@ class PortalSayfaController extends ApiController
             'slug' => $sayfa->slug,
             'path' => $sayfa->sistem ? '/'.$sayfa->slug : '/sayfa/'.$sayfa->slug,
             'sistem' => (bool) $sayfa->sistem,
+            'sadece_giris' => (bool) $sayfa->sadece_giris,
             'has_kurs' => $sayfa->hasKurs(),
             'has_etkinlik' => $sayfa->hasEtkinlik(),
         ];
+    }
+
+    private function sadeceGirisEngeli(PortalSayfa $sayfa, Request $request, JwtTokenServisi $jwt): ?JsonResponse
+    {
+        if (! $sayfa->sadece_giris) {
+            return null;
+        }
+
+        $header = $request->header('Authorization', '');
+        if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $header, $matches) !== 1) {
+            return $this->error('Bu sayfaya erişmek için giriş yapmalısınız.', 401);
+        }
+
+        try {
+            $kisi = $jwt->kisi($matches[1], JwtTokenServisi::TIP_ACCESS);
+            auth('api')->setUser($kisi);
+            $request->setUserResolver(static fn () => $kisi);
+
+            return null;
+        } catch (UnexpectedValueException $e) {
+            return $this->error($e->getMessage() ?: 'Bu sayfaya erişmek için giriş yapmalısınız.', 401);
+        } catch (\Throwable) {
+            return $this->error('Bu sayfaya erişmek için giriş yapmalısınız.', 401);
+        }
     }
 
     private function gorselYaniti(?string $path): BinaryFileResponse|Response

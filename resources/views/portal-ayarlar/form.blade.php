@@ -134,6 +134,20 @@
                     <span>Menüde göster</span>
                 </label>
             </div>
+
+            <div class="form-group" style="margin-top: 0.75rem">
+                <label class="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        name="sadece_giris"
+                        value="1"
+                        @checked(old('sadece_giris', $sayfa->sadece_giris ?? false))
+                        @disabled(! $guncelleyebilir)
+                    >
+                    <span>Yalnızca login olmuş kullanıcılar erişebilsin</span>
+                </label>
+                <p class="form-hint">Seçiliyse sayfa yalnızca giriş yapmış kullanıcılara menüde görünür; giriş yapmamış kullanıcılar erişemez.</p>
+            </div>
         </div>
 
         <div class="sertifika-ayarlar-block" style="margin-top: 1.5rem">
