@@ -17,6 +17,13 @@ use Illuminate\View\View;
 
 class LoginController extends Controller
 {
+    public function home(): RedirectResponse
+    {
+        return auth()->check()
+            ? redirect()->route('anasayfa')
+            : redirect()->route('login');
+    }
+
     public function create(): View
     {
         return view('auth.login');

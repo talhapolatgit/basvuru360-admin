@@ -23,11 +23,7 @@ use App\Http\Controllers\SabitTanimController;
 use App\Http\Controllers\TakvimController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('anasayfa')
-        : redirect()->route('login');
-});
+Route::get('/', [LoginController::class, 'home'])->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/giris', [LoginController::class, 'create'])->name('login');
