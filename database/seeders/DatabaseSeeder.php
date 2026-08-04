@@ -18,19 +18,23 @@ class DatabaseSeeder extends Seeder
             RolYetkiSeeder::class,
         ]);
 
-        $admin = User::factory()->create([
-            'ad' => 'Sistem',
-            'soyad' => 'Yöneticisi',
-            'email' => 'admin@basvuru360.test',
-            'password' => Hash::make('password'),
-        ]);
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'admin@basvuru360.test'],
+            [
+                'ad' => 'Sistem',
+                'soyad' => 'Yöneticisi',
+                'password' => Hash::make('password'),
+                'aktif' => true,
+                'email_verified_at' => now(),
+            ]
+        );
 
         $adminRolId = Rol::query()->where('kod', 'admin')->value('id');
         if ($adminRolId) {
             $admin->syncRoller([(int) $adminRolId]);
         }
 
-        User::factory()->count(3)->ogretmen()->create();
+        $this->createOgretmenler();
 
         $this->call([
             IlIlceSeeder::class,
@@ -44,5 +48,33 @@ class DatabaseSeeder extends Seeder
             EtkinlikSeeder::class,
             EtkinlikBasvuruSeeder::class,
         ]);
+    }
+
+    private function createOgretmenler(): void
+    {
+        $ogretmenRolId = Rol::query()->where('kod', 'ogretmen')->value('id');
+
+        $ogretmenler = [
+            ['ad' => 'Ahmet', 'soyad' => 'Yılmaz', 'email' => 'ogretmen1@basvuru360.test'],
+            ['ad' => 'Ayşe', 'soyad' => 'Demir', 'email' => 'ogretmen2@basvuru360.test'],
+            ['ad' => 'Mehmet', 'soyad' => 'Kaya', 'email' => 'ogretmen3@basvuru360.test'],
+        ];
+
+        foreach ($ogretmenler as $data) {
+            $user = User::query()->firstOrCreate(
+                ['email' => $data['email']],
+                [
+                    'ad' => $data['ad'],
+                    'soyad' => $data['soyad'],
+                    'password' => Hash::make('password'),
+                    'aktif' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            if ($ogretmenRolId) {
+                $user->syncRoller([(int) $ogretmenRolId]);
+            }
+        }
     }
 }

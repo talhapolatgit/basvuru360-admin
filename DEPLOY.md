@@ -98,6 +98,8 @@ CORS_ALLOWED_ORIGINS=https://portal.example.com
 php artisan db:seed --force
 ```
 
+Production images install Composer without `--dev`, so seeders must not use Faker/factories (fixed in `DatabaseSeeder` / `KursSeeder`).
+
 Default admin (change immediately):
 
 - Email: `admin@basvuru360.test`

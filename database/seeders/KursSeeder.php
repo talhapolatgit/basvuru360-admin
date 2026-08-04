@@ -10,6 +10,7 @@ use App\Models\EgitimDurumu;
 use App\Models\Kurs;
 use App\Models\KursGun;
 use App\Models\KursTipi;
+use App\Models\Rol;
 use App\Models\User;
 use App\Models\Merkez;
 use Illuminate\Database\Seeder;
@@ -72,7 +73,29 @@ class KursSeeder extends Seeder
         }
 
         if ($ogretmenler->isEmpty()) {
-            $ogretmenler = User::factory()->count(3)->ogretmen()->create();
+            $ogretmenRolId = \App\Models\Rol::query()->where('kod', 'ogretmen')->value('id');
+            $ogretmenler = collect([
+                ['ad' => 'Ahmet', 'soyad' => 'Yılmaz', 'email' => 'ogretmen1@basvuru360.test'],
+                ['ad' => 'Ayşe', 'soyad' => 'Demir', 'email' => 'ogretmen2@basvuru360.test'],
+                ['ad' => 'Mehmet', 'soyad' => 'Kaya', 'email' => 'ogretmen3@basvuru360.test'],
+            ])->map(function (array $data) use ($ogretmenRolId) {
+                $user = User::query()->firstOrCreate(
+                    ['email' => $data['email']],
+                    [
+                        'ad' => $data['ad'],
+                        'soyad' => $data['soyad'],
+                        'password' => 'password',
+                        'aktif' => true,
+                        'email_verified_at' => now(),
+                    ]
+                );
+
+                if ($ogretmenRolId) {
+                    $user->syncRoller([(int) $ogretmenRolId]);
+                }
+
+                return $user;
+            });
         }
 
         $durumlar = [
