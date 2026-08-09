@@ -12,7 +12,28 @@ mkdir -p \
     bootstrap/cache \
     public/uploads/genel \
     public/uploads/portal-sayfalar \
-    public/uploads/sertifika
+    public/uploads/sertifika \
+    public/uploads/avatars
+
+# If Coolify mounts an empty public/uploads volume, restore seeded logos from the image.
+seed_copy_missing() {
+    src="$1"
+    dest="$2"
+    if [ ! -d "$src" ]; then
+        return 0
+    fi
+    mkdir -p "$dest"
+    for f in "$src"/*; do
+        [ -e "$f" ] || continue
+        base=$(basename "$f")
+        if [ ! -e "$dest/$base" ]; then
+            cp -a "$f" "$dest/$base"
+        fi
+    done
+}
+
+seed_copy_missing /opt/basvuru360-seed-uploads/genel public/uploads/genel
+seed_copy_missing /opt/basvuru360-seed-uploads/portal-sayfalar public/uploads/portal-sayfalar
 
 if [ -z "${APP_KEY:-}" ]; then
     echo "ERROR: APP_KEY is empty. Set APP_KEY in Coolify environment variables (php artisan key:generate --show)." >&2

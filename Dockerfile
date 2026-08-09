@@ -52,6 +52,12 @@ COPY --chown=www-data:www-data . /var/www/html
 COPY --from=vendor --chown=www-data:www-data /app/vendor /var/www/html/vendor
 COPY --from=frontend --chown=www-data:www-data /app/public/build /var/www/html/public/build
 
+# Keep seed branding assets outside the Coolify uploads volume mount path
+RUN mkdir -p /opt/basvuru360-seed-uploads \
+    && if [ -d public/uploads/genel ]; then cp -a public/uploads/genel /opt/basvuru360-seed-uploads/; fi \
+    && if [ -d public/uploads/portal-sayfalar ]; then cp -a public/uploads/portal-sayfalar /opt/basvuru360-seed-uploads/; fi \
+    && chown -R www-data:www-data /opt/basvuru360-seed-uploads
+
 RUN mkdir -p \
         storage/app/public \
         storage/framework/cache/data \

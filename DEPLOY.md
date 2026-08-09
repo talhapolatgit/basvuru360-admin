@@ -26,7 +26,9 @@ Laravel admin panel + `/api/v1` API. Portal (`basvuru360-portal`) is a separate 
 |----------------|---------|
 | `/var/www/html/storage/app` | Laravel `public` disk files (başvuru evrakları, etc.) |
 | `/var/www/html/storage/logs` | Application logs (optional) |
-| `/var/www/html/public/uploads` | Genel / portal sayfa / sertifika görselleri |
+| `/var/www/html/public/uploads` | Runtime uploads (optional). Seeded logos are copied from the image into `genel/` and `portal-sayfalar/` on boot if missing. |
+
+If you mount `public/uploads` as an empty volume, redeploy after pulling so the entrypoint can restore branding assets. Do not delete files under `public/uploads/genel` or `public/uploads/portal-sayfalar` unless you intend to replace them.
 
 6. Domain: leave empty or use Coolify’s temporary URL for now; add a real domain later and set `APP_URL` to match.
 
