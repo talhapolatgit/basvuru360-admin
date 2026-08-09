@@ -16,7 +16,13 @@
 /public/build
 /public/hot
 /public/storage
-/public/uploads
+/public/uploads/*
+!/public/uploads/genel/
+!/public/uploads/genel/**
+!/public/uploads/portal-sayfalar/
+!/public/uploads/portal-sayfalar/**
+/public/uploads/sertifika/
+/public/uploads/avatars/
 /storage/*.key
 /storage/pail
 /vendor
