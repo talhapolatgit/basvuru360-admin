@@ -1,0 +1,107 @@
+[
+    {
+        "id": 1,
+        "anahtar": "sms_basvuru_onay",
+        "deger": "evet",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 2,
+        "anahtar": "sms_basvuru_iptal",
+        "deger": "istege_bagli",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 3,
+        "anahtar": "sms_basvuru_yedek",
+        "deger": "istege_bagli",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:56:23"
+    },
+    {
+        "id": 4,
+        "anahtar": "sms_metin_onay",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz onaylanmıştır.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 5,
+        "anahtar": "sms_metin_iptal",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz iptal edilmiştir.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 6,
+        "anahtar": "sms_metin_yedek",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz yedek listeye alınmıştır.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 7,
+        "anahtar": "eposta_basvuru_onay",
+        "deger": "evet",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 8,
+        "anahtar": "eposta_basvuru_iptal",
+        "deger": "istege_bagli",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 9,
+        "anahtar": "eposta_basvuru_yedek",
+        "deger": "hayir",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 10,
+        "anahtar": "eposta_konu_onay",
+        "deger": "Etkinlik Başvuru Onayı",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 11,
+        "anahtar": "eposta_konu_iptal",
+        "deger": "Etkinlik Başvuru İptali",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 12,
+        "anahtar": "eposta_konu_yedek",
+        "deger": "Etkinlik Başvuru Yedek Bildirimi",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 13,
+        "anahtar": "eposta_metin_onay",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz onaylanmıştır.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 14,
+        "anahtar": "eposta_metin_iptal",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz iptal edilmiştir.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    },
+    {
+        "id": 15,
+        "anahtar": "eposta_metin_yedek",
+        "deger": "Merhaba {ad_soyad}, etkinlik başvurunuz yedek listeye alınmıştır.",
+        "created_at": "2026-07-30 10:54:48",
+        "updated_at": "2026-07-30 10:54:48"
+    }
+]

@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "tur": "sms",
+        "aktif_saglayici": "demo_sms",
+        "aktif": 1,
+        "ayarlar": null,
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-07-29 23:46:56"
+    },
+    {
+        "id": 2,
+        "tur": "kimlik_sorgulama",
+        "aktif_saglayici": "demo_kimlik",
+        "aktif": 1,
+        "ayarlar": null,
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-07-24 17:09:13"
+    },
+    {
+        "id": 3,
+        "tur": "adres_sorgulama",
+        "aktif_saglayici": "demo_adres",
+        "aktif": 1,
+        "ayarlar": null,
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-07-24 17:09:13"
+    },
+    {
+        "id": 4,
+        "tur": "eposta",
+        "aktif_saglayici": "smtp",
+        "aktif": 1,
+        "ayarlar": "{\"smtp\":{\"host\":\"basvuru360.com\",\"port\":\"587\",\"encryption\":\"tls\",\"username\":\"admin@basvuru360.com\",\"password\":\"123456\",\"from_address\":\"admin@basvuru360.com\"}}",
+        "created_at": "2026-07-27 17:44:04",
+        "updated_at": "2026-07-27 18:09:34"
+    }
+]

@@ -95,20 +95,15 @@ CORS_ALLOWED_ORIGINS=https://portal.example.com
 
 1. Deploy the application from Coolify
 2. First boot runs `migrate --force`, `storage:link`, and config/route/view cache (see `docker/entrypoint.d/99-laravel.sh`)
-3. Seed admin user (one-time), via Coolify **Execute Command** / terminal:
+3. Seed from the local DB snapshot (one-time), via Coolify **Execute Command** / terminal:
 
 ```bash
 php artisan db:seed --force
 ```
 
-Production images install Composer without `--dev`, so seeders must not use Faker/factories (fixed in `DatabaseSeeder` / `KursSeeder`).
+Seed data lives in `database/data/seed/*.json` (`LocalDataSeeder`). No Faker/demo factories. Re-export locally with `php database/scripts/export_seed_snapshot.php` when you want the snapshot updated.
 
-Default admin (change immediately):
-
-- Email: `admin@basvuru360.test`
-- Password: `password`
-
-For production you may prefer a minimal custom seeder or `php artisan tinker` instead of full demo seeders.
+Admin login credentials are whatever was exported in the snapshot (change immediately after first production seed).
 
 ## 5. Domain later
 

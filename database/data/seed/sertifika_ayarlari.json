@@ -1,0 +1,9 @@
+[
+    {
+        "id": 1,
+        "kurum_adi": "",
+        "sablonlar": "{\"sertifika_hak_etti\":{\"kod\":\"SRT\",\"metin\":\":sure saatlik :kurs e\\u011fitimini ba\\u015far\\u0131yla tamamlayarak bu belgeyi almaya hak kazanm\\u0131\\u015ft\\u0131r.\",\"renk\":\"#94e1ad\",\"vurgu\":\"#b8860b\",\"arka_plan\":\"uploads\\/sertifika\\/sertifika_hak_etti-20260724115333-841820f9.jpg\",\"baslik\":\"SERT\\u0130F\\u0130KA\",\"alt_baslik\":\"Ba\\u015far\\u0131 Belgesi\",\"alt_metin\":\"Alan: :alan \\u00b7 Merkez: :merkez \\u00b7 Kurs d\\u00f6nemi: :donem\",\"kenarlik_olcusu\":20,\"egitmen_imzasi\":true,\"diger_imzaci\":true,\"diger_imzaci_unvan\":\"E\\u011fitim M\\u00fcd\\u00fcr\\u00fc\",\"diger_imzaci_ad_soyad\":\"Ay\\u015fe YILMAZ\",\"belge_no_yazdir\":true,\"tarih_yazdir\":false},\"katilim_belgesi_hak_etti\":{\"kod\":\"KTB\",\"metin\":\":sure saatlik :kurs e\\u011fitimini ba\\u015far\\u0131yla tamamlayarak bu belgeyi almaya hak kazanm\\u0131\\u015ft\\u0131r.\",\"renk\":\"#0f4c5c\",\"vurgu\":\"#5c7a6e\",\"arka_plan\":\"uploads\\/sertifika\\/katilim_belgesi_hak_etti-20260724160532-8623c505.jpg\",\"baslik\":\"KATILIM BELGES\\u0130\",\"alt_baslik\":\"Ba\\u015far\\u0131 Belgesi\",\"alt_metin\":\"Alan: :alan \\u00b7 Merkez: :merkez \\u00b7 Kurs d\\u00f6nemi: :donem \\u00b7 Toplam s\\u00fcre: :sure \\u00b7 E\\u011fitmen: :egitmen\",\"kenarlik_olcusu\":12,\"egitmen_imzasi\":true,\"diger_imzaci\":false,\"diger_imzaci_unvan\":\"\",\"diger_imzaci_ad_soyad\":\"\",\"belge_no_yazdir\":true,\"tarih_yazdir\":true}}",
+        "created_at": "2026-07-24 11:43:10",
+        "updated_at": "2026-07-24 16:25:33"
+    }
+]

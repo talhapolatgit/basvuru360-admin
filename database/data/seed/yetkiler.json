@@ -1,0 +1,1002 @@
+[
+    {
+        "id": 1,
+        "kod": "dashboard.goruntule",
+        "ad": "Dashboard Görüntüle",
+        "modul": "dashboard",
+        "aciklama": null,
+        "sira": 0,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 2,
+        "kod": "kurs.goruntule",
+        "ad": "Kursları Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 1,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 3,
+        "kod": "kurs.olustur",
+        "ad": "Kurs Oluştur",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 2,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 4,
+        "kod": "kurs.guncelle",
+        "ad": "Kurs Güncelle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 3,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 5,
+        "kod": "kurs.yayinla",
+        "ad": "Kurs Yayınla / Yayından Kaldır",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 4,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 6,
+        "kod": "kurs.sms",
+        "ad": "Kurs SMS Gönder",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 5,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 7,
+        "kod": "kurs.eposta",
+        "ad": "Kurs E-posta Gönder",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 6,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 8,
+        "kod": "kurs.yoklama",
+        "ad": "Yoklama Al / Düzenle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 7,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 9,
+        "kod": "kurs.export",
+        "ad": "Kurs Excel / PDF Dışa Aktar",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 8,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 10,
+        "kod": "basvuru.goruntule",
+        "ad": "Başvuruları Görüntüle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 9,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 11,
+        "kod": "basvuru.guncelle",
+        "ad": "Başvuru Güncelle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 10,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 12,
+        "kod": "basvuru.export",
+        "ad": "Başvuru Excel Dışa Aktar",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 11,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 13,
+        "kod": "merkez.goruntule",
+        "ad": "Merkezleri Görüntüle",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 12,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 14,
+        "kod": "merkez.olustur",
+        "ad": "Merkez Oluştur",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 13,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 15,
+        "kod": "merkez.guncelle",
+        "ad": "Merkez Güncelle",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 14,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 16,
+        "kod": "merkez.sms",
+        "ad": "Merkez SMS Gönder",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 15,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 17,
+        "kod": "merkez.eposta",
+        "ad": "Merkez E-posta Gönder",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 16,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 18,
+        "kod": "merkez.export",
+        "ad": "Merkez Excel Dışa Aktar",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 17,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 19,
+        "kod": "alan.goruntule",
+        "ad": "Alanları Görüntüle",
+        "modul": "alan",
+        "aciklama": null,
+        "sira": 18,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 20,
+        "kod": "alan.olustur",
+        "ad": "Alan Oluştur",
+        "modul": "alan",
+        "aciklama": null,
+        "sira": 19,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 21,
+        "kod": "alan.guncelle",
+        "ad": "Alan Güncelle",
+        "modul": "alan",
+        "aciklama": null,
+        "sira": 20,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 22,
+        "kod": "alan.export",
+        "ad": "Alan Excel Dışa Aktar",
+        "modul": "alan",
+        "aciklama": null,
+        "sira": 21,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 23,
+        "kod": "brans.goruntule",
+        "ad": "Branşları Görüntüle",
+        "modul": "brans",
+        "aciklama": null,
+        "sira": 22,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 24,
+        "kod": "brans.olustur",
+        "ad": "Branş Oluştur",
+        "modul": "brans",
+        "aciklama": null,
+        "sira": 23,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 25,
+        "kod": "brans.guncelle",
+        "ad": "Branş Güncelle",
+        "modul": "brans",
+        "aciklama": null,
+        "sira": 24,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 26,
+        "kod": "brans.export",
+        "ad": "Branş Excel Dışa Aktar",
+        "modul": "brans",
+        "aciklama": null,
+        "sira": 25,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 27,
+        "kod": "takvim.goruntule",
+        "ad": "Takvimi Görüntüle",
+        "modul": "takvim",
+        "aciklama": null,
+        "sira": 26,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 28,
+        "kod": "log.goruntule",
+        "ad": "İşlem Kayıtlarını Görüntüle",
+        "modul": "log",
+        "aciklama": null,
+        "sira": 27,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 29,
+        "kod": "log.export",
+        "ad": "İşlem Kayıtları Excel Dışa Aktar",
+        "modul": "log",
+        "aciklama": null,
+        "sira": 28,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 30,
+        "kod": "egitmen.goruntule",
+        "ad": "Eğitmenleri Görüntüle",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 29,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 31,
+        "kod": "egitmen.olustur",
+        "ad": "Eğitmen Oluştur",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 30,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 32,
+        "kod": "egitmen.guncelle",
+        "ad": "Eğitmen Güncelle",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 31,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 33,
+        "kod": "egitmen.sms",
+        "ad": "Eğitmen SMS Gönder",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 32,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 34,
+        "kod": "egitmen.eposta",
+        "ad": "Eğitmen E-posta Gönder",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 33,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 35,
+        "kod": "egitmen.sifre",
+        "ad": "Eğitmen Şifre Gönder",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 34,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 36,
+        "kod": "egitmen.export",
+        "ad": "Eğitmen Excel Dışa Aktar",
+        "modul": "egitmen",
+        "aciklama": null,
+        "sira": 35,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 37,
+        "kod": "kullanici.goruntule",
+        "ad": "Kullanıcıları Görüntüle",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 36,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 38,
+        "kod": "kullanici.olustur",
+        "ad": "Kullanıcı Oluştur",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 37,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 39,
+        "kod": "kullanici.guncelle",
+        "ad": "Kullanıcı Güncelle",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 38,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 40,
+        "kod": "kullanici.sms",
+        "ad": "Kullanıcı SMS Gönder",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 39,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 41,
+        "kod": "kullanici.eposta",
+        "ad": "Kullanıcı E-posta Gönder",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 40,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 42,
+        "kod": "kullanici.sifre",
+        "ad": "Kullanıcı Şifre Gönder",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 41,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 43,
+        "kod": "kullanici.export",
+        "ad": "Kullanıcı Excel Dışa Aktar",
+        "modul": "kullanici",
+        "aciklama": null,
+        "sira": 42,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 44,
+        "kod": "kisi.goruntule",
+        "ad": "Kişileri Görüntüle",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 43,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 45,
+        "kod": "kisi.olustur",
+        "ad": "Kişi Oluştur",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 44,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 46,
+        "kod": "kisi.guncelle",
+        "ad": "Kişi Güncelle",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 45,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 47,
+        "kod": "kisi.sms",
+        "ad": "Kişi SMS Gönder",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 46,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 48,
+        "kod": "kisi.eposta",
+        "ad": "Kişi E-posta Gönder",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 47,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 49,
+        "kod": "kisi.export",
+        "ad": "Kişi Excel Dışa Aktar",
+        "modul": "kisi",
+        "aciklama": null,
+        "sira": 48,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 50,
+        "kod": "rol.goruntule",
+        "ad": "Rolleri Görüntüle",
+        "modul": "rol",
+        "aciklama": null,
+        "sira": 49,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 51,
+        "kod": "rol.yonet",
+        "ad": "Rol Oluştur / Güncelle / Sil",
+        "modul": "rol",
+        "aciklama": null,
+        "sira": 50,
+        "created_at": "2026-07-21 23:50:48",
+        "updated_at": "2026-07-21 23:50:48"
+    },
+    {
+        "id": 52,
+        "kod": "kurs.ogretmen_ata",
+        "ad": "Öğretmen Ata",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 9,
+        "created_at": "2026-07-22 00:06:59",
+        "updated_at": "2026-07-22 00:06:59"
+    },
+    {
+        "id": 53,
+        "kod": "kurs.sadece_atanan",
+        "ad": "Yalnızca Kendine Atanan Kursları Görüntüle",
+        "modul": "kurs",
+        "aciklama": "Seçiliyse kullanıcı yalnızca kendisine eğitmen olarak atanmış kursları listeler ve görüntüler.",
+        "sira": 2,
+        "created_at": "2026-07-22 00:14:58",
+        "updated_at": "2026-07-22 00:14:58"
+    },
+    {
+        "id": 54,
+        "kod": "kurs.sadece_yetkili_merkez",
+        "ad": "Yalnızca Yetkilendirildiği Merkezleri Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 3,
+        "created_at": "2026-07-22 12:45:38",
+        "updated_at": "2026-07-22 12:45:38"
+    },
+    {
+        "id": 55,
+        "kod": "kurs.tum_merkezler",
+        "ad": "Tüm Merkezleri Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 4,
+        "created_at": "2026-07-22 12:45:38",
+        "updated_at": "2026-07-22 12:45:38"
+    },
+    {
+        "id": 56,
+        "kod": "kurs.sadece_kendi_kurum",
+        "ad": "Yalnızca Kendi Kurumunu Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 5,
+        "created_at": "2026-07-22 14:51:36",
+        "updated_at": "2026-07-22 14:51:36"
+    },
+    {
+        "id": 57,
+        "kod": "kurs.tum_kurumlar",
+        "ad": "Tüm Kurumları Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 6,
+        "created_at": "2026-07-22 14:51:36",
+        "updated_at": "2026-07-22 14:51:36"
+    },
+    {
+        "id": 58,
+        "kod": "sabit.goruntule",
+        "ad": "Sabit Tanımları Görüntüle",
+        "modul": "sabit",
+        "aciklama": null,
+        "sira": 51,
+        "created_at": "2026-07-22 15:26:53",
+        "updated_at": "2026-07-22 15:26:53"
+    },
+    {
+        "id": 59,
+        "kod": "sabit.olustur",
+        "ad": "Sabit Tanım Oluştur",
+        "modul": "sabit",
+        "aciklama": null,
+        "sira": 52,
+        "created_at": "2026-07-22 15:26:53",
+        "updated_at": "2026-07-22 15:26:53"
+    },
+    {
+        "id": 60,
+        "kod": "sabit.guncelle",
+        "ad": "Sabit Tanım Güncelle",
+        "modul": "sabit",
+        "aciklama": null,
+        "sira": 53,
+        "created_at": "2026-07-22 15:26:53",
+        "updated_at": "2026-07-22 15:26:53"
+    },
+    {
+        "id": 61,
+        "kod": "etkinlik.goruntule",
+        "ad": "Etkinlikleri Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 54,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 62,
+        "kod": "etkinlik.sadece_atanan",
+        "ad": "Yalnızca Sorumlu Olduğu Etkinlikleri Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 55,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 63,
+        "kod": "etkinlik.sadece_yetkili_merkez",
+        "ad": "Yalnızca Yetkilendirildiği Merkezleri Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 56,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 64,
+        "kod": "etkinlik.tum_merkezler",
+        "ad": "Tüm Merkezleri Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 57,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 65,
+        "kod": "etkinlik.sadece_kendi_kurum",
+        "ad": "Yalnızca Kendi Kurumunu Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 58,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 66,
+        "kod": "etkinlik.tum_kurumlar",
+        "ad": "Tüm Kurumları Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 59,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 67,
+        "kod": "etkinlik.olustur",
+        "ad": "Etkinlik Oluştur",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 60,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 68,
+        "kod": "etkinlik.guncelle",
+        "ad": "Etkinlik Güncelle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 61,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 69,
+        "kod": "etkinlik.sorumlu_ata",
+        "ad": "Sorumlu Ata",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 62,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 70,
+        "kod": "etkinlik.yayinla",
+        "ad": "Etkinlik Yayınla / Yayından Kaldır",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 63,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 71,
+        "kod": "etkinlik.sms",
+        "ad": "Etkinlik SMS Gönder",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 64,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 72,
+        "kod": "etkinlik.eposta",
+        "ad": "Etkinlik E-posta Gönder",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 65,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 73,
+        "kod": "etkinlik.yoklama",
+        "ad": "Etkinlik Yoklama Al / Düzenle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 66,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 74,
+        "kod": "etkinlik.export",
+        "ad": "Etkinlik Excel Dışa Aktar",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 67,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 75,
+        "kod": "etkinlik_basvuru.goruntule",
+        "ad": "Etkinlik Başvurularını Görüntüle",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 68,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 76,
+        "kod": "etkinlik_basvuru.guncelle",
+        "ad": "Etkinlik Başvurusu Güncelle",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 69,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 77,
+        "kod": "etkinlik_basvuru.export",
+        "ad": "Etkinlik Başvurusu Excel Dışa Aktar",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 70,
+        "created_at": "2026-07-23 00:06:43",
+        "updated_at": "2026-07-23 00:06:43"
+    },
+    {
+        "id": 78,
+        "kod": "entegrasyon.goruntule",
+        "ad": "Entegrasyonları Görüntüle",
+        "modul": "entegrasyon",
+        "aciklama": null,
+        "sira": 71,
+        "created_at": "2026-07-24 17:09:14",
+        "updated_at": "2026-07-24 17:09:14"
+    },
+    {
+        "id": 79,
+        "kod": "entegrasyon.guncelle",
+        "ad": "Entegrasyon Ayarlarını Güncelle",
+        "modul": "entegrasyon",
+        "aciklama": null,
+        "sira": 72,
+        "created_at": "2026-07-24 17:09:14",
+        "updated_at": "2026-07-24 17:09:14"
+    },
+    {
+        "id": 80,
+        "kod": "basvuru.olustur",
+        "ad": "Başvuru Oluştur",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 73,
+        "created_at": "2026-07-26 23:53:31",
+        "updated_at": "2026-07-26 23:53:31"
+    },
+    {
+        "id": 81,
+        "kod": "etkinlik_basvuru.olustur",
+        "ad": "Etkinlik Başvurusu Oluştur",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 74,
+        "created_at": "2026-07-27 13:28:17",
+        "updated_at": "2026-07-27 13:28:17"
+    },
+    {
+        "id": 82,
+        "kod": "basvuru.durum_guncelle",
+        "ad": "Durum Güncelle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 75,
+        "created_at": "2026-07-28 22:45:34",
+        "updated_at": "2026-07-28 22:45:34"
+    },
+    {
+        "id": 83,
+        "kod": "basvuru.basari_guncelle",
+        "ad": "Başarı Güncelle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 76,
+        "created_at": "2026-07-28 22:45:34",
+        "updated_at": "2026-07-28 22:45:34"
+    },
+    {
+        "id": 84,
+        "kod": "basvuru.kursa_baslama_guncelle",
+        "ad": "Kursa Başlama Tarihi Güncelle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 77,
+        "created_at": "2026-07-29 09:36:21",
+        "updated_at": "2026-07-29 09:36:21"
+    },
+    {
+        "id": 85,
+        "kod": "kurs.yoklama_goruntule",
+        "ad": "Yoklamaları Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 78,
+        "created_at": "2026-07-29 10:44:46",
+        "updated_at": "2026-07-29 10:44:46"
+    },
+    {
+        "id": 86,
+        "kod": "kurs.mesaj_goruntule",
+        "ad": "Mesajları Görüntüle",
+        "modul": "kurs",
+        "aciklama": null,
+        "sira": 79,
+        "created_at": "2026-07-29 10:44:46",
+        "updated_at": "2026-07-29 10:44:46"
+    },
+    {
+        "id": 87,
+        "kod": "etkinlik.yoklama_goruntule",
+        "ad": "Yoklamaları Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 80,
+        "created_at": "2026-07-29 12:50:14",
+        "updated_at": "2026-07-29 12:50:14"
+    },
+    {
+        "id": 88,
+        "kod": "etkinlik.mesaj_goruntule",
+        "ad": "Mesajları Görüntüle",
+        "modul": "etkinlik",
+        "aciklama": null,
+        "sira": 81,
+        "created_at": "2026-07-29 12:50:14",
+        "updated_at": "2026-07-29 12:50:14"
+    },
+    {
+        "id": 89,
+        "kod": "basvuru.evrak_goruntule",
+        "ad": "Evrak Görüntüle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 82,
+        "created_at": "2026-07-29 13:02:23",
+        "updated_at": "2026-07-29 13:02:23"
+    },
+    {
+        "id": 90,
+        "kod": "basvuru.evrak_yukle",
+        "ad": "Evrak Yükle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 83,
+        "created_at": "2026-07-29 13:02:23",
+        "updated_at": "2026-07-29 13:02:23"
+    },
+    {
+        "id": 91,
+        "kod": "basvuru.evrak_sil",
+        "ad": "Evrak Sil",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 84,
+        "created_at": "2026-07-29 13:02:23",
+        "updated_at": "2026-07-29 13:02:23"
+    },
+    {
+        "id": 92,
+        "kod": "etkinlik_basvuru.evrak_goruntule",
+        "ad": "Evrak Görüntüle",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 85,
+        "created_at": "2026-07-29 13:16:31",
+        "updated_at": "2026-07-29 13:16:31"
+    },
+    {
+        "id": 93,
+        "kod": "etkinlik_basvuru.evrak_yukle",
+        "ad": "Evrak Yükle",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 86,
+        "created_at": "2026-07-29 13:16:31",
+        "updated_at": "2026-07-29 13:16:31"
+    },
+    {
+        "id": 94,
+        "kod": "etkinlik_basvuru.evrak_sil",
+        "ad": "Evrak Sil",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 87,
+        "created_at": "2026-07-29 13:16:31",
+        "updated_at": "2026-07-29 13:16:31"
+    },
+    {
+        "id": 95,
+        "kod": "etkinlik_basvuru.yedek_sira_guncelle",
+        "ad": "Yedek Sıra Güncelle",
+        "modul": "etkinlik_basvuru",
+        "aciklama": null,
+        "sira": 88,
+        "created_at": "2026-07-29 22:02:09",
+        "updated_at": "2026-07-29 22:02:09"
+    },
+    {
+        "id": 96,
+        "kod": "basvuru.yedek_sira_guncelle",
+        "ad": "Yedek Sıra Güncelle",
+        "modul": "basvuru",
+        "aciklama": null,
+        "sira": 89,
+        "created_at": "2026-07-29 22:20:11",
+        "updated_at": "2026-07-29 22:20:11"
+    },
+    {
+        "id": 97,
+        "kod": "genel_ayar.goruntule",
+        "ad": "Genel Ayarları Görüntüle",
+        "modul": "genel_ayar",
+        "aciklama": null,
+        "sira": 90,
+        "created_at": "2026-07-30 10:35:19",
+        "updated_at": "2026-07-30 10:35:19"
+    },
+    {
+        "id": 98,
+        "kod": "genel_ayar.guncelle",
+        "ad": "Genel Ayarları Güncelle",
+        "modul": "genel_ayar",
+        "aciklama": null,
+        "sira": 91,
+        "created_at": "2026-07-30 10:35:19",
+        "updated_at": "2026-07-30 10:35:19"
+    },
+    {
+        "id": 99,
+        "kod": "portal_ayar.goruntule",
+        "ad": "Portal Ayarlarını Görüntüle",
+        "modul": "portal_ayar",
+        "aciklama": null,
+        "sira": 92,
+        "created_at": "2026-08-01 21:30:59",
+        "updated_at": "2026-08-01 21:30:59"
+    },
+    {
+        "id": 100,
+        "kod": "portal_ayar.guncelle",
+        "ad": "Portal Ayarlarını Güncelle",
+        "modul": "portal_ayar",
+        "aciklama": null,
+        "sira": 93,
+        "created_at": "2026-08-01 21:30:59",
+        "updated_at": "2026-08-01 21:30:59"
+    }
+]

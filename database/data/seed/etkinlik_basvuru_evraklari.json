@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "etkinlik_basvuru_id": 57,
+        "evrak_tipi_id": 2,
+        "dosya_yolu": "etkinlik-basvuru-evraklari/57/iu7jxyJvxSoPTUIfDSgtrbYCaSVDepG51f12Sh9Q.jpg",
+        "orijinal_ad": "567.jpg",
+        "mime": "image/jpeg",
+        "boyut": 205400,
+        "olusturan_id": 1,
+        "silen_id": null,
+        "created_at": "2026-07-27 13:31:47",
+        "updated_at": "2026-07-27 13:31:47",
+        "deleted_at": null
+    },
+    {
+        "id": 2,
+        "etkinlik_basvuru_id": 58,
+        "evrak_tipi_id": 2,
+        "dosya_yolu": "etkinlik-basvuru-evraklari/58/g9UX16XHhGXFqqRhZtqx0YHjVWn9IqG9KsuDkHKR.jpg",
+        "orijinal_ad": "567.jpg",
+        "mime": "image/jpeg",
+        "boyut": 205400,
+        "olusturan_id": 3,
+        "silen_id": null,
+        "created_at": "2026-07-29 13:14:03",
+        "updated_at": "2026-07-29 13:14:03",
+        "deleted_at": null
+    }
+]

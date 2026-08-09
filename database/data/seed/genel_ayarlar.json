@@ -1,0 +1,142 @@
+[
+    {
+        "id": 1,
+        "anahtar": "kurum_adi",
+        "deger": "Küçükçekmece Belediyesi",
+        "created_at": "2026-07-30 10:50:23",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 2,
+        "anahtar": "telefon",
+        "deger": "02120000000",
+        "created_at": "2026-07-30 10:50:23",
+        "updated_at": "2026-07-30 10:50:23"
+    },
+    {
+        "id": 3,
+        "anahtar": "eposta",
+        "deger": "iletisim@kucukcekmece.istanbul",
+        "created_at": "2026-07-30 10:50:23",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 4,
+        "anahtar": "logo",
+        "deger": "uploads/genel/logo-20260801204759-626dc6f0.png",
+        "created_at": "2026-07-30 10:50:23",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 5,
+        "anahtar": "web_sitesi",
+        "deger": "https://kucukcekmece.istanbul",
+        "created_at": "2026-07-30 10:50:23",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 6,
+        "anahtar": "kisi_giris_yontemi",
+        "deger": "tc_dogum_tarihi",
+        "created_at": "2026-07-30 12:05:13",
+        "updated_at": "2026-07-30 12:06:59"
+    },
+    {
+        "id": 7,
+        "anahtar": "il",
+        "deger": "İstanbul",
+        "created_at": "2026-07-30 12:06:59",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 8,
+        "anahtar": "ilce",
+        "deger": "Küçükçekmece",
+        "created_at": "2026-07-30 12:06:59",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 9,
+        "anahtar": "adres",
+        "deger": null,
+        "created_at": "2026-07-30 12:06:59",
+        "updated_at": "2026-07-30 12:06:59"
+    },
+    {
+        "id": 10,
+        "anahtar": "sidebar_logo",
+        "deger": "uploads/genel/sidebar-logo-20260801204759-1e32880c.png",
+        "created_at": "2026-07-30 23:38:24",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 11,
+        "anahtar": "sidebar_baslik",
+        "deger": "Küçükçekmece Belediyesi",
+        "created_at": "2026-07-30 23:38:24",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 12,
+        "anahtar": "sidebar_alt_baslik",
+        "deger": "Başvuru Portalı",
+        "created_at": "2026-07-30 23:38:24",
+        "updated_at": "2026-08-01 20:48:47"
+    },
+    {
+        "id": 13,
+        "anahtar": "kvkk_metni",
+        "deger": "KVKK Metni",
+        "created_at": "2026-07-31 16:35:02",
+        "updated_at": "2026-07-31 16:35:02"
+    },
+    {
+        "id": 14,
+        "anahtar": "aydinlatma_metni",
+        "deger": null,
+        "created_at": "2026-07-31 16:35:02",
+        "updated_at": "2026-07-31 16:35:02"
+    },
+    {
+        "id": 15,
+        "anahtar": "sidebar_logo_arkaplan",
+        "deger": "#ffffff",
+        "created_at": "2026-08-01 16:03:15",
+        "updated_at": "2026-08-01 20:47:59"
+    },
+    {
+        "id": 16,
+        "anahtar": "sidebar_arkaplan",
+        "deger": "#1f2937",
+        "created_at": "2026-08-01 16:15:52",
+        "updated_at": "2026-08-01 16:44:41"
+    },
+    {
+        "id": 17,
+        "anahtar": "sidebar_arkaplan_tip",
+        "deger": "duz",
+        "created_at": "2026-08-01 16:17:57",
+        "updated_at": "2026-08-01 16:44:56"
+    },
+    {
+        "id": 18,
+        "anahtar": "header_logo",
+        "deger": "uploads/genel/header-logo-20260801203028-d560d083.png",
+        "created_at": "2026-08-01 17:43:51",
+        "updated_at": "2026-08-01 20:30:28"
+    },
+    {
+        "id": 19,
+        "anahtar": "favicon",
+        "deger": "uploads/genel/favicon-20260802004656-1d7c7008.png",
+        "created_at": "2026-08-02 00:46:31",
+        "updated_at": "2026-08-02 00:46:56"
+    },
+    {
+        "id": 20,
+        "anahtar": "site_aciklama",
+        "deger": "Başvuru 360 online başvuru platformu.",
+        "created_at": "2026-08-02 00:46:31",
+        "updated_at": "2026-08-02 00:47:53"
+    }
+]

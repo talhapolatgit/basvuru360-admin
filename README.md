@@ -20,7 +20,18 @@ API / panel (example):
 php artisan serve --host=127.0.0.1 --port=8001
 ```
 
-Default seeder admin (only after `php artisan db:seed`):
+### Seeding
 
-- Email: `admin@basvuru360.test`
-- Password: `password`
+Domain data is loaded from a local DB snapshot under `database/data/seed/*.json` via `LocalDataSeeder` (no demo/Faker data).
+
+```bash
+php artisan db:seed
+```
+
+To refresh the snapshot from the current local database:
+
+```bash
+php database/scripts/export_seed_snapshot.php
+```
+
+Default admin credentials match whatever was in the DB at export time (check `users` / your notes).

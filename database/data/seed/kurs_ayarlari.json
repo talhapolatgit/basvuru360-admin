@@ -1,0 +1,142 @@
+[
+    {
+        "id": 1,
+        "anahtar": "sms_basvuru_onay",
+        "deger": "evet",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 2,
+        "anahtar": "sms_basvuru_iptal",
+        "deger": "istege_bagli",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 3,
+        "anahtar": "sms_basvuru_yedek",
+        "deger": "hayir",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 4,
+        "anahtar": "sms_metin_onay",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz onaylanmıştır.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 5,
+        "anahtar": "sms_metin_iptal",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz iptal edilmiştir.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 6,
+        "anahtar": "sms_metin_yedek",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz yedek listeye alınmıştır.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 7,
+        "anahtar": "eposta_basvuru_onay",
+        "deger": "evet",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 8,
+        "anahtar": "eposta_basvuru_iptal",
+        "deger": "istege_bagli",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 9,
+        "anahtar": "eposta_basvuru_yedek",
+        "deger": "hayir",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 10,
+        "anahtar": "eposta_konu_onay",
+        "deger": "Kurs Başvuru Onayı",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 11,
+        "anahtar": "eposta_konu_iptal",
+        "deger": "Kurs Başvuru İptali",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 12,
+        "anahtar": "eposta_konu_yedek",
+        "deger": "Kurs Başvuru Yedek Bildirimi",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 13,
+        "anahtar": "eposta_metin_onay",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz onaylanmıştır.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 14,
+        "anahtar": "eposta_metin_iptal",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz iptal edilmiştir.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 15,
+        "anahtar": "eposta_metin_yedek",
+        "deger": "Merhaba {ad_soyad}, kurs başvurunuz yedek listeye alınmıştır.",
+        "created_at": "2026-07-30 10:59:07",
+        "updated_at": "2026-07-30 10:59:07"
+    },
+    {
+        "id": 16,
+        "anahtar": "kvkk_baslik",
+        "deger": "6698 SAYILI K.V.K.K. KAPSAMINDA AYDINLATMA METNİ",
+        "created_at": "2026-07-31 16:56:17",
+        "updated_at": "2026-08-02 00:23:27"
+    },
+    {
+        "id": 17,
+        "anahtar": "kvkk_metni",
+        "deger": "KVKK ve Aydınlatma Metni",
+        "created_at": "2026-07-31 16:56:17",
+        "updated_at": "2026-08-02 00:37:19"
+    },
+    {
+        "id": 18,
+        "anahtar": "aydinlatma_baslik",
+        "deger": null,
+        "created_at": "2026-07-31 16:56:17",
+        "updated_at": "2026-07-31 16:56:17"
+    },
+    {
+        "id": 19,
+        "anahtar": "aydinlatma_metni",
+        "deger": null,
+        "created_at": "2026-07-31 16:56:17",
+        "updated_at": "2026-07-31 16:56:17"
+    },
+    {
+        "id": 20,
+        "anahtar": "onaylanmis_basvuru_kisi_iptal",
+        "deger": "hayir",
+        "created_at": "2026-08-01 13:45:14",
+        "updated_at": "2026-08-01 13:45:39"
+    }
+]
