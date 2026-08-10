@@ -2120,7 +2120,7 @@ class EtkinlikController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'ad' => ['required', 'string', 'max:255'],
-            'aciklama' => ['nullable', 'string', 'max:5000'],
+            'aciklama' => ['nullable', 'string', 'max:50000'],
             'merkez_id' => ['required', 'exists:merkezler,id'],
             'etkinlik_tipi_id' => ['required', 'exists:etkinlik_tipleri,id'],
             'durum' => ['required', Rule::enum(EtkinlikDurum::class)],
@@ -2159,9 +2159,32 @@ class EtkinlikController extends Controller implements HasMiddleware
             'ikamet_disi_kontenjan.required' => 'Sınırlı ilçe dışı seçildiğinde ikamet dışı kontenjan girilmelidir.',
         ]);
 
+        $validated['aciklama'] = $this->normalizeRichText($validated['aciklama'] ?? null);
+
         $this->assertBasvuruTarihleriBitisindenSonraDegil($validated);
 
         return $validated;
+    }
+
+    private function normalizeRichText(?string $html): ?string
+    {
+        if ($html === null) {
+            return null;
+        }
+
+        $trimmed = trim($html);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $plain = trim(html_entity_decode(strip_tags($trimmed), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $plain = preg_replace('/\x{200B}/u', '', $plain) ?? $plain;
+
+        if ($plain === '') {
+            return null;
+        }
+
+        return $trimmed;
     }
 
     /**

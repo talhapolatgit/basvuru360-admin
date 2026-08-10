@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Cinsiyet;
 use App\Http\Controllers\Api\ApiController;
+use App\Http\Controllers\Api\V1\Concerns\ResolvesPortalBasvuruKatilimci;
 use App\Http\Resources\Api\V1\EtkinlikBasvuruResource;
 use App\Http\Resources\Api\V1\KisiResource;
 use App\Models\Etkinlik;
@@ -15,7 +16,6 @@ use App\Services\BasvuruKosulDogrulayici;
 use App\Services\EtkinlikAyarServisi;
 use App\Services\EtkinlikYedekListeServisi;
 use App\Services\LogKaydedici;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +24,13 @@ use Illuminate\Validation\ValidationException;
 
 class EtkinlikBasvuruController extends ApiController
 {
+    use ResolvesPortalBasvuruKatilimci;
+
     public function store(Request $request): JsonResponse
     {
-        /** @var Kisi $kisi */
-        $kisi = $request->user();
+        /** @var Kisi $basvuran */
+        $basvuran = $request->user();
+        $cocukAdina = $this->basvuruIcinCocukMu($request);
 
         $etkinlik = Etkinlik::query()
             ->portaldeAktif()
@@ -49,15 +52,19 @@ class EtkinlikBasvuruController extends ApiController
             ? $etkinlik->evrakTipleri->pluck('id')->map(fn ($id) => (int) $id)->all()
             : [];
 
+        $kimlikAktif = $this->kimlikSorgulamaAktifMi();
+        $cinsiyetZorunlu = $etkinlik->cinsiyet_sarti && ! $kimlikAktif;
+
         $rules = [
             'etkinlik_id' => ['required', 'integer', 'exists:etkinlikler,id'],
+            'basvuru_icin' => ['nullable', Rule::in(['kendisi', 'cocuk'])],
             'telefon' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:150'],
             'il' => ['required', 'string', 'max:100'],
             'ilce' => ['required', 'string', 'max:100'],
             'adres' => ['required', 'string', 'max:500'],
             'cinsiyet' => [
-                $etkinlik->cinsiyet_sarti ? 'required' : 'nullable',
+                $cinsiyetZorunlu ? 'required' : 'nullable',
                 Rule::enum(Cinsiyet::class),
             ],
             'veli_tc_kimlik_no' => ['nullable', 'digits:11'],
@@ -66,6 +73,10 @@ class EtkinlikBasvuruController extends ApiController
             'veli_soyad' => ['nullable', 'string', 'max:100'],
             'veli_telefon' => ['nullable', 'string', 'max:20'],
             'veli_email' => ['nullable', 'email', 'max:150'],
+            'cocuk_ad' => ['nullable', 'string', 'max:100'],
+            'cocuk_soyad' => ['nullable', 'string', 'max:100'],
+            'cocuk_tc_kimlik_no' => ['nullable', 'digits:11'],
+            'cocuk_dogum_tarihi' => ['nullable', 'date'],
         ];
 
         $onayKodlari = collect(app(EtkinlikAyarServisi::class)->basvuruOnaylari())
@@ -82,21 +93,25 @@ class EtkinlikBasvuruController extends ApiController
             $rules["evrak.{$tipId}"] = ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'];
         }
 
-        $yas = $this->yasHesapla($kisi->dogum_tarihi?->format('Y-m-d'));
-        $kucuk = $yas !== null && $yas < 18;
+        if ($cocukAdina) {
+            $rules = array_merge($rules, $this->cocukBasvuruKurallari($basvuran));
+        }
 
-        if ($kucuk) {
+        $yasBasvuran = $this->yasHesapla($basvuran->dogum_tarihi?->format('Y-m-d'));
+        $kucukBasvuran = ! $cocukAdina && $yasBasvuran !== null && $yasBasvuran < 18;
+
+        if ($kucukBasvuran) {
             $rules['veli_tc_kimlik_no'] = [
                 'required',
                 'digits:11',
-                Rule::notIn([(string) $kisi->tc_kimlik_no]),
+                Rule::notIn([(string) $basvuran->tc_kimlik_no]),
             ];
             $rules['veli_dogum_tarihi'] = ['required', 'date'];
             $rules['veli_ad'] = ['required', 'string', 'max:100'];
             $rules['veli_soyad'] = ['required', 'string', 'max:100'];
         }
 
-        $validated = $request->validate($rules, [
+        $validated = $request->validate($rules, array_merge([
             'etkinlik_id.required' => 'Etkinlik seçilmelidir.',
             'cinsiyet.required' => 'Bu etkinlik için cinsiyet seçimi zorunludur.',
             'telefon.required' => 'Telefon zorunludur.',
@@ -113,57 +128,116 @@ class EtkinlikBasvuruController extends ApiController
             'evrak.*.max' => 'Evrak en fazla 5 MB olabilir.',
             'kvkk_onay.accepted' => 'Başvuru için KVKK metnini onaylamanız gerekir.',
             'aydinlatma_onay.accepted' => 'Başvuru için aydınlatma metnini onaylamanız gerekir.',
-        ]);
+        ], $this->cocukBasvuruMesajlari()));
 
-        if (! $kisi->dogum_tarihi) {
-            throw ValidationException::withMessages([
-                'dogum_tarihi' => 'Başvuru için profilinizde doğum tarihi tanımlı olmalıdır.',
-            ]);
-        }
-
-        if (! $kisi->ad || ! $kisi->soyad || ! $kisi->tc_kimlik_no) {
+        if (! $basvuran->ad || ! $basvuran->soyad || ! $basvuran->tc_kimlik_no) {
             throw ValidationException::withMessages([
                 'ad' => 'Başvuru için profil bilgileriniz eksik. Lütfen profilinizi tamamlayın.',
             ]);
         }
 
-        $katilimciPayload = [
-            'dogum_tarihi' => $kisi->dogum_tarihi->format('Y-m-d'),
-            'cinsiyet' => $validated['cinsiyet'] ?? $kisi->cinsiyet?->value,
-            'il' => $validated['il'],
-            'ilce' => $validated['ilce'],
-        ];
-
-        app(BasvuruKosulDogrulayici::class)->dogrula($etkinlik, $katilimciPayload, $yas);
-
-        $veliDolu = filled($validated['veli_tc_kimlik_no'] ?? null)
-            || filled($validated['veli_ad'] ?? null)
-            || filled($validated['veli_soyad'] ?? null);
-
-        if ($veliDolu && ! $kucuk) {
-            $request->validate([
-                'veli_tc_kimlik_no' => [
-                    'required',
-                    'digits:11',
-                    Rule::notIn([(string) $kisi->tc_kimlik_no]),
-                ],
-                'veli_dogum_tarihi' => ['required', 'date'],
-                'veli_ad' => ['required', 'string', 'max:100'],
-                'veli_soyad' => ['required', 'string', 'max:100'],
-            ], [
-                'veli_tc_kimlik_no.required' => 'Veli bilgisi giriliyorsa TC Kimlik No zorunludur.',
-                'veli_tc_kimlik_no.not_in' => 'Veli TC Kimlik No katılımcıdan farklı olmalıdır.',
-                'veli_dogum_tarihi.required' => 'Veli bilgisi giriliyorsa doğum tarihi zorunludur.',
-                'veli_ad.required' => 'Veli bilgisi giriliyorsa ad zorunludur.',
-                'veli_soyad.required' => 'Veli bilgisi giriliyorsa soyad zorunludur.',
+        if ($cocukAdina) {
+            $this->cocukBasvurusuIcinBasvuranUygunMu($basvuran);
+            $kimlikCinsiyet = $this->cocukKimlikDogrula([
+                'cocuk_tc_kimlik_no' => $validated['cocuk_tc_kimlik_no'],
+                'cocuk_dogum_tarihi' => $validated['cocuk_dogum_tarihi'],
+                'cocuk_ad' => $validated['cocuk_ad'],
+                'cocuk_soyad' => $validated['cocuk_soyad'],
             ]);
-            $validated = array_merge($validated, $request->only([
-                'veli_tc_kimlik_no', 'veli_dogum_tarihi', 'veli_ad', 'veli_soyad', 'veli_telefon', 'veli_email',
-            ]));
-            $veliDolu = true;
+
+            $cinsiyet = $this->cozulmusCinsiyet($validated['cinsiyet'] ?? null)
+                ?? $kimlikCinsiyet;
+
+            $katilimci = $this->kisiUpsert([
+                'tc_kimlik_no' => $validated['cocuk_tc_kimlik_no'],
+                'dogum_tarihi' => $validated['cocuk_dogum_tarihi'],
+                'ad' => $validated['cocuk_ad'],
+                'soyad' => $validated['cocuk_soyad'],
+                'cinsiyet' => $cinsiyet,
+            ]);
+
+            $yas = $this->yasHesapla($validated['cocuk_dogum_tarihi']);
+            $katilimciPayload = [
+                'dogum_tarihi' => $validated['cocuk_dogum_tarihi'],
+                'cinsiyet' => $cinsiyet ?? $katilimci->cinsiyet?->value,
+                'il' => $validated['il'],
+                'ilce' => $validated['ilce'],
+            ];
+            app(BasvuruKosulDogrulayici::class)->dogrula($etkinlik, $katilimciPayload, $yas);
+
+            $kucuk = false;
+            $veliDolu = false;
+        } else {
+            if (! $basvuran->dogum_tarihi) {
+                throw ValidationException::withMessages([
+                    'dogum_tarihi' => 'Başvuru için profilinizde doğum tarihi tanımlı olmalıdır.',
+                ]);
+            }
+
+            $katilimci = $basvuran;
+            $yas = $yasBasvuran;
+            $cinsiyet = $this->cozulmusCinsiyet($validated['cinsiyet'] ?? null)
+                ?? $basvuran->cinsiyet?->value
+                ?? $this->kimliktenCinsiyetAl(
+                    (string) $basvuran->tc_kimlik_no,
+                    $basvuran->dogum_tarihi->format('Y-m-d'),
+                );
+
+            if ($cinsiyet && ! $basvuran->cinsiyet) {
+                $basvuran->cinsiyet = $cinsiyet;
+                $basvuran->save();
+                $katilimci = $basvuran->fresh();
+            }
+
+            $katilimciPayload = [
+                'dogum_tarihi' => $basvuran->dogum_tarihi->format('Y-m-d'),
+                'cinsiyet' => $cinsiyet,
+                'il' => $validated['il'],
+                'ilce' => $validated['ilce'],
+            ];
+            app(BasvuruKosulDogrulayici::class)->dogrula($etkinlik, $katilimciPayload, $yas);
+
+            $veliDolu = filled($validated['veli_tc_kimlik_no'] ?? null)
+                || filled($validated['veli_ad'] ?? null)
+                || filled($validated['veli_soyad'] ?? null);
+
+            if ($veliDolu && ! $kucukBasvuran) {
+                $request->validate([
+                    'veli_tc_kimlik_no' => [
+                        'required',
+                        'digits:11',
+                        Rule::notIn([(string) $basvuran->tc_kimlik_no]),
+                    ],
+                    'veli_dogum_tarihi' => ['required', 'date'],
+                    'veli_ad' => ['required', 'string', 'max:100'],
+                    'veli_soyad' => ['required', 'string', 'max:100'],
+                ], [
+                    'veli_tc_kimlik_no.required' => 'Veli bilgisi giriliyorsa TC Kimlik No zorunludur.',
+                    'veli_tc_kimlik_no.not_in' => 'Veli TC Kimlik No katılımcıdan farklı olmalıdır.',
+                    'veli_dogum_tarihi.required' => 'Veli bilgisi giriliyorsa doğum tarihi zorunludur.',
+                    'veli_ad.required' => 'Veli bilgisi giriliyorsa ad zorunludur.',
+                    'veli_soyad.required' => 'Veli bilgisi giriliyorsa soyad zorunludur.',
+                ]);
+                $validated = array_merge($validated, $request->only([
+                    'veli_tc_kimlik_no', 'veli_dogum_tarihi', 'veli_ad', 'veli_soyad', 'veli_telefon', 'veli_email',
+                ]));
+                $veliDolu = true;
+            }
+
+            $kucuk = $kucukBasvuran;
         }
 
-        $basvuru = DB::transaction(function () use ($request, $validated, $etkinlik, $kisi, $kucuk, $veliDolu, $evrakTipiIds) {
+        $basvuru = DB::transaction(function () use (
+            $request,
+            $validated,
+            $etkinlik,
+            $basvuran,
+            $katilimci,
+            $cocukAdina,
+            $kucuk,
+            $veliDolu,
+            $evrakTipiIds,
+        ) {
             /** @var Etkinlik $etkinlik */
             $etkinlik = Etkinlik::query()->whereKey($etkinlik->id)->lockForUpdate()->firstOrFail();
 
@@ -172,23 +246,33 @@ class EtkinlikBasvuruController extends ApiController
             $durumKod = $yerlesim['durum_kod'];
             $yedekSira = $yerlesim['yedek_sira'];
 
-            $kisi->basvuruIleProfilGuncelle($validated);
+            $basvuran->basvuruIleProfilGuncelle($validated);
 
-            $veli = null;
-            if ($kucuk || $veliDolu) {
-                $veli = $this->kisiUpsert([
-                    'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
-                    'dogum_tarihi' => $validated['veli_dogum_tarihi'],
-                    'ad' => $validated['veli_ad'],
-                    'soyad' => $validated['veli_soyad'],
-                    'telefon' => $validated['veli_telefon'] ?? null,
-                    'email' => $validated['veli_email'] ?? null,
-                ]);
+            if ($cocukAdina) {
+                $finalBasvuranId = $basvuran->id;
+                $finalVeliId = $basvuran->id;
+                $finalKisiId = $katilimci->id;
+            } else {
+                $veli = null;
+                if ($kucuk || $veliDolu) {
+                    $veli = $this->kisiUpsert([
+                        'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
+                        'dogum_tarihi' => $validated['veli_dogum_tarihi'],
+                        'ad' => $validated['veli_ad'],
+                        'soyad' => $validated['veli_soyad'],
+                        'telefon' => $validated['veli_telefon'] ?? null,
+                        'email' => $validated['veli_email'] ?? null,
+                    ]);
+                }
+
+                $finalBasvuranId = $kucuk && $veli ? $veli->id : $basvuran->id;
+                $finalVeliId = $veli?->id;
+                $finalKisiId = $basvuran->id;
             }
 
             $iptalDurumId = EtkinlikBasvuruDurum::idByKod('iptal');
             $mevcutAktif = EtkinlikBasvuru::query()
-                ->where('kisi_id', $kisi->id)
+                ->where('kisi_id', $finalKisiId)
                 ->where('etkinlik_id', $etkinlik->id)
                 ->whereNull('deleted_at')
                 ->when($iptalDurumId, fn ($q) => $q->where('durum_id', '!=', $iptalDurumId))
@@ -197,17 +281,16 @@ class EtkinlikBasvuruController extends ApiController
 
             if ($mevcutAktif) {
                 throw ValidationException::withMessages([
-                    'etkinlik_id' => 'Bu etkinliğe ait aktif bir başvurunuz zaten var.',
+                    'etkinlik_id' => $cocukAdina
+                        ? 'Bu etkinliğe ait çocuk için aktif bir başvuru zaten var.'
+                        : 'Bu etkinliğe ait aktif bir başvurunuz zaten var.',
                 ]);
             }
 
-            $basvuranId = $kucuk && $veli ? $veli->id : $kisi->id;
-            $veliId = $veli?->id;
-
             $basvuru = EtkinlikBasvuru::query()->create([
-                'kisi_id' => $kisi->id,
-                'basvuran_id' => $basvuranId,
-                'veli_id' => $veliId,
+                'kisi_id' => $finalKisiId,
+                'basvuran_id' => $finalBasvuranId,
+                'veli_id' => $finalVeliId,
                 'etkinlik_id' => $etkinlik->id,
                 'durum_id' => $durumId,
                 'yedek_sira' => $yedekSira,
@@ -239,16 +322,19 @@ class EtkinlikBasvuruController extends ApiController
             LogKaydedici::kaydet(
                 islem: 'etkinlik_basvuru.olusturuldu',
                 kurs: null,
-                aciklama: $kisi->tam_adi.' portal üzerinden etkinlik başvurusu oluşturdu'
+                aciklama: $basvuran->tam_adi.' portal üzerinden etkinlik başvurusu oluşturdu'
+                    .($cocukAdina ? ' (çocuk: '.$katilimci->tam_adi.')' : '')
                     .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
                 konu: $basvuru,
                 yeni: [
-                    'kisi_id' => $kisi->id,
-                    'veli_id' => $veliId,
+                    'kisi_id' => $finalKisiId,
+                    'basvuran_id' => $finalBasvuranId,
+                    'veli_id' => $finalVeliId,
                     'etkinlik_id' => $etkinlik->id,
                     'durum' => $durumKod,
                     'yedek_sira' => $yedekSira,
                     'kanal' => 'portal',
+                    'basvuru_icin' => $cocukAdina ? 'cocuk' : 'kendisi',
                 ],
                 ekstra: ['etkinlik_id' => $etkinlik->id],
             );
@@ -268,6 +354,7 @@ class EtkinlikBasvuruController extends ApiController
         $basvuru->load([
             'durum',
             'iptalGerekce',
+            'kisi',
             'veli',
             'etkinlik.merkez',
             'evraklar.evrakTipi',
@@ -277,7 +364,7 @@ class EtkinlikBasvuruController extends ApiController
             'basvuru' => new EtkinlikBasvuruResource($basvuru),
             'durum' => $durumKod,
             'yedek_sira' => $yedekSira,
-            'kisi' => new KisiResource($kisi->fresh()),
+            'kisi' => new KisiResource($basvuran->fresh()),
         ], $message, 201);
     }
 
@@ -292,6 +379,7 @@ class EtkinlikBasvuruController extends ApiController
         $basvuru->load([
             'durum',
             'iptalGerekce',
+            'kisi',
             'veli',
             'etkinlik.merkez',
             'evraklar.evrakTipi',
@@ -359,6 +447,7 @@ class EtkinlikBasvuruController extends ApiController
         $basvuru->refresh()->load([
             'durum',
             'iptalGerekce',
+            'kisi',
             'veli',
             'etkinlik.merkez',
             'evraklar.evrakTipi',
@@ -394,49 +483,5 @@ class EtkinlikBasvuruController extends ApiController
                     ->orWhere('veli_id', $kisi->id);
             })
             ->first();
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function kisiUpsert(array $data): Kisi
-    {
-        $tc = trim((string) ($data['tc_kimlik_no'] ?? ''));
-        $kisi = Kisi::query()->where('tc_kimlik_no', $tc)->first();
-
-        $payload = [
-            'ad' => trim((string) $data['ad']),
-            'soyad' => trim((string) $data['soyad']),
-            'tc_kimlik_no' => $tc,
-            'dogum_tarihi' => $data['dogum_tarihi'] ?? null,
-            'telefon' => $data['telefon'] ?? null,
-            'email' => $data['email'] ?? null,
-            'aktif' => true,
-        ];
-
-        if ($kisi) {
-            $kisi->fill(array_filter(
-                $payload,
-                fn ($value, $key) => $key === 'aktif' || ($value !== null && $value !== ''),
-                ARRAY_FILTER_USE_BOTH
-            ))->save();
-
-            return $kisi->fresh();
-        }
-
-        return Kisi::query()->create($payload);
-    }
-
-    private function yasHesapla(?string $dogumTarihi): ?int
-    {
-        if (! $dogumTarihi) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($dogumTarihi)->age;
-        } catch (\Throwable) {
-            return null;
-        }
     }
 }

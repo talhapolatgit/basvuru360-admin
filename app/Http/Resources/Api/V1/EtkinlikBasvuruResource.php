@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Http\Resources\Api\V1\Concerns\ResolvesPortalBasvuruOzeti;
 use App\Models\EtkinlikBasvuru;
 use App\Services\EtkinlikAyarServisi;
 use Illuminate\Http\Request;
@@ -12,6 +13,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class EtkinlikBasvuruResource extends JsonResource
 {
+    use ResolvesPortalBasvuruOzeti;
+
     /**
      * @return array<string, mixed>
      */
@@ -23,6 +26,8 @@ class EtkinlikBasvuruResource extends JsonResource
         return [
             'id' => $basvuru->id,
             'tip' => 'etkinlik',
+            'basvuru_icin' => $this->portalBasvuruIcin($basvuru, $request),
+            'cocuk' => $this->portalCocukOzeti($basvuru, $request),
             'etkinlik' => $basvuru->relationLoaded('etkinlik') && $basvuru->etkinlik
                 ? [
                     'id' => $basvuru->etkinlik->id,

@@ -35,6 +35,7 @@ class BasvurularimController extends ApiController
                 ->with([
                     'durum',
                     'iptalGerekce',
+                    'kisi',
                     'veli',
                     'kurs.merkez',
                     'kurs.brans',
@@ -61,6 +62,7 @@ class BasvurularimController extends ApiController
                 ->with([
                     'durum',
                     'iptalGerekce',
+                    'kisi',
                     'veli',
                     'etkinlik.merkez',
                     'evraklar.evrakTipi',

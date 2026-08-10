@@ -2926,6 +2926,7 @@ class KursController extends Controller implements HasMiddleware
             'gunler.*.bitis_saati' => ['required', 'date_format:H:i'],
             'gunler.*.ders_saati' => ['required', 'numeric', 'gt:0', 'max:24'],
             'gunler.*.sinif' => ['nullable', 'string', 'max:50'],
+            'aciklama' => ['nullable', 'string', 'max:50000'],
         ], [
             'kurs_bitis_tarihi.after_or_equal' => 'Bitiş tarihi başlangıçtan önce olamaz.',
             'basvuru_bitis_tarihi.after_or_equal' => 'Başvuru bitiş tarihi başlangıçtan önce olamaz.',
@@ -2940,10 +2941,33 @@ class KursController extends Controller implements HasMiddleware
             'gunler.*.ders_saati.gt' => 'Ders saati 0\'dan büyük olmalıdır.',
         ]);
 
+        $validated['aciklama'] = $this->normalizeRichText($validated['aciklama'] ?? null);
+
         $this->assertBasvuruTarihleriKursBitisindenSonraDegil($validated);
         $this->assertBaslamaGunuProgramda($validated);
 
         return $validated;
+    }
+
+    private function normalizeRichText(?string $html): ?string
+    {
+        if ($html === null) {
+            return null;
+        }
+
+        $trimmed = trim($html);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        $plain = trim(html_entity_decode(strip_tags($trimmed), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $plain = preg_replace('/\x{200B}/u', '', $plain) ?? $plain;
+
+        if ($plain === '') {
+            return null;
+        }
+
+        return $trimmed;
     }
 
     /**
@@ -3040,6 +3064,7 @@ class KursController extends Controller implements HasMiddleware
             'cinsiyet_sarti' => $validated['cinsiyet_sarti'] ?? null,
             'ikamet_sarti' => $ikametSarti,
             'evrak_zorunlu' => $evrakTipiIds !== [],
+            'aciklama' => $validated['aciklama'] ?? null,
             'guncelleyen_id' => $request->user()?->id,
         ];
 

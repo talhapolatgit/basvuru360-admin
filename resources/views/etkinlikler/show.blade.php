@@ -200,7 +200,13 @@
             </div>
             <div class="lesson-info-card" style="grid-column: 1 / -1;">
                 <div class="lesson-info-label">Açıklama</div>
-                <div class="lesson-info-value">{{ $etkinlik->aciklama ?: '—' }}</div>
+                <div class="lesson-info-value">
+                    @if ($etkinlik->aciklama)
+                        <div class="rich-editor__surface" style="min-height:0; max-height:none; padding:0; border:0;">{!! $etkinlik->aciklama !!}</div>
+                    @else
+                        —
+                    @endif
+                </div>
             </div>
         </div>
 

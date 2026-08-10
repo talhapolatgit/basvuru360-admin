@@ -74,6 +74,7 @@ class KursResource extends JsonResource
                 'label' => $kurs->basvuruDurumuLabel(),
             ],
             'evrak_zorunlu' => (bool) $kurs->evrak_zorunlu,
+            'aciklama' => $kurs->aciklama,
             'evrak_tipleri' => $kurs->relationLoaded('evrakTipleri')
                 ? $kurs->evrakTipleri->map(fn ($tip) => [
                     'id' => $tip->id,

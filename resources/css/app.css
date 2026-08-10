@@ -2277,6 +2277,21 @@
 
     .confirm-modal-dialog-lg {
         width: min(760px, calc(100vw - 32px));
+        max-width: min(760px, calc(100vw - 32px));
+    }
+
+    #sms-modal .confirm-modal-dialog,
+    #eposta-modal .confirm-modal-dialog,
+    #basvuru-sms-modal .confirm-modal-dialog,
+    #basvuru-eposta-modal .confirm-modal-dialog,
+    #etkinlik-basvuru-sms-modal .confirm-modal-dialog,
+    #etkinlik-basvuru-eposta-modal .confirm-modal-dialog,
+    #merkez-sms-modal .confirm-modal-dialog,
+    #merkez-eposta-modal .confirm-modal-dialog,
+    #egitmen-sms-modal .confirm-modal-dialog,
+    #egitmen-eposta-modal .confirm-modal-dialog {
+        max-width: 500px;
+        width: min(500px, calc(100vw - 32px));
     }
 
 .basvuru-evraklar-modal-dialog {

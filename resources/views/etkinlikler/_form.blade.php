@@ -53,11 +53,6 @@
             @error('ad') <div class="form-error">{{ $message }}</div> @enderror
         </div>
 
-        <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="aciklama">Açıklama</label>
-            <textarea id="aciklama" name="aciklama" class="form-control" rows="3" maxlength="5000">{{ $val('aciklama') }}</textarea>
-        </div>
-
         <div class="form-group">
             <label>Etkinlik Tipi <span class="req">*</span></label>
             <x-searchable-select
@@ -231,6 +226,43 @@
                 <p class="evrak-empty" data-evrak-empty>Henüz evrak koşulu eklenmedi.</p>
             @endforelse
         </div>
+    </div>
+</div>
+
+<div class="card form-section-card">
+    <div class="card-section-header">
+        <div>
+            <h2 class="card-section-title">Açıklama</h2>
+            <p class="card-section-desc">İsteğe bağlı. Portalda etkinlik detayında gösterilir.</p>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="aciklama">Açıklama</label>
+        @php
+            $aciklamaDegeri = old('aciklama', $etkinlik?->aciklama ?? '');
+        @endphp
+        <div class="rich-editor @error('aciklama') is-invalid @enderror" data-rich-editor>
+            @include('sabit-tanimlar.partials.rich-editor-toolbar')
+            <div
+                class="rich-editor__surface"
+                data-rich-surface
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Etkinlik açıklaması"
+            >{!! $aciklamaDegeri !!}</div>
+            <textarea
+                id="aciklama"
+                name="aciklama"
+                class="rich-editor__input"
+                hidden
+                data-rich-input
+            >{{ $aciklamaDegeri }}</textarea>
+        </div>
+        @error('aciklama')
+            <p class="form-error">{{ $message }}</p>
+        @enderror
     </div>
 </div>
 

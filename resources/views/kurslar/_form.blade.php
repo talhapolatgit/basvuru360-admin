@@ -390,6 +390,43 @@
     </div>
 </div>
 
+<div class="card form-section-card">
+    <div class="card-section-header">
+        <div>
+            <h2 class="card-section-title">Açıklama</h2>
+            <p class="card-section-desc">İsteğe bağlı. Portalda kurs detayının altında gösterilir.</p>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="aciklama">Açıklama</label>
+        @php
+            $aciklamaDegeri = old('aciklama', $kurs?->aciklama ?? '');
+        @endphp
+        <div class="rich-editor @error('aciklama') is-invalid @enderror" data-rich-editor>
+            @include('sabit-tanimlar.partials.rich-editor-toolbar')
+            <div
+                class="rich-editor__surface"
+                data-rich-surface
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Kurs açıklaması"
+            >{!! $aciklamaDegeri !!}</div>
+            <textarea
+                id="aciklama"
+                name="aciklama"
+                class="rich-editor__input"
+                hidden
+                data-rich-input
+            >{{ $aciklamaDegeri }}</textarea>
+        </div>
+        @error('aciklama')
+            <p class="form-error">{{ $message }}</p>
+        @enderror
+    </div>
+</div>
+
 <template id="gun-row-template">
     <div class="gun-row" data-gun-row>
         <div class="form-group">

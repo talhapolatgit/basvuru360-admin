@@ -44,6 +44,7 @@ class Kurs extends Model
         'mezun_olma_sarti',
         'evrak_zorunlu',
         'onlinede_yayinlansin',
+        'aciklama',
         'takvim_rengi',
         'basvuru_sayisi',
         'kayit_sayisi',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\ApiController;
+use App\Services\Entegrasyon\EntegrasyonAyarServisi;
 use App\Services\GenelAyarServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -10,7 +11,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GenelAyarController extends ApiController
 {
-    public function __invoke(GenelAyarServisi $servis): JsonResponse
+    public function __invoke(GenelAyarServisi $servis, EntegrasyonAyarServisi $entegrasyon): JsonResponse
     {
         $form = $servis->formVerisi();
         $yontem = $servis->kisiGirisYontemi();
@@ -44,6 +45,7 @@ class GenelAyarController extends ApiController
                 'label' => $yontem->label(),
             ],
             'kisi_giris_yontemi_secenekler' => $form['kisi_giris_yontemi_secenekler'],
+            'kimlik_sorgulama_aktif' => $entegrasyon->turAktifMi('kimlik_sorgulama'),
         ]);
     }
 

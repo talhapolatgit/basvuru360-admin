@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Http\Resources\Api\V1\Concerns\ResolvesPortalBasvuruOzeti;
 use App\Models\KursBasvuru;
 use App\Services\KursAyarServisi;
 use Illuminate\Http\Request;
@@ -12,6 +13,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class KursBasvuruResource extends JsonResource
 {
+    use ResolvesPortalBasvuruOzeti;
+
     /**
      * @return array<string, mixed>
      */
@@ -23,6 +26,8 @@ class KursBasvuruResource extends JsonResource
         return [
             'id' => $basvuru->id,
             'tip' => 'kurs',
+            'basvuru_icin' => $this->portalBasvuruIcin($basvuru, $request),
+            'cocuk' => $this->portalCocukOzeti($basvuru, $request),
             'kurs' => $basvuru->relationLoaded('kurs') && $basvuru->kurs
                 ? [
                     'id' => $basvuru->kurs->id,
