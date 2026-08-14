@@ -50,6 +50,13 @@ class KursBasvuruResource extends JsonResource
                     'ad' => $basvuru->durum->ad,
                 ]
                 : null,
+            'basari_durum' => $basvuru->relationLoaded('basariDurum') && $basvuru->basariDurum
+                ? [
+                    'kod' => $basvuru->basariDurum->kod,
+                    'ad' => $basvuru->basariDurum->ad,
+                    'status_sinifi' => $basvuru->basariDurum->status_sinifi,
+                ]
+                : null,
             'yedek_sira' => $basvuru->yedek_sira,
             'iptal_tarihi' => $basvuru->iptal_tarihi?->toIso8601String(),
             'iptal_gerekce' => $basvuru->relationLoaded('iptalGerekce') && $basvuru->iptalGerekce
@@ -61,6 +68,7 @@ class KursBasvuruResource extends JsonResource
             'onay_tarihi' => $basvuru->onay_tarihi?->toIso8601String(),
             'created_at' => $basvuru->created_at?->toIso8601String(),
             'iptal_edilebilir' => $this->iptalEdilebilir($basvuru),
+            'belge_indirilebilir' => $this->belgeIndirilebilir($basvuru),
             'evraklar' => $basvuru->relationLoaded('evraklar')
                 ? $basvuru->evraklar->map(fn ($e) => [
                     'id' => $e->id,
@@ -81,6 +89,20 @@ class KursBasvuruResource extends JsonResource
                 ]
                 : null,
         ];
+    }
+
+    private function belgeIndirilebilir(KursBasvuru $basvuru): bool
+    {
+        if (! $basvuru->relationLoaded('basariDurum') || ! $basvuru->basariDurum) {
+            return false;
+        }
+
+        $kodlar = config('sertifika.hak_eden_kodlar', [
+            'sertifika_hak_etti',
+            'katilim_belgesi_hak_etti',
+        ]);
+
+        return in_array($basvuru->basariDurum->kod, $kodlar, true);
     }
 
     private function iptalEdilebilir(KursBasvuru $basvuru): bool

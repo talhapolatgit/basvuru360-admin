@@ -34,6 +34,7 @@ class BasvurularimController extends ApiController
                 })
                 ->with([
                     'durum',
+                    'basariDurum',
                     'iptalGerekce',
                     'kisi',
                     'veli',

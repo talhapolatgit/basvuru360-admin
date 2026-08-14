@@ -17,11 +17,15 @@ use App\Services\BasvuruKosulDogrulayici;
 use App\Services\KursAyarServisi;
 use App\Services\KursYedekListeServisi;
 use App\Services\LogKaydedici;
+use App\Services\SertifikaAyarServisi;
+use App\Services\SertifikaPdfOlusturucu;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class KursBasvuruController extends ApiController
 {
@@ -478,6 +482,48 @@ class KursBasvuruController extends ApiController
         );
 
         return $this->success(new KursBasvuruResource($basvuru), 'Başvuru iptal edildi.');
+    }
+
+    public function belge(Request $request, int $id): Response|JsonResponse
+    {
+        $basvuru = $this->sahipBasvuru($request, $id);
+
+        if (! $basvuru) {
+            return $this->error('Başvuru bulunamadı.', 404);
+        }
+
+        $basvuru->load([
+            'kisi',
+            'basariDurum',
+            'kurs.merkez',
+            'kurs.alan',
+            'kurs.brans',
+            'kurs.ogretmenler',
+        ]);
+
+        $ayarlar = app(SertifikaAyarServisi::class)->ayarlar();
+        $kodlar = $ayarlar['hak_eden_kodlar'] ?: [
+            'sertifika_hak_etti',
+            'katilim_belgesi_hak_etti',
+        ];
+
+        $basariKod = $basvuru->basariDurum?->kod;
+        if (! $basariKod || ! in_array($basariKod, $kodlar, true)) {
+            return $this->error('Bu başvuru için indirilebilir belge bulunmuyor.', 422);
+        }
+
+        $kurs = $basvuru->kurs;
+        if (! $kurs) {
+            return $this->error('Kurs bulunamadı.', 404);
+        }
+
+        $belge = app(SertifikaPdfOlusturucu::class)->belgeVerisi($kurs, $basvuru, $ayarlar);
+        $filename = 'belge-'.$kurs->kurs_no.'-'.$basvuru->id.'.pdf';
+
+        return Pdf::loadView('kurslar.sertifika_pdf', [
+            'kurs' => $kurs,
+            'belgeler' => collect([$belge]),
+        ])->setPaper('a4', 'landscape')->download($filename);
     }
 
     private function sahipBasvuru(Request $request, int $id): ?KursBasvuru

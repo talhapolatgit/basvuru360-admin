@@ -73,6 +73,9 @@ Route::prefix('v1')->group(function () {
             ->name('api.v1.kurs-basvurulari.store');
         Route::get('/kurs-basvurulari/{id}', [KursBasvuruController::class, 'show'])
             ->name('api.v1.kurs-basvurulari.show');
+        Route::get('/kurs-basvurulari/{id}/belge', [KursBasvuruController::class, 'belge'])
+            ->middleware('throttle:20,1')
+            ->name('api.v1.kurs-basvurulari.belge');
         Route::post('/kurs-basvurulari/{id}/iptal', [KursBasvuruController::class, 'iptal'])
             ->middleware('throttle:20,1')
             ->name('api.v1.kurs-basvurulari.iptal');

@@ -397,6 +397,18 @@
           }
         },
         {
+          "name": "Kurs Belge İndir (Sertifika / Katılım)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/pdf" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/kurs-basvurulari/{{basvuru_id}}/belge",
+            "description": "Başarı durumu sertifika_hak_etti veya katilim_belgesi_hak_etti ise PDF döner.\n\nPostman'da Send and Download ile kaydedin. Yanıt application/pdf (JSON envelope değil).\n\n`basvuru_id`: Başvurularım listesinden alın; belge_indirilebilir: true olmalı."
+          }
+        },
+        {
           "name": "Kurs Başvurusu İptal",
           "request": {
             "method": "POST",
