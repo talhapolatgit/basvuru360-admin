@@ -51,13 +51,13 @@
             </div>
 
             <div class="form-group">
-                <label for="alan_id">Alan</label>
-                <select id="alan_id" name="alan_id" class="form-control" data-reset-value="">
-                    <option value="">Tüm Alanlar</option>
-                    @foreach ($alanlar as $alan)
-                        <option value="{{ $alan->id }}" @selected(($filters['alan_id'] ?? '') == $alan->id)>{{ $alan->ad }}</option>
-                    @endforeach
-                </select>
+                <label>Alan</label>
+                <x-searchable-select
+                    name="alan_id"
+                    placeholder="Tüm Alanlar"
+                    :value="$filters['alan_id'] ?? ''"
+                    :options="$alanlar->map(fn ($alan) => ['value' => $alan->id, 'label' => $alan->ad])->all()"
+                />
             </div>
 
             <div class="form-group">

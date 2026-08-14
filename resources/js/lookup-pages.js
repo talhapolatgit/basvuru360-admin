@@ -238,3 +238,69 @@ export function initEtkinlikBasvurulariPage() {
         });
     }
 }
+
+export function initKresDonemlerPage() {
+    initLookupPage({
+        tableId: 'kres-donemler-table',
+        tableConfig: {
+            tableId: 'kres-donemler-table',
+            resultsId: 'kres-donemler-results',
+            cardId: 'kres-donemler-table-card',
+            filterFormId: 'kres-donemler-filter-form',
+            clearBtnId: 'kres-donemler-filter-clear',
+            cookieKey: 'kres_donemler_table_prefs',
+            excelLinkId: 'kres-donemler-excel-link',
+        },
+        modalId: 'kres-donem-form-modal',
+        modalConfig: {
+            modalId: 'kres-donem-form-modal',
+            formSelector: '.kres-donem-form',
+            createTitle: 'Yeni Dönem',
+            editTitle: 'Dönemi Düzenle',
+        },
+    });
+}
+
+export function initKresOkullarTanimPage() {
+    initLookupPage({
+        tableId: 'kres-okullar-table',
+        tableConfig: {
+            tableId: 'kres-okullar-table',
+            resultsId: 'kres-okullar-results',
+            cardId: 'kres-okullar-table-card',
+            filterFormId: 'kres-okullar-filter-form',
+            clearBtnId: 'kres-okullar-filter-clear',
+            cookieKey: 'kres_okullar_table_prefs',
+            excelLinkId: 'kres-okullar-excel-link',
+        },
+        modalId: 'kres-okul-form-modal',
+        modalConfig: {
+            modalId: 'kres-okul-form-modal',
+            formSelector: '.kres-okul-form',
+            createTitle: 'Yeni Okul',
+            editTitle: 'Okulu Düzenle',
+        },
+    });
+}
+
+export function initKresGruplarTanimPage() {
+    initLookupPage({
+        tableId: 'kres-gruplar-table',
+        tableConfig: {
+            tableId: 'kres-gruplar-table',
+            resultsId: 'kres-gruplar-results',
+            cardId: 'kres-gruplar-table-card',
+            filterFormId: 'kres-gruplar-filter-form',
+            clearBtnId: 'kres-gruplar-filter-clear',
+            cookieKey: 'kres_gruplar_table_prefs',
+            excelLinkId: 'kres-gruplar-excel-link',
+        },
+        modalId: 'kres-grup-form-modal',
+        modalConfig: {
+            modalId: 'kres-grup-form-modal',
+            formSelector: '.kres-grup-form',
+            createTitle: 'Yeni Grup',
+            editTitle: 'Grubu Düzenle',
+        },
+    });
+}

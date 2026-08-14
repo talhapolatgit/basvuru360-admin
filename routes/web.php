@@ -12,6 +12,11 @@ use App\Http\Controllers\PortalAyarController;
 use App\Http\Controllers\EtkinlikBasvuruController;
 use App\Http\Controllers\EtkinlikController;
 use App\Http\Controllers\KisiController;
+use App\Http\Controllers\KresBasvuruController;
+use App\Http\Controllers\KresController;
+use App\Http\Controllers\KresDonemController;
+use App\Http\Controllers\KresGrupController;
+use App\Http\Controllers\KresOkulController;
 use App\Http\Controllers\KullaniciController;
 use App\Http\Controllers\KursController;
 use App\Http\Controllers\LogController;
@@ -150,6 +155,33 @@ Route::middleware('auth')->group(function () {
     Route::post('/kurs-basvurulari', [BasvuruController::class, 'store'])->middleware('yetki:basvuru.olustur')->name('basvurular.store');
     Route::get('/kurs-basvurulari/kurs/{kurs}/ozet', [BasvuruController::class, 'kursOzet'])->middleware('yetki:basvuru.olustur')->name('basvurular.kurs-ozet');
     Route::get('/kurs-basvurulari/excel', [BasvuruController::class, 'export'])->middleware('yetki:basvuru.export')->name('basvurular.export');
+
+    // —— Kreş Yönetimi ——
+    Route::get('/kres', [KresController::class, 'index'])->middleware('yetki:kres.goruntule')->name('kres.index');
+    Route::post('/kres/donem-sec', [KresController::class, 'setDonem'])->middleware('yetki:kres.goruntule')->name('kres.donem-sec');
+
+    Route::get('/kres/donemler', [KresDonemController::class, 'index'])->middleware('yetki:kres.donem_yonet')->name('kres.donemler.index');
+    Route::get('/kres/donemler/excel', [KresDonemController::class, 'export'])->middleware('yetki:kres.donem_yonet')->name('kres.donemler.export');
+    Route::post('/kres/donemler', [KresDonemController::class, 'store'])->middleware('yetki:kres.donem_yonet')->name('kres.donemler.store');
+    Route::put('/kres/donemler/{kresDonem}', [KresDonemController::class, 'update'])->middleware('yetki:kres.donem_yonet')->name('kres.donemler.update');
+
+    Route::get('/kres/okullar', [KresOkulController::class, 'index'])->middleware('yetki:kres.okul_yonet')->name('kres.okullar.index');
+    Route::get('/kres/okullar/excel', [KresOkulController::class, 'export'])->middleware('yetki:kres.okul_yonet')->name('kres.okullar.export');
+    Route::post('/kres/okullar', [KresOkulController::class, 'store'])->middleware('yetki:kres.okul_yonet')->name('kres.okullar.store');
+    Route::get('/kres/okullar/{kresOkul}', [KresOkulController::class, 'show'])->middleware('yetki:kres.goruntule')->name('kres.okullar.show');
+    Route::put('/kres/okullar/{kresOkul}', [KresOkulController::class, 'update'])->middleware('yetki:kres.okul_yonet')->name('kres.okullar.update');
+
+    Route::get('/kres/gruplar', [KresGrupController::class, 'index'])->middleware('yetki:kres.grup_yonet')->name('kres.gruplar.index');
+    Route::get('/kres/gruplar/excel', [KresGrupController::class, 'export'])->middleware('yetki:kres.grup_yonet')->name('kres.gruplar.export');
+    Route::post('/kres/gruplar', [KresGrupController::class, 'store'])->middleware('yetki:kres.grup_yonet')->name('kres.gruplar.store');
+    Route::put('/kres/gruplar/{kresGrup}', [KresGrupController::class, 'update'])->middleware('yetki:kres.grup_yonet')->name('kres.gruplar.update');
+    Route::get('/kres/okullar/{kresOkul}/gruplar/{kresGrup}', [KresGrupController::class, 'show'])->middleware('yetki:kres.goruntule,kres.basvuru_goruntule')->name('kres.gruplar.show');
+    Route::get('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular', [KresGrupController::class, 'basvurular'])->middleware('yetki:kres.goruntule,kres.basvuru_goruntule')->name('kres.gruplar.basvurular');
+    Route::get('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular/excel', [KresGrupController::class, 'exportBasvurular'])->middleware('yetki:kres.basvuru_goruntule,kres.goruntule')->name('kres.gruplar.basvurular.export');
+
+    Route::get('/kres/kisiler/ara', [KresBasvuruController::class, 'kisiAra'])->middleware('yetki:kres.basvuru_olustur')->name('kres.kisiler.ara');
+    Route::post('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular', [KresBasvuruController::class, 'store'])->middleware('yetki:kres.basvuru_olustur')->name('kres.basvurular.store');
+    Route::put('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular/{kresBasvuru}/durum', [KresBasvuruController::class, 'updateDurum'])->middleware('yetki:kres.basvuru_durum_guncelle')->name('kres.basvurular.durum');
 
     // —— Merkezler ——
     Route::get('/merkezler', [MerkezController::class, 'index'])->middleware('yetki:merkez.goruntule')->name('merkezler.index');

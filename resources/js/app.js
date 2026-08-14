@@ -5,7 +5,7 @@ import { initSidebar } from './sidebar';
 import { consumeFlashToasts, showToast } from './toast';
 import { initKursDetailActions, initBasvuruActionModals, initBasvuruMesajModallari, initKursYedekSiraModal } from './kurs-detail';
 import { initBasvuruEvraklarModal, initBasvuruEvraklarPanel } from './basvuru-evraklar-modal';
-import { initMerkezlerPage, initAlanlarPage, initBranslarPage, initEgitmenlerPage, initKullanicilarPage, initKisilerPage, initMerkezYetkileriPage, initEtkinliklerPage, initEtkinlikBasvurulariPage } from './lookup-pages';
+import { initMerkezlerPage, initAlanlarPage, initBranslarPage, initEgitmenlerPage, initKullanicilarPage, initKisilerPage, initMerkezYetkileriPage, initEtkinliklerPage, initEtkinlikBasvurulariPage, initKresDonemlerPage, initKresOkullarTanimPage, initKresGruplarTanimPage } from './lookup-pages';
 import { initEtkinlikDetailPage, initBasvuruMesajModallari as initEtkinlikBasvuruMesajModallari, initEtkinlikBasvuruDurumModal, initEtkinlikYedekSiraModal } from './etkinlik-detail';
 import { initSabitTanimlarPage } from './sabit-tanimlar';
 import { initRichTextEditors } from './rich-text-editor';
@@ -21,6 +21,7 @@ import { initAvatarUploaders } from './avatar-uploader';
 import { initKisiForm } from './kisi-form';
 import { initBasvuruCreatePage } from './basvuru-create';
 import { initEtkinlikBasvuruCreatePage } from './etkinlik-basvuru-create';
+import { initKresGrupDetailPage } from './kres-grup-detail';
 
 window.showToast = showToast;
 
@@ -284,6 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initMerkezYetkileriPage();
     initEtkinliklerPage();
     initEtkinlikBasvurulariPage();
+    initKresDonemlerPage();
+    initKresOkullarTanimPage();
+    initKresGruplarTanimPage();
     initEtkinlikDetailPage();
     initEtkinlikBasvuruDurumModal();
     initEtkinlikYedekSiraModal();
@@ -301,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initKisiForm();
     initBasvuruCreatePage();
     initEtkinlikBasvuruCreatePage();
+    initKresGrupDetailPage();
     consumeFlashToasts();
 
     document.addEventListener('click', () => {

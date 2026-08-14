@@ -4365,11 +4365,15 @@
         display: none !important;
     }
 
-    #kurslar-table-card {
+    .table-card {
         position: relative;
     }
 
-    #kurslar-table-card.is-loading::after {
+    .table-card.is-loading {
+        pointer-events: none;
+    }
+
+    .table-card.is-loading::after {
         content: '';
         position: absolute;
         inset: 0;
@@ -4378,7 +4382,7 @@
         z-index: 20;
     }
 
-    #kurslar-table-card.is-loading::before {
+    .table-card.is-loading::before {
         content: '';
         position: absolute;
         top: 50%;
@@ -6827,6 +6831,381 @@
 
     .basvuru-step {
         padding: 10px;
+    }
+}
+
+/* —— Kreş Yönetimi —— */
+.kres-chrome {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.15rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(11, 107, 98, 0.06), rgba(12, 33, 56, 0.03));
+    border: 1px solid rgba(12, 33, 56, 0.08);
+}
+
+.kres-page-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem 1.15rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.kres-page-actions__btns {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.kres-donem-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(12, 33, 56, 0.12);
+    box-shadow: 0 1px 2px rgba(12, 33, 56, 0.04);
+}
+
+.kres-donem-switcher__label {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7e8299;
+    white-space: nowrap;
+}
+
+.kres-donem-switcher__select {
+    min-width: 11rem;
+    max-width: 16rem;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent;
+    font-weight: 600;
+    color: #181c32;
+    padding: 0.35rem 1.75rem 0.35rem 0.25rem;
+    height: auto;
+    cursor: pointer;
+}
+
+.kres-donem-switcher__select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.kres-stepper {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.kres-stepper__sep {
+    width: 18px;
+    align-self: center;
+    height: 2px;
+    background: rgba(12, 33, 56, 0.12);
+    flex-shrink: 0;
+}
+
+.kres-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #3f4254;
+    background: #fff;
+    border: 1px solid rgba(12, 33, 56, 0.1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    min-width: 0;
+    flex: 1 1 160px;
+}
+
+.kres-step:hover {
+    border-color: rgba(11, 107, 98, 0.35);
+}
+
+.kres-step.is-active {
+    border-color: rgba(11, 107, 98, 0.45);
+    box-shadow: 0 4px 14px rgba(11, 107, 98, 0.12);
+    background: #fff;
+}
+
+.kres-step.is-done {
+    border-color: rgba(11, 107, 98, 0.25);
+}
+
+.kres-step.is-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.kres-step__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(12, 33, 56, 0.06);
+    color: #3f4254;
+    flex-shrink: 0;
+}
+
+.kres-step.is-active .kres-step__num,
+.kres-step.is-done .kres-step__num {
+    background: rgba(11, 107, 98, 0.14);
+    color: #0b6b62;
+}
+
+.kres-step__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kres-step__label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.kres-step__hint {
+    font-size: 0.72rem;
+    color: #7e8299;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kres-school-grid,
+.kres-group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.kres-school-card,
+.kres-group-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.15rem 1.2rem;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid rgba(12, 33, 56, 0.08);
+    box-shadow: 0 1px 2px rgba(12, 33, 56, 0.04);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.kres-school-card:hover,
+.kres-group-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(11, 107, 98, 0.28);
+    box-shadow: 0 8px 22px rgba(12, 33, 56, 0.08);
+}
+
+.kres-school-card.is-passive,
+.kres-group-card.is-passive {
+    opacity: 0.72;
+}
+
+.kres-school-card__top,
+.kres-group-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.kres-school-card__title,
+.kres-group-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #181c32;
+}
+
+.kres-school-card__meta {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #7e8299;
+}
+
+.kres-group-card__ages {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #0b6b62;
+    background: rgba(11, 107, 98, 0.1);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.kres-school-card__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.kres-stat-label {
+    display: block;
+    font-size: 0.68rem;
+    color: #7e8299;
+    margin-bottom: 0.15rem;
+}
+
+.kres-school-card__stats strong {
+    font-size: 1.05rem;
+    color: #181c32;
+}
+
+.kres-fill {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.kres-fill--wide {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(12, 33, 56, 0.08);
+}
+
+.kres-fill__bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(12, 33, 56, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.kres-fill__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--fill, 0%);
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0b6b62, #1aae9f);
+}
+
+.kres-fill__label {
+    font-size: 0.72rem;
+    color: #7e8299;
+}
+
+.kres-empty {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px dashed rgba(12, 33, 56, 0.15);
+    margin-bottom: 1rem;
+}
+
+.kres-empty--inline {
+    grid-column: 1 / -1;
+}
+
+.kres-empty h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.15rem;
+}
+
+.kres-empty p {
+    margin: 0 0 1rem;
+    color: #7e8299;
+}
+
+.kres-info-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin: -0.5rem 0 1.25rem;
+    font-size: 0.88rem;
+    color: #5e6278;
+}
+
+.kres-kisi-picked {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+    color: #0b6b62;
+    font-weight: 600;
+}
+
+.kres-kisi-results {
+    margin-top: 0.45rem;
+    border: 1px solid rgba(12, 33, 56, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.kres-kisi-result {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.65rem 0.85rem;
+    border: 0;
+    border-bottom: 1px solid rgba(12, 33, 56, 0.06);
+    background: #fff;
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.kres-kisi-result:hover {
+    background: rgba(11, 107, 98, 0.06);
+}
+
+.kres-kisi-result:last-child {
+    border-bottom: 0;
+}
+
+.confirm-modal-dialog--wide {
+    max-width: 560px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.85rem;
+}
+
+.checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.9rem;
+    margin: 0.25rem 0 1rem;
+}
+
+@media (max-width: 720px) {
+    .kres-stepper__sep {
+        display: none;
+    }
+
+    .kres-step {
+        flex: 1 1 100%;
     }
 }
 

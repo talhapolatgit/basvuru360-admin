@@ -150,6 +150,55 @@
   </div>
   @endif
 
+  @php
+    $kresMenuAcik = request()->routeIs('kres.*');
+    $kresMenuGoster = auth()->user()?->hasAnyYetki([
+      'kres.goruntule',
+      'kres.donem_yonet',
+      'kres.okul_yonet',
+      'kres.grup_yonet',
+      'kres.basvuru_goruntule',
+    ]);
+  @endphp
+  @if ($kresMenuGoster)
+  <div class="menu-dropdown" data-menu-dropdown>
+    <button
+      type="button"
+      class="menu-item menu-dropdown-toggle w-full justify-between {{ $kresMenuAcik ? 'menu-item-active dropdown-open' : '' }}"
+      data-menu-dropdown-toggle
+      aria-expanded="{{ $kresMenuAcik ? 'true' : 'false' }}"
+    >
+      <span class="flex items-center gap-3.5">
+        <svg class="menu-item-icon {{ $kresMenuAcik ? 'menu-item-icon-accent' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        Kreş Yönetimi
+      </span>
+      <svg class="menu-arrow h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="submenu {{ $kresMenuAcik ? 'open' : '' }}" data-menu-dropdown-content>
+      @yetki('kres.goruntule')
+      <a href="{{ route('kres.index') }}" class="submenu-item {{ request()->routeIs('kres.index', 'kres.okullar.show', 'kres.gruplar.show', 'kres.gruplar.basvurular', 'kres.gruplar.basvurular.export', 'kres.basvurular.*') ? 'is-active' : '' }}">
+        Başvurular
+      </a>
+      @endyetki
+      @yetki('kres.donem_yonet')
+      <a href="{{ route('kres.donemler.index') }}" class="submenu-item {{ request()->routeIs('kres.donemler.*') ? 'is-active' : '' }}">
+        Dönemler
+      </a>
+      @endyetki
+      @yetki('kres.okul_yonet')
+      <a href="{{ route('kres.okullar.index') }}" class="submenu-item {{ request()->routeIs('kres.okullar.index', 'kres.okullar.export') ? 'is-active' : '' }}">
+        Okullar
+      </a>
+      @endyetki
+      @yetki('kres.grup_yonet')
+      <a href="{{ route('kres.gruplar.index') }}" class="submenu-item {{ request()->routeIs('kres.gruplar.index', 'kres.gruplar.export') ? 'is-active' : '' }}">
+        Gruplar
+      </a>
+      @endyetki
+    </div>
+  </div>
+  @endif
+
   @yetki('takvim.goruntule')
   <a href="{{ route('takvim.index') }}" class="menu-item {{ request()->routeIs('takvim.*') ? 'menu-item-active' : '' }}">
     <svg class="menu-item-icon {{ request()->routeIs('takvim.*') ? 'menu-item-icon-accent' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>

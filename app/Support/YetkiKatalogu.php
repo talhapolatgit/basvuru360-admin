@@ -16,6 +16,7 @@ class YetkiKatalogu
         'basvuru' => 'Başvurular',
         'etkinlik' => 'Etkinlikler',
         'etkinlik_basvuru' => 'Etkinlik Başvuruları',
+        'kres' => 'Kreş Yönetimi',
         'merkez' => 'Merkezler',
         'alan' => 'Alanlar',
         'brans' => 'Branşlar',
@@ -108,6 +109,15 @@ class YetkiKatalogu
             ['kod' => 'etkinlik_basvuru.evrak_yukle', 'ad' => 'Evrak Yükle', 'modul' => 'etkinlik_basvuru'],
             ['kod' => 'etkinlik_basvuru.evrak_sil', 'ad' => 'Evrak Sil', 'modul' => 'etkinlik_basvuru'],
             ['kod' => 'etkinlik_basvuru.export', 'ad' => 'Etkinlik Başvurusu Excel Dışa Aktar', 'modul' => 'etkinlik_basvuru'],
+
+            ['kod' => 'kres.goruntule', 'ad' => 'Kreş Yönetimini Görüntüle', 'modul' => 'kres'],
+            ['kod' => 'kres.donem_yonet', 'ad' => 'Kreş Dönemi Yönet', 'modul' => 'kres'],
+            ['kod' => 'kres.okul_yonet', 'ad' => 'Kreş Okulu Yönet', 'modul' => 'kres'],
+            ['kod' => 'kres.grup_yonet', 'ad' => 'Kreş Grubu Yönet', 'modul' => 'kres'],
+            ['kod' => 'kres.basvuru_goruntule', 'ad' => 'Kreş Başvurularını Görüntüle', 'modul' => 'kres'],
+            ['kod' => 'kres.basvuru_olustur', 'ad' => 'Kreş Başvurusu Oluştur', 'modul' => 'kres'],
+            ['kod' => 'kres.basvuru_guncelle', 'ad' => 'Kreş Başvurusu Güncelle', 'modul' => 'kres'],
+            ['kod' => 'kres.basvuru_durum_guncelle', 'ad' => 'Kreş Başvuru Durumu Güncelle', 'modul' => 'kres'],
 
             ['kod' => 'merkez.goruntule', 'ad' => 'Merkezleri Görüntüle', 'modul' => 'merkez'],
             ['kod' => 'merkez.olustur', 'ad' => 'Merkez Oluştur', 'modul' => 'merkez'],
