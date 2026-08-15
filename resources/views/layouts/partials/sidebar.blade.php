@@ -157,6 +157,7 @@
       'kres.donem_yonet',
       'kres.okul_yonet',
       'kres.grup_yonet',
+      'kres.soru_formu_yonet',
       'kres.basvuru_goruntule',
     ]);
   @endphp
@@ -193,6 +194,11 @@
       @yetki('kres.grup_yonet')
       <a href="{{ route('kres.gruplar.index') }}" class="submenu-item {{ request()->routeIs('kres.gruplar.index', 'kres.gruplar.export') ? 'is-active' : '' }}">
         Gruplar
+      </a>
+      @endyetki
+      @yetki('kres.soru_formu_yonet')
+      <a href="{{ route('kres.soru-formlari.index') }}" class="submenu-item {{ request()->routeIs('kres.soru-formlari.*') ? 'is-active' : '' }}">
+        Soru Formları
       </a>
       @endyetki
     </div>

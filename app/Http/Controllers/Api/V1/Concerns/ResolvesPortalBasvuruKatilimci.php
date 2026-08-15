@@ -216,6 +216,7 @@ trait ResolvesPortalBasvuruKatilimci
             'dogum_tarihi' => $data['dogum_tarihi'] ?? null,
             'telefon' => $data['telefon'] ?? null,
             'email' => $data['email'] ?? null,
+            'adres' => $data['adres'] ?? null,
             'cinsiyet' => $data['cinsiyet'] ?? null,
             'aktif' => true,
         ];

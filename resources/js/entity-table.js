@@ -237,17 +237,23 @@ export function initEntityTable(options) {
             form.querySelectorAll('[data-searchable-select]').forEach((select) => {
                 const valueInput = select.querySelector('[data-select-value]');
                 const label = select.querySelector('[data-select-label]');
+                const resetValue = select.getAttribute('data-reset-value') ?? '';
+                const resetOption = select.querySelector(
+                    `[data-select-options] .select-option[data-value="${CSS.escape(resetValue)}"]`
+                );
                 const emptyOption = select.querySelector('[data-select-options] .select-option[data-value=""]');
-                const placeholder = emptyOption?.getAttribute('data-label') || emptyOption?.textContent?.trim() || 'Seçin';
+                const option = resetOption || emptyOption;
+                const value = option?.getAttribute('data-value') ?? '';
+                const placeholder = option?.getAttribute('data-label') || option?.textContent?.trim() || 'Seçin';
 
                 if (valueInput) {
-                    valueInput.value = '';
+                    valueInput.value = value;
                 }
                 if (label) {
                     label.textContent = placeholder;
                 }
-                select.querySelectorAll('.select-option').forEach((option) => {
-                    option.classList.toggle('selected', option.getAttribute('data-value') === '');
+                select.querySelectorAll('.select-option').forEach((opt) => {
+                    opt.classList.toggle('selected', opt.getAttribute('data-value') === value);
                 });
             });
             load(form.getAttribute('action'));

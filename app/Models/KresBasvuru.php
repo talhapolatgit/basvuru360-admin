@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KresBasvuru extends Model
@@ -67,5 +68,13 @@ class KresBasvuru extends Model
     public function olusturan(): BelongsTo
     {
         return $this->belongsTo(User::class, 'olusturan_id');
+    }
+
+    /**
+     * @return HasMany<KresBasvuruCevap, $this>
+     */
+    public function cevaplar(): HasMany
+    {
+        return $this->hasMany(KresBasvuruCevap::class, 'basvuru_id');
     }
 }

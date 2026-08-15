@@ -10,6 +10,9 @@
             <h1 class="lesson-detail-title">{{ $grup->ad }}</h1>
             <p class="page-subtitle" style="margin-top:6px;">
                 {{ $grup->yasAraligiLabel() }}
+                @if ($grup->cinsiyet_sarti)
+                    · {{ $grup->cinsiyet_sarti->label() }}
+                @endif
                 · Kontenjan {{ $grup->kontenjan }}
                 · Kesin kayıt {{ $kesinSayisi }}
             </p>
@@ -248,4 +251,177 @@
     </div>
 </div>
 @endyetki
+
+<div class="confirm-modal" id="kres-basvuru-sms-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kres-sms-close></div>
+    <div class="confirm-modal-dialog confirm-modal-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="kres-basvuru-sms-title">
+        <div class="confirm-modal-header">
+            <h3 id="kres-basvuru-sms-title" class="confirm-modal-title">SMS Gönder</h3>
+            <button type="button" class="confirm-modal-x" data-kres-sms-close aria-label="Kapat">&times;</button>
+        </div>
+        <div class="confirm-modal-body">
+            <p data-kres-sms-alici style="margin-bottom:14px;"></p>
+            <p class="form-hint" data-kres-sms-no-telefon hidden style="margin-bottom:14px; color:#f64e60;">
+                Bu kişi için kayıtlı telefon numarası bulunamadı.
+            </p>
+            <div class="form-group sms-mesaj-group" style="margin-bottom:0;">
+                <div class="sms-mesaj-label-row">
+                    <label for="kres-basvuru-sms-mesaj">Mesaj <span class="req">*</span></label>
+                    <div class="sms-mesaj-actions">
+                        <button type="button" class="sms-degisken-btn" data-kres-sms-insert="{ad_soyad}" title="İmleç konumuna ekler">{ad_soyad}</button>
+                        <button type="button" class="sms-onizle-btn" data-kres-sms-onizle>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Önizle
+                        </button>
+                    </div>
+                </div>
+                <textarea
+                    id="kres-basvuru-sms-mesaj"
+                    class="form-control sms-mesaj-input"
+                    rows="4"
+                    maxlength="480"
+                    data-kres-sms-mesaj
+                    placeholder="Örn: Merhaba {ad_soyad}, bilgilendirme mesajınız."
+                ></textarea>
+                <p class="form-hint" style="margin-top:8px; font-size:12px; color:#7e8299;">
+                    <span data-kres-sms-char-count>0</span>/480 karakter · Kişiye özel isim için <code>{ad_soyad}</code> kullanın
+                </p>
+            </div>
+        </div>
+        <div class="confirm-modal-footer">
+            <button type="button" class="btn btn-secondary btn-wide" data-kres-sms-close>Vazgeç</button>
+            <button type="button" class="btn btn-primary btn-wide" data-kres-sms-send>Gönder</button>
+        </div>
+    </div>
+</div>
+
+<div class="confirm-modal" id="kres-basvuru-eposta-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kres-eposta-close></div>
+    <div class="confirm-modal-dialog confirm-modal-dialog-lg" role="dialog" aria-modal="true" aria-labelledby="kres-basvuru-eposta-title">
+        <div class="confirm-modal-header">
+            <h3 id="kres-basvuru-eposta-title" class="confirm-modal-title">E-posta Gönder</h3>
+            <button type="button" class="confirm-modal-x" data-kres-eposta-close aria-label="Kapat">&times;</button>
+        </div>
+        <div class="confirm-modal-body">
+            <p data-kres-eposta-alici style="margin-bottom:14px;"></p>
+            <p class="form-hint" data-kres-eposta-no-email hidden style="margin-bottom:14px; color:#f64e60;">
+                Bu kişi için kayıtlı e-posta adresi bulunamadı.
+            </p>
+            <div class="form-group">
+                <div class="sms-mesaj-label-row">
+                    <label for="kres-basvuru-eposta-konu">Konu <span class="req">*</span></label>
+                    <div class="sms-mesaj-actions">
+                        <button type="button" class="sms-degisken-btn" data-kres-eposta-insert="{ad_soyad}" data-kres-eposta-insert-target="konu" title="Konu alanına ekler">{ad_soyad}</button>
+                    </div>
+                </div>
+                <input
+                    type="text"
+                    id="kres-basvuru-eposta-konu"
+                    class="form-control"
+                    maxlength="200"
+                    data-kres-eposta-konu
+                    placeholder="Örn: Merhaba {ad_soyad}"
+                >
+            </div>
+            <div class="form-group sms-mesaj-group" style="margin-bottom:0;">
+                <div class="sms-mesaj-label-row">
+                    <label for="kres-basvuru-eposta-mesaj">Mesaj <span class="req">*</span></label>
+                    <div class="sms-mesaj-actions">
+                        <button type="button" class="sms-degisken-btn" data-kres-eposta-insert="{ad_soyad}" data-kres-eposta-insert-target="mesaj" title="Mesaj alanına ekler">{ad_soyad}</button>
+                        <button type="button" class="sms-onizle-btn" data-kres-eposta-onizle>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Önizle
+                        </button>
+                    </div>
+                </div>
+                <textarea
+                    id="kres-basvuru-eposta-mesaj"
+                    class="form-control sms-mesaj-input"
+                    rows="6"
+                    maxlength="5000"
+                    data-kres-eposta-mesaj
+                    placeholder="Örn: Merhaba {ad_soyad}, bilgilendirme mesajınız."
+                ></textarea>
+                <p class="form-hint" style="margin-top:8px; font-size:12px; color:#7e8299;">
+                    <span data-kres-eposta-char-count>0</span>/5000 karakter · Kişiye özel isim için <code>{ad_soyad}</code> kullanın
+                </p>
+            </div>
+        </div>
+        <div class="confirm-modal-footer">
+            <button type="button" class="btn btn-secondary btn-wide" data-kres-eposta-close>Vazgeç</button>
+            <button type="button" class="btn btn-primary btn-wide" data-kres-eposta-send>Gönder</button>
+        </div>
+    </div>
+</div>
+
+<div class="confirm-modal" id="kres-sms-onizleme-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kres-sms-onizleme-close></div>
+    <div class="confirm-modal-dialog sms-onizleme-dialog" role="dialog" aria-modal="true" aria-labelledby="kres-sms-onizleme-title">
+        <div class="confirm-modal-header">
+            <h3 id="kres-sms-onizleme-title" class="confirm-modal-title">SMS Önizleme</h3>
+            <button type="button" class="confirm-modal-x" data-kres-sms-onizleme-close aria-label="Kapat">&times;</button>
+        </div>
+        <div class="confirm-modal-body sms-onizleme-body">
+            <p class="sms-onizleme-alici" data-kres-sms-onizleme-alici></p>
+            <div class="sms-phone" aria-hidden="true">
+                <div class="sms-phone-frame">
+                    <div class="sms-phone-notch"></div>
+                    <div class="sms-phone-screen">
+                        <div class="sms-phone-status">
+                            <span>9:41</span>
+                            <span>SMS</span>
+                        </div>
+                        <div class="sms-phone-thread">
+                            <div class="sms-phone-bubble" data-kres-sms-onizleme-mesaj></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="confirm-modal-footer">
+            <button type="button" class="btn btn-primary btn-wide" data-kres-sms-onizleme-close>Kapat</button>
+        </div>
+    </div>
+</div>
+
+<div class="confirm-modal" id="kres-eposta-onizleme-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kres-eposta-onizleme-close></div>
+    <div class="confirm-modal-dialog eposta-onizleme-dialog" role="dialog" aria-modal="true" aria-labelledby="kres-eposta-onizleme-title">
+        <div class="confirm-modal-header">
+            <h3 id="kres-eposta-onizleme-title" class="confirm-modal-title">E-Posta Önizleme</h3>
+            <button type="button" class="confirm-modal-x" data-kres-eposta-onizleme-close aria-label="Kapat">&times;</button>
+        </div>
+        <div class="confirm-modal-body eposta-onizleme-body">
+            <p class="sms-onizleme-alici" data-kres-eposta-onizleme-alici></p>
+            <div class="eposta-preview" aria-hidden="true">
+                <div class="eposta-preview-chrome">
+                    <span class="eposta-preview-dot"></span>
+                    <span class="eposta-preview-dot"></span>
+                    <span class="eposta-preview-dot"></span>
+                    <span class="eposta-preview-chrome-title">E-posta</span>
+                </div>
+                <div class="eposta-preview-meta">
+                    <div class="eposta-preview-row">
+                        <span>Kime</span>
+                        <strong data-kres-eposta-onizleme-kime>—</strong>
+                    </div>
+                    <div class="eposta-preview-row">
+                        <span>Konu</span>
+                        <strong data-kres-eposta-onizleme-konu></strong>
+                    </div>
+                </div>
+                <div class="eposta-preview-body" data-kres-eposta-onizleme-mesaj></div>
+            </div>
+        </div>
+        <div class="confirm-modal-footer">
+            <button type="button" class="btn btn-primary btn-wide" data-kres-eposta-onizleme-close>Kapat</button>
+        </div>
+    </div>
+</div>
 @endsection

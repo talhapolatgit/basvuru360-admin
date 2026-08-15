@@ -4246,6 +4246,10 @@ export function initKursDetailActions() {
         return;
     }
 
+    if (document.querySelector('[data-kres-grup-page]')) {
+        return;
+    }
+
     if (!document.querySelector('.lesson-detail')) {
         return;
     }

@@ -5,13 +5,15 @@
         'donem' => 'Dönem',
         'yas' => 'Yaş Aralığı',
         'kontenjan' => 'Kontenjan',
+        'yedek' => 'Yedek K.',
+        'cinsiyet' => 'Cinsiyet',
         'durum' => 'Durum',
         'olusturma' => 'Oluşturma Tarihi',
         'islemler' => 'İşlemler',
     ];
-    $defaultVisible = ['ad', 'okul', 'donem', 'yas', 'kontenjan', 'durum', 'olusturma', 'islemler'];
+    $defaultVisible = ['ad', 'okul', 'donem', 'yas', 'kontenjan', 'cinsiyet', 'durum', 'olusturma', 'islemler'];
     $defaultOrder = array_keys($allColumns);
-    $sortableColumns = ['ad', 'okul', 'donem', 'kontenjan', 'olusturma'];
+    $sortableColumns = ['ad', 'okul', 'donem', 'kontenjan', 'yedek', 'olusturma'];
 @endphp
 
 <div class="table-wrapper">
@@ -42,6 +44,8 @@
                     <td data-column="donem">{{ $grup->donem?->ad ?? '—' }}</td>
                     <td data-column="yas">{{ $grup->yasAraligiLabel() }}</td>
                     <td data-column="kontenjan">{{ number_format($grup->kontenjan) }}</td>
+                    <td data-column="yedek">{{ number_format($grup->yedek_kontenjan) }}</td>
+                    <td data-column="cinsiyet">{{ $grup->cinsiyetSartiLabel() }}</td>
                     <td data-column="durum">
                         @if ($grup->aktif)
                             <span class="status status-aktif">Aktif</span>
@@ -66,6 +70,8 @@
                                     data-min-yas="{{ $grup->min_yas }}"
                                     data-max-yas="{{ $grup->max_yas }}"
                                     data-kontenjan="{{ $grup->kontenjan }}"
+                                    data-yedek-kontenjan="{{ $grup->yedek_kontenjan }}"
+                                    data-cinsiyet-sarti="{{ $grup->cinsiyet_sarti?->value }}"
                                     data-aktif="{{ $grup->aktif ? '1' : '0' }}"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>

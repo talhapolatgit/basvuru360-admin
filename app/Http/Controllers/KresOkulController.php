@@ -149,11 +149,13 @@ class KresOkulController extends Controller
         if ($request->filled('q')) {
             $q = trim((string) $request->string('q'));
             if ($q !== '') {
-                $query->where(function (Builder $inner) use ($q) {
-                    $inner->where('ad', 'like', "%{$q}%")
-                        ->orWhere('adres', 'like', "%{$q}%")
-                        ->orWhere('telefon', 'like', "%{$q}%");
-                });
+                $mode = (string) $request->input('q_mode', 'contains');
+                match ($mode) {
+                    'starts' => $query->where('ad', 'like', $q.'%'),
+                    'ends' => $query->where('ad', 'like', '%'.$q),
+                    'exact' => $query->where('ad', $q),
+                    default => $query->where('ad', 'like', '%'.$q.'%'),
+                };
             }
         }
 
@@ -185,7 +187,7 @@ class KresOkulController extends Controller
             ? (int) $request->input('per_page')
             : 20;
 
-        $filters = $request->only(['q', 'durum', 'per_page', 'sort', 'direction']);
+        $filters = $request->only(['q', 'q_mode', 'durum', 'per_page', 'sort', 'direction']);
         $filters['durum'] = $durum;
 
         if ($paginate) {

@@ -4,6 +4,7 @@
     'value' => '',
     'placeholder' => 'Seçin',
     'required' => false,
+    'emptyValue' => '',
 ])
 
 @php
@@ -45,7 +46,7 @@
     <div class="select-dropdown" data-select-dropdown>
         <input type="text" class="select-search" placeholder="Ara..." data-select-search autocomplete="off">
         <div data-select-options>
-            <div class="select-option {{ $selectedValue === '' ? 'selected' : '' }}" data-value="" data-label="{{ $placeholder }}">
+            <div class="select-option {{ $selectedValue === (string) $emptyValue ? 'selected' : '' }}" data-value="{{ $emptyValue }}" data-label="{{ $placeholder }}">
                 {{ $placeholder }}
             </div>
             @foreach ($options as $option)

@@ -80,7 +80,7 @@
                         >
                     </div>
                     @if ($sistem)
-                        <p class="form-hint">Sistem sayfalarının URL’si değiştirilemez.</p>
+                        <p class="form-hint">Bu sistem sayfasının URL’si panelden değiştirilemez.</p>
                     @endif
                     @error('slug')
                         <p class="form-error">{{ $message }}</p>

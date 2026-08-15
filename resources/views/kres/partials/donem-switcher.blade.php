@@ -12,7 +12,7 @@
     >
         @forelse (($donemler ?? collect()) as $donem)
             <option value="{{ $donem->id }}" @selected(($aktifDonem ?? null) && $aktifDonem->id === $donem->id)>
-                {{ $donem->ad }}{{ $donem->aktif ? '' : ' (pasif)' }}
+                {{ $donem->ad }}{{ $donem->aktif ? ' (aktif)' : '' }}
             </option>
         @empty
             <option value="">Dönem yok</option>

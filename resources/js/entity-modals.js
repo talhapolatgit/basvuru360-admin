@@ -64,6 +64,7 @@ export function initEntityModal({
     onCreate,
     onEdit,
     onSuccess,
+    beforeSubmit,
 }) {
     const modal = document.getElementById(modalId);
     const form = modal?.querySelector(formSelector);
@@ -155,6 +156,13 @@ export function initEntityModal({
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        if (beforeSubmit) {
+            const allowed = await beforeSubmit(form);
+            if (!allowed) {
+                return;
+            }
+        }
 
         const submitBtn = form.querySelector('button[type="submit"]');
         const previousLabel = submitBtn?.textContent;

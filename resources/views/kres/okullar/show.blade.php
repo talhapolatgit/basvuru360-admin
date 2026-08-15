@@ -38,7 +38,12 @@
         <a href="{{ route('kres.gruplar.show', [$okul, $grup]) }}" class="kres-group-card {{ $grup->aktif ? '' : 'is-passive' }}">
             <div class="kres-group-card__top">
                 <h2>{{ $grup->ad }}</h2>
-                <span class="kres-group-card__ages">{{ $grup->yasAraligiLabel() }}</span>
+                <span class="kres-group-card__ages">
+                    {{ $grup->yasAraligiLabel() }}
+                    @if ($grup->cinsiyet_sarti)
+                        · {{ $grup->cinsiyet_sarti->label() }}
+                    @endif
+                </span>
             </div>
             <div class="kres-school-card__stats">
                 <div>

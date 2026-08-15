@@ -2013,7 +2013,9 @@
     #sms-onizleme-modal,
     #eposta-onizleme-modal,
     #sms-alicilar-detay-modal,
-    #eposta-alicilar-detay-modal {
+    #eposta-alicilar-detay-modal,
+    #kres-donem-aktif-confirm,
+    #kres-soru-onizleme-modal {
         z-index: 2100;
     }
 
@@ -6901,6 +6903,25 @@
     cursor: not-allowed;
 }
 
+.kres-donem-switchler {
+    gap: 28px;
+}
+
+.kres-donem-form .switch-label:has(input:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.kres-donem-form .form-hint {
+    margin-top: -8px;
+}
+
+.kres-donem-durumlar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .kres-stepper {
     display: flex;
     align-items: stretch;
@@ -7191,6 +7212,35 @@
     gap: 0.85rem;
 }
 
+#kres-grup-form-modal .confirm-modal-dialog {
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+#kres-grup-form-modal .kres-grup-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#kres-grup-form-modal .confirm-modal-body {
+    overflow-y: auto;
+}
+
+.confirm-modal-body .form-row {
+    margin-top: 16px;
+}
+
+.confirm-modal-body .form-row .form-group {
+    margin-top: 0;
+}
+
+.confirm-modal-body .form-row + .form-group {
+    margin-top: 16px;
+}
+
 .checkbox-label {
     display: inline-flex;
     align-items: center;
@@ -7199,7 +7249,305 @@
     margin: 0.25rem 0 1rem;
 }
 
+.kres-soru-builder {
+    margin-top: 4px;
+}
+
+.kres-soru-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.kres-soru-card {
+    display: grid;
+    grid-template-columns: 22px 24px minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #eef0f8;
+    border-radius: 10px;
+    padding: 8px 10px 8px 8px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.kres-soru-card:hover {
+    border-color: #e1e3ea;
+    background: #fcfcfd;
+}
+
+.kres-soru-card.is-dragging {
+    position: fixed;
+    z-index: 80;
+    margin: 0;
+    pointer-events: none;
+    opacity: 0.95;
+    border-color: #c4cbe0;
+    box-shadow: 0 12px 28px rgba(24, 28, 50, 0.16);
+    cursor: grabbing;
+}
+
+.kres-soru-placeholder {
+    border: 1px dashed #d8dbe6;
+    border-radius: 10px;
+    background: #f4f6fa;
+}
+
+.kres-soru-card__actions,
+.kres-soru-card__actions * {
+    cursor: pointer;
+    touch-action: auto;
+}
+
+body.is-kres-soru-dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+
+body.is-kres-soru-dragging * {
+    cursor: grabbing !important;
+}
+
+.kres-soru-drag {
+    width: 22px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #c4cbe0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+}
+
+.kres-soru-drag:hover,
+.kres-soru-card:hover .kres-soru-drag {
+    color: #7e8299;
+}
+
+.kres-soru-card.is-dragging .kres-soru-drag {
+    cursor: grabbing;
+}
+
+.kres-soru-card__index {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: #f4f6fa;
+    color: #5e6278;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kres-soru-card__body {
+    min-width: 0;
+}
+
+.kres-soru-card__main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.kres-soru-card__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 650;
+    color: #181c32;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kres-soru-card__opts {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #a1a5b7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kres-soru-tip,
+.kres-soru-zorunlu {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.kres-soru-tip {
+    background: #f4f6fa;
+    color: #5e6278;
+}
+
+.kres-soru-zorunlu {
+    background: rgba(241, 65, 108, 0.08);
+    color: #f1416c;
+}
+
+.kres-soru-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.kres-soru-icon-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #a1a5b7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.kres-soru-icon-btn:hover {
+    background: #f4f6fa;
+    color: #3f4254;
+}
+
+.kres-soru-icon-btn--danger:hover {
+    background: #fff5f8;
+    color: #f1416c;
+}
+
+.kres-soru-secenek-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 8px 0 10px;
+}
+
+[data-secenek-ekle].btn-back {
+    margin-top: 2px;
+}
+
+.kres-soru-secenek-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px 28px 28px;
+    gap: 4px;
+    align-items: center;
+}
+
+.kres-soru-secenek-row .kres-soru-icon-btn {
+    width: 28px;
+    height: 28px;
+}
+
+#kres-soru-modal .confirm-modal-dialog {
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+#kres-soru-modal [data-soru-form] {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#kres-soru-modal .confirm-modal-body {
+    overflow-y: auto;
+}
+
+#kres-soru-modal [data-soru-alanlari] {
+    margin-top: 16px;
+}
+
+#kres-soru-modal [data-secim-adet-hint] {
+    margin: 6px 0 0;
+}
+
+#kres-soru-modal .form-hint {
+    margin: 0 0 8px;
+}
+
+.kres-soru-onizleme-dialog {
+    max-width: 640px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+#kres-soru-onizleme-modal .confirm-modal-body {
+    overflow-y: auto;
+}
+
+.kres-soru-onizleme-banner {
+    margin: 0 0 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(11, 107, 98, 0.08);
+    color: #0b6b62;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.kres-soru-onizleme-head {
+    margin-bottom: 18px;
+}
+
+.kres-soru-onizleme-ad {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #181c32;
+}
+
+.kres-soru-onizleme-donem,
+.kres-soru-onizleme-aciklama {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #7e8299;
+}
+
+.kres-soru-onizleme-form .form-group + .form-group {
+    margin-top: 16px;
+}
+
+.kres-soru-onizleme-secenekler {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.kres-soru-onizleme-secenekler .checkbox-label {
+    margin: 0;
+}
+
+.kres-soru-onizleme-secenekler .checkbox-label:has(input:disabled) {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 @media (max-width: 720px) {
+    .kres-soru-card {
+        grid-template-columns: 22px 24px minmax(0, 1fr);
+    }
+
+    .kres-soru-card__actions {
+        grid-column: 2 / -1;
+        justify-self: end;
+    }
+
     .kres-stepper__sep {
         display: none;
     }

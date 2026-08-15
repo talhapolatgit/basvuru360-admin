@@ -592,10 +592,23 @@ class KullaniciController extends Controller
         if ($request->filled('ad_soyad')) {
             $adSoyad = trim((string) $request->string('ad_soyad'));
             if ($adSoyad !== '') {
-                $query->where(function (Builder $query) use ($adSoyad) {
-                    $query->where('ad', 'like', "%{$adSoyad}%")
-                        ->orWhere('soyad', 'like', "%{$adSoyad}%")
-                        ->orWhereRaw("CONCAT(ad, ' ', soyad) like ?", ["%{$adSoyad}%"]);
+                $mode = (string) $request->input('ad_soyad_mode', 'contains');
+                [$operator, $pattern] = match ($mode) {
+                    'starts' => ['like', $adSoyad.'%'],
+                    'ends' => ['like', '%'.$adSoyad],
+                    'exact' => ['=', $adSoyad],
+                    default => ['like', '%'.$adSoyad.'%'],
+                };
+
+                $query->where(function (Builder $query) use ($operator, $pattern) {
+                    $query->where('ad', $operator, $pattern)
+                        ->orWhere('soyad', $operator, $pattern);
+
+                    if ($operator === '=') {
+                        $query->orWhereRaw("CONCAT(ad, ' ', soyad) = ?", [$pattern]);
+                    } else {
+                        $query->orWhereRaw("CONCAT(ad, ' ', soyad) like ?", [$pattern]);
+                    }
                 });
             }
         }
@@ -662,7 +675,7 @@ class KullaniciController extends Controller
             ? (int) $request->input('per_page')
             : 20;
 
-        $filters = $request->only(['ad_soyad', 'tc_kimlik_no', 'telefon', 'email', 'rol', 'durum', 'per_page', 'sort', 'direction']);
+        $filters = $request->only(['ad_soyad', 'ad_soyad_mode', 'tc_kimlik_no', 'telefon', 'email', 'rol', 'durum', 'per_page', 'sort', 'direction']);
         $filters['durum'] = $durum;
         $filters['rol'] = $rol;
 

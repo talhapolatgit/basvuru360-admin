@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Cinsiyet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -17,6 +18,8 @@ class KresGrup extends Model
         'min_yas',
         'max_yas',
         'kontenjan',
+        'yedek_kontenjan',
+        'cinsiyet_sarti',
         'aktif',
     ];
 
@@ -26,6 +29,8 @@ class KresGrup extends Model
             'min_yas' => 'integer',
             'max_yas' => 'integer',
             'kontenjan' => 'integer',
+            'yedek_kontenjan' => 'integer',
+            'cinsiyet_sarti' => Cinsiyet::class,
             'aktif' => 'boolean',
         ];
     }
@@ -73,5 +78,31 @@ class KresGrup extends Model
         }
 
         return '≤ '.$this->max_yas.' yaş';
+    }
+
+    public function cinsiyetSartiLabel(): string
+    {
+        return $this->cinsiyet_sarti?->label() ?? 'Farketmez';
+    }
+
+    public function ogrenciUygunMu(?int $yas, ?Cinsiyet $cinsiyet = null): bool
+    {
+        if (! $this->aktif) {
+            return false;
+        }
+
+        if ($this->min_yas !== null && ($yas === null || $yas < (int) $this->min_yas)) {
+            return false;
+        }
+
+        if ($this->max_yas !== null && ($yas === null || $yas > (int) $this->max_yas)) {
+            return false;
+        }
+
+        if ($this->cinsiyet_sarti instanceof Cinsiyet && $cinsiyet instanceof Cinsiyet) {
+            return $this->cinsiyet_sarti === $cinsiyet;
+        }
+
+        return true;
     }
 }

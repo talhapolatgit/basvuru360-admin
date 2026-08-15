@@ -67,7 +67,12 @@ function initLookupPage({ tableId, tableConfig, modalId, modalConfig }) {
     if (document.getElementById(modalId)) {
         initEntityModal({
             ...modalConfig,
-            onSuccess: () => {
+            onSuccess: (data) => {
+                modalConfig.onSuccess?.(data);
+                if (data?.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
                 if (table) {
                     table.reload();
                 } else {
@@ -79,6 +84,10 @@ function initLookupPage({ tableId, tableConfig, modalId, modalConfig }) {
 }
 
 export function initMerkezlerPage() {
+    if (document.getElementById('merkezler-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'merkezler-table',
         tableConfig: {
@@ -110,6 +119,10 @@ export function initMerkezlerPage() {
 }
 
 export function initAlanlarPage() {
+    if (document.getElementById('alanlar-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'alanlar-table',
         tableConfig: {
@@ -132,6 +145,10 @@ export function initAlanlarPage() {
 }
 
 export function initBranslarPage() {
+    if (document.getElementById('branslar-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'branslar-table',
         tableConfig: {
@@ -155,6 +172,7 @@ export function initBranslarPage() {
 
 export function initEgitmenlerPage() {
     if (document.getElementById('egitmenler-table')) {
+        initSearchModes();
         initEntityTable({
             tableId: 'egitmenler-table',
             resultsId: 'egitmenler-results',
@@ -169,6 +187,7 @@ export function initEgitmenlerPage() {
 
 export function initKullanicilarPage() {
     if (document.getElementById('kullanicilar-table')) {
+        initSearchModes();
         initEntityTable({
             tableId: 'kullanicilar-table',
             resultsId: 'kullanicilar-results',
@@ -183,6 +202,7 @@ export function initKullanicilarPage() {
 
 export function initKisilerPage() {
     if (document.getElementById('kisiler-table')) {
+        initSearchModes();
         initEntityTable({
             tableId: 'kisiler-table',
             resultsId: 'kisiler-results',
@@ -240,6 +260,10 @@ export function initEtkinlikBasvurulariPage() {
 }
 
 export function initKresDonemlerPage() {
+    if (document.getElementById('kres-donemler-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'kres-donemler-table',
         tableConfig: {
@@ -257,11 +281,120 @@ export function initKresDonemlerPage() {
             formSelector: '.kres-donem-form',
             createTitle: 'Yeni Dönem',
             editTitle: 'Dönemi Düzenle',
+            onCreate(form) {
+                syncKresDonemYayinla(form);
+            },
+            onEdit(form) {
+                syncKresDonemYayinla(form);
+            },
+            beforeSubmit: confirmKresDonemAktifDegisimi,
+            onSuccess(data) {
+                const form = document.querySelector('.kres-donem-form');
+                if (form && Array.isArray(data?.aktif_donemler)) {
+                    form.dataset.aktifDonemler = JSON.stringify(data.aktif_donemler);
+                }
+            },
         },
+    });
+
+    const donemForm = document.querySelector('.kres-donem-form');
+    donemForm?.querySelector('[data-field="aktif"]')?.addEventListener('change', () => {
+        syncKresDonemYayinla(donemForm);
+    });
+}
+
+function syncKresDonemYayinla(form) {
+    const aktif = form.querySelector('[data-field="aktif"]');
+    const yayinla = form.querySelector('[data-field="yayinla"]');
+    if (!aktif || !yayinla) {
+        return;
+    }
+
+    const aktifMi = !!aktif.checked;
+    yayinla.disabled = !aktifMi;
+    if (!aktifMi) {
+        yayinla.checked = false;
+    }
+}
+
+function parseAktifDonemler(form) {
+    try {
+        const parsed = JSON.parse(form.dataset.aktifDonemler || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function editingDonemId(form) {
+    const match = String(form.action || '').match(/\/donemler\/(\d+)(?:\/|$|\?)/);
+    return match ? Number(match[1]) : null;
+}
+
+function confirmKresDonemAktifDegisimi(form) {
+    const aktif = form.querySelector('[data-field="aktif"]')?.checked;
+    if (!aktif) {
+        return true;
+    }
+
+    const editingId = editingDonemId(form);
+    const others = parseAktifDonemler(form).filter((donem) => Number(donem.id) !== editingId);
+    if (!others.length) {
+        return true;
+    }
+
+    const names = others.map((donem) => `"${donem.ad}"`).join(', ');
+    const message = others.length === 1
+        ? `Yalnızca bir dönem aktif olabilir. ${names} pasife alınacak. Onaylıyor musunuz?`
+        : `Yalnızca bir dönem aktif olabilir. Aktif dönemler pasife alınacak: ${names}. Onaylıyor musunuz?`;
+
+    return askKresDonemAktifConfirm(message);
+}
+
+function askKresDonemAktifConfirm(message) {
+    const modal = document.getElementById('kres-donem-aktif-confirm');
+    const text = modal?.querySelector('[data-aktif-confirm-message]');
+    if (!modal || !text) {
+        return window.confirm(message);
+    }
+
+    text.textContent = message;
+    modal.hidden = false;
+    document.body.classList.add('modal-open');
+
+    return new Promise((resolve) => {
+        const finish = (ok) => {
+            modal.hidden = true;
+            modal.removeEventListener('click', onClick);
+            document.removeEventListener('keydown', onKey);
+            resolve(ok);
+        };
+        const onClick = (event) => {
+            if (event.target.closest('[data-aktif-confirm-ok]')) {
+                event.preventDefault();
+                finish(true);
+                return;
+            }
+            if (event.target.closest('[data-aktif-confirm-cancel]')) {
+                event.preventDefault();
+                finish(false);
+            }
+        };
+        const onKey = (event) => {
+            if (event.key === 'Escape') {
+                finish(false);
+            }
+        };
+        modal.addEventListener('click', onClick);
+        document.addEventListener('keydown', onKey);
     });
 }
 
 export function initKresOkullarTanimPage() {
+    if (document.getElementById('kres-okullar-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'kres-okullar-table',
         tableConfig: {
@@ -284,6 +417,10 @@ export function initKresOkullarTanimPage() {
 }
 
 export function initKresGruplarTanimPage() {
+    if (document.getElementById('kres-gruplar-table')) {
+        initSearchModes();
+    }
+
     initLookupPage({
         tableId: 'kres-gruplar-table',
         tableConfig: {
@@ -301,6 +438,60 @@ export function initKresGruplarTanimPage() {
             formSelector: '.kres-grup-form',
             createTitle: 'Yeni Grup',
             editTitle: 'Grubu Düzenle',
+        },
+    });
+}
+
+function parseFormluDonemler(form) {
+    try {
+        const parsed = JSON.parse(form.dataset.formluDonemler || '[]');
+        return Array.isArray(parsed) ? parsed.map(Number) : [];
+    } catch {
+        return [];
+    }
+}
+
+function syncSoruFormuDonemSecenekleri(form, currentId = null) {
+    const used = parseFormluDonemler(form);
+    const current = currentId == null ? null : Number(currentId);
+    form.querySelectorAll('[data-field="donemId"] option').forEach((option) => {
+        if (!option.value) {
+            option.disabled = false;
+            return;
+        }
+        const id = Number(option.value);
+        option.disabled = used.includes(id) && id !== current;
+    });
+}
+
+export function initKresSoruFormlariPage() {
+    if (document.getElementById('kres-soru-formlari-table')) {
+        initSearchModes();
+    }
+
+    initLookupPage({
+        tableId: 'kres-soru-formlari-table',
+        tableConfig: {
+            tableId: 'kres-soru-formlari-table',
+            resultsId: 'kres-soru-formlari-results',
+            cardId: 'kres-soru-formlari-table-card',
+            filterFormId: 'kres-soru-formlari-filter-form',
+            clearBtnId: 'kres-soru-formlari-filter-clear',
+            cookieKey: 'kres_soru_formlari_table_prefs',
+            excelLinkId: 'kres-soru-formlari-excel-link',
+        },
+        modalId: 'kres-soru-formu-form-modal',
+        modalConfig: {
+            modalId: 'kres-soru-formu-form-modal',
+            formSelector: '.kres-soru-formu-meta-form',
+            createTitle: 'Yeni Form',
+            editTitle: 'Formu Düzenle',
+            onCreate(form) {
+                syncSoruFormuDonemSecenekleri(form);
+            },
+            onEdit(form, btn) {
+                syncSoruFormuDonemSecenekleri(form, btn.dataset.donemId);
+            },
         },
     });
 }

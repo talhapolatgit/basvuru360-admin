@@ -17,6 +17,57 @@ import {
 
 const BASVURU_COOKIE_KEY = 'kres_basvuru_table_prefs';
 
+function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+}
+
+function personalize(template, adSoyad) {
+    return String(template || '').replaceAll('{ad_soyad}', adSoyad || '');
+}
+
+function insertToken(input, token) {
+    if (!input || !token) return;
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    input.value = input.value.slice(0, start) + token + input.value.slice(end);
+    const cursor = start + token.length;
+    input.focus();
+    input.setSelectionRange(cursor, cursor);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function validationMessage(error) {
+    const data = error?.response?.data;
+    if (data?.errors && typeof data.errors === 'object') {
+        const first = Object.values(data.errors).flat()[0];
+        if (first) return first;
+    }
+    if (typeof data?.message === 'string' && data.message) {
+        return data.message;
+    }
+    return 'İşlem sırasında bir hata oluştu.';
+}
+
+function setModalOpen(modal, open) {
+    if (!modal) return;
+    modal.hidden = !open;
+    if (open) {
+        document.body.classList.add('modal-open');
+        return;
+    }
+    if (![...document.querySelectorAll('.confirm-modal')].some((el) => !el.hidden)) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
 function bindBasvuruColumnSearch(table) {
     if (!table) return;
     const inputs = table.querySelectorAll('[data-column-search]');
@@ -237,18 +288,248 @@ export function initKresGrupDetailPage() {
         return { order, visible };
     }
 
+    function closeRowMenus() {
+        document.querySelectorAll('[data-row-actions].is-open').forEach((wrap) => {
+            wrap.classList.remove('is-open');
+            wrap.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
+            const dropdown = wrap.querySelector('[data-action-dropdown]');
+            if (dropdown) {
+                dropdown.hidden = true;
+                dropdown.classList.remove('is-dropup');
+                dropdown.style.top = '';
+                dropdown.style.bottom = '';
+                dropdown.style.left = '';
+                dropdown.style.right = '';
+                dropdown.style.position = '';
+            }
+        });
+        document.querySelectorAll('.table-wrapper.has-open-action-menu').forEach((el) => {
+            el.classList.remove('has-open-action-menu');
+        });
+    }
+
     function openDurumModal(btn) {
         if (!durumModal) return;
         const form = durumModal.querySelector('[data-durum-form]');
         if (!form) return;
+        closeRowMenus();
         form.action = btn.dataset.url;
         form.durum_id.value = btn.dataset.durumId || '';
         form.yedek_sira.value = btn.dataset.yedekSira || '';
         durumModal.querySelector('[data-durum-kisi]').textContent = btn.dataset.kisi || '';
         syncYedek(form);
-        durumModal.hidden = false;
-        document.body.classList.add('modal-open');
+        setModalOpen(durumModal, true);
     }
+
+    const smsModal = document.getElementById('kres-basvuru-sms-modal');
+    const epostaModal = document.getElementById('kres-basvuru-eposta-modal');
+    const smsOnizlemeModal = document.getElementById('kres-sms-onizleme-modal');
+    const epostaOnizlemeModal = document.getElementById('kres-eposta-onizleme-modal');
+    let mesajAlici = { ad: '', rol: '', sendUrl: '', telefonVar: false, emailVar: false, email: '' };
+    let mesajGonderiliyor = false;
+
+    function aliciEtiket() {
+        const rol = mesajAlici.rol === 'veli' ? 'veli' : 'öğrenci';
+        return `${mesajAlici.ad || 'Bu kişi'} (${rol})`;
+    }
+
+    smsModal?.querySelectorAll('[data-kres-sms-close]').forEach((el) => {
+        el.addEventListener('click', () => setModalOpen(smsModal, false));
+    });
+    epostaModal?.querySelectorAll('[data-kres-eposta-close]').forEach((el) => {
+        el.addEventListener('click', () => setModalOpen(epostaModal, false));
+    });
+    smsOnizlemeModal?.querySelectorAll('[data-kres-sms-onizleme-close]').forEach((el) => {
+        el.addEventListener('click', () => setModalOpen(smsOnizlemeModal, false));
+    });
+    epostaOnizlemeModal?.querySelectorAll('[data-kres-eposta-onizleme-close]').forEach((el) => {
+        el.addEventListener('click', () => setModalOpen(epostaOnizlemeModal, false));
+    });
+
+    const smsMesaj = smsModal?.querySelector('[data-kres-sms-mesaj]');
+    const smsChar = smsModal?.querySelector('[data-kres-sms-char-count]');
+    smsMesaj?.addEventListener('input', () => {
+        if (smsChar) smsChar.textContent = String(smsMesaj.value.length);
+    });
+    smsModal?.querySelector('[data-kres-sms-insert]')?.addEventListener('click', (event) => {
+        insertToken(smsMesaj, event.currentTarget.getAttribute('data-kres-sms-insert') || '');
+    });
+    smsModal?.querySelector('[data-kres-sms-onizle]')?.addEventListener('click', () => {
+        const mesaj = smsMesaj?.value?.trim() || '';
+        if (!mesaj) {
+            showToast('Önizleme için önce mesaj yazın.', 'error');
+            smsMesaj?.focus();
+            return;
+        }
+        const alici = smsOnizlemeModal?.querySelector('[data-kres-sms-onizleme-alici]');
+        const bubble = smsOnizlemeModal?.querySelector('[data-kres-sms-onizleme-mesaj]');
+        if (alici) alici.innerHTML = `<strong>${escapeHtml(aliciEtiket())}</strong>`;
+        if (bubble) bubble.textContent = personalize(mesaj, mesajAlici.ad || 'Ad Soyad');
+        setModalOpen(smsOnizlemeModal, true);
+    });
+    smsModal?.querySelector('[data-kres-sms-send]')?.addEventListener('click', async () => {
+        const mesaj = smsMesaj?.value?.trim() || '';
+        const sendBtn = smsModal.querySelector('[data-kres-sms-send]');
+        if (!mesaj) {
+            showToast('SMS metni zorunludur.', 'error');
+            smsMesaj?.focus();
+            return;
+        }
+        if (!mesajAlici.telefonVar) {
+            showToast('Bu kişi için kayıtlı telefon numarası bulunamadı.', 'error');
+            return;
+        }
+        if (!mesajAlici.sendUrl || mesajGonderiliyor) return;
+        mesajGonderiliyor = true;
+        sendBtn.disabled = true;
+        try {
+            const formData = new FormData();
+            formData.append('mesaj', mesaj);
+            const { data } = await window.axios.post(mesajAlici.sendUrl, formData, {
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+            });
+            setModalOpen(smsModal, false);
+            showToast(data.message || 'SMS gönderildi.', 'success');
+        } catch (error) {
+            showToast(validationMessage(error), 'error');
+        } finally {
+            mesajGonderiliyor = false;
+            sendBtn.disabled = false;
+        }
+    });
+
+    const epostaKonu = epostaModal?.querySelector('[data-kres-eposta-konu]');
+    const epostaMesaj = epostaModal?.querySelector('[data-kres-eposta-mesaj]');
+    const epostaChar = epostaModal?.querySelector('[data-kres-eposta-char-count]');
+    epostaMesaj?.addEventListener('input', () => {
+        if (epostaChar) epostaChar.textContent = String(epostaMesaj.value.length);
+    });
+    epostaModal?.querySelectorAll('[data-kres-eposta-insert]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const token = btn.getAttribute('data-kres-eposta-insert') || '';
+            const target = btn.getAttribute('data-kres-eposta-insert-target') || 'mesaj';
+            insertToken(target === 'konu' ? epostaKonu : epostaMesaj, token);
+        });
+    });
+    epostaModal?.querySelector('[data-kres-eposta-onizle]')?.addEventListener('click', () => {
+        const konu = epostaKonu?.value?.trim() || '';
+        const mesaj = epostaMesaj?.value?.trim() || '';
+        if (!konu) {
+            showToast('Önizleme için önce konu yazın.', 'error');
+            epostaKonu?.focus();
+            return;
+        }
+        if (!mesaj) {
+            showToast('Önizleme için önce mesaj yazın.', 'error');
+            epostaMesaj?.focus();
+            return;
+        }
+        const alici = epostaOnizlemeModal?.querySelector('[data-kres-eposta-onizleme-alici]');
+        const kime = epostaOnizlemeModal?.querySelector('[data-kres-eposta-onizleme-kime]');
+        const konuEl = epostaOnizlemeModal?.querySelector('[data-kres-eposta-onizleme-konu]');
+        const mesajEl = epostaOnizlemeModal?.querySelector('[data-kres-eposta-onizleme-mesaj]');
+        if (alici) alici.innerHTML = `Alıcı: <strong>${escapeHtml(aliciEtiket())}</strong>`;
+        if (kime) kime.textContent = mesajAlici.email || 'E-posta yok';
+        if (konuEl) konuEl.textContent = personalize(konu, mesajAlici.ad || 'Ad Soyad');
+        if (mesajEl) mesajEl.textContent = personalize(mesaj, mesajAlici.ad || 'Ad Soyad');
+        setModalOpen(epostaOnizlemeModal, true);
+    });
+    epostaModal?.querySelector('[data-kres-eposta-send]')?.addEventListener('click', async () => {
+        const konu = epostaKonu?.value?.trim() || '';
+        const mesaj = epostaMesaj?.value?.trim() || '';
+        const sendBtn = epostaModal.querySelector('[data-kres-eposta-send]');
+        if (!konu) {
+            showToast('E-posta konusu zorunludur.', 'error');
+            epostaKonu?.focus();
+            return;
+        }
+        if (!mesaj) {
+            showToast('E-posta metni zorunludur.', 'error');
+            epostaMesaj?.focus();
+            return;
+        }
+        if (!mesajAlici.emailVar) {
+            showToast('Bu kişi için kayıtlı e-posta adresi bulunamadı.', 'error');
+            return;
+        }
+        if (!mesajAlici.sendUrl || mesajGonderiliyor) return;
+        mesajGonderiliyor = true;
+        sendBtn.disabled = true;
+        try {
+            const formData = new FormData();
+            formData.append('konu', konu);
+            formData.append('mesaj', mesaj);
+            const { data } = await window.axios.post(mesajAlici.sendUrl, formData, {
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+            });
+            setModalOpen(epostaModal, false);
+            showToast(data.message || 'E-posta gönderildi.', 'success');
+        } catch (error) {
+            showToast(validationMessage(error), 'error');
+        } finally {
+            mesajGonderiliyor = false;
+            sendBtn.disabled = false;
+        }
+    });
+
+    panel.addEventListener('click', (event) => {
+        const durumBtn = event.target.closest('[data-kres-durum-open]');
+        if (durumBtn && panel.contains(durumBtn)) {
+            event.preventDefault();
+            openDurumModal(durumBtn);
+            return;
+        }
+
+        const smsBtn = event.target.closest('[data-kres-sms-ac]');
+        if (smsBtn && panel.contains(smsBtn)) {
+            event.preventDefault();
+            closeRowMenus();
+            mesajAlici = {
+                ad: smsBtn.dataset.ad || '',
+                rol: smsBtn.dataset.rol || '',
+                sendUrl: smsBtn.dataset.sendUrl || '',
+                telefonVar: smsBtn.dataset.telefonVar === '1',
+                emailVar: false,
+                email: '',
+            };
+            const aliciEl = smsModal?.querySelector('[data-kres-sms-alici]');
+            const noTel = smsModal?.querySelector('[data-kres-sms-no-telefon]');
+            if (aliciEl) {
+                aliciEl.innerHTML = `<strong>${escapeHtml(aliciEtiket())}</strong> için SMS gönderilecek.`;
+            }
+            if (noTel) noTel.hidden = mesajAlici.telefonVar;
+            if (smsMesaj) smsMesaj.value = '';
+            if (smsChar) smsChar.textContent = '0';
+            setModalOpen(smsModal, true);
+            smsMesaj?.focus();
+            return;
+        }
+
+        const epostaBtn = event.target.closest('[data-kres-eposta-ac]');
+        if (epostaBtn && panel.contains(epostaBtn)) {
+            event.preventDefault();
+            closeRowMenus();
+            mesajAlici = {
+                ad: epostaBtn.dataset.ad || '',
+                rol: epostaBtn.dataset.rol || '',
+                sendUrl: epostaBtn.dataset.sendUrl || '',
+                telefonVar: false,
+                emailVar: epostaBtn.dataset.emailVar === '1',
+                email: epostaBtn.dataset.email || '',
+            };
+            const aliciEl = epostaModal?.querySelector('[data-kres-eposta-alici]');
+            const noEmail = epostaModal?.querySelector('[data-kres-eposta-no-email]');
+            if (aliciEl) {
+                aliciEl.innerHTML = `<strong>${escapeHtml(aliciEtiket())}</strong> için e-posta gönderilecek.`;
+            }
+            if (noEmail) noEmail.hidden = mesajAlici.emailVar;
+            if (epostaKonu) epostaKonu.value = '';
+            if (epostaMesaj) epostaMesaj.value = '';
+            if (epostaChar) epostaChar.textContent = '0';
+            setModalOpen(epostaModal, true);
+            epostaKonu?.focus();
+        }
+    });
 
     function bindTableInteractions() {
         const table = content.querySelector('#kres-basvuru-table');
@@ -299,9 +580,6 @@ export function initKresGrupDetailPage() {
             });
         });
 
-        content.querySelectorAll('[data-kres-durum-open]').forEach((btn) => {
-            btn.addEventListener('click', () => openDurumModal(btn));
-        });
     }
 
     async function loadBasvurular({ durum = currentDurum, page = currentPage, force = false } = {}) {
@@ -364,7 +642,15 @@ export function initKresGrupDetailPage() {
         setColumnPickerOpen(!columnDropdown?.classList.contains('open'));
     });
     columnDropdown?.addEventListener('click', (event) => event.stopPropagation());
-    document.addEventListener('click', () => setColumnPickerOpen(false));
+    document.addEventListener('click', (event) => {
+        if (!columnDropdown?.classList.contains('open')) {
+            return;
+        }
+        if (event.target.closest('[data-basvuru-column-picker]')) {
+            return;
+        }
+        setColumnPickerOpen(false);
+    });
 
     columnSaveBtn?.addEventListener('click', (event) => {
         event.preventDefault();

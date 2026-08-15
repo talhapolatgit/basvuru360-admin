@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\KresDonem;
+use App\Services\KresDonemBaglami;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -33,16 +35,18 @@ class KresDonemController extends Controller
             return view('kres.donemler._results', $viewData);
         }
 
-        return view('kres.donemler.index', $viewData);
+        return view('kres.donemler.index', $viewData + [
+            'aktifDonemler' => $this->aktifDonemOzeti(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse
     {
-        $donem = KresDonem::query()->create($this->validated($request));
+        $donem = $this->kaydet($request);
         $message = '"'.$donem->ad.'" dönemi başarıyla oluşturuldu.';
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['message' => $message]);
+            return response()->json($this->jsonSonuc($message));
         }
 
         return redirect()->route('kres.donemler.index')->with('success', $message);
@@ -50,11 +54,11 @@ class KresDonemController extends Controller
 
     public function update(Request $request, KresDonem $kresDonem): RedirectResponse|JsonResponse
     {
-        $kresDonem->update($this->validated($request, $kresDonem));
-        $message = '"'.$kresDonem->ad.'" dönemi başarıyla güncellendi.';
+        $donem = $this->kaydet($request, $kresDonem);
+        $message = '"'.$donem->ad.'" dönemi başarıyla güncellendi.';
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['message' => $message]);
+            return response()->json($this->jsonSonuc($message));
         }
 
         return redirect()->route('kres.donemler.index')->with('success', $message);
@@ -72,7 +76,7 @@ class KresDonemController extends Controller
         return response()->streamDownload(function () use ($donemler) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($handle, ['Ad', 'Başlangıç', 'Bitiş', 'Grup Sayısı', 'Durum', 'Oluşturma Tarihi'], ';');
+            fputcsv($handle, ['Ad', 'Başlangıç', 'Bitiş', 'Grup Sayısı', 'Durum', 'Yayın', 'Oluşturma Tarihi'], ';');
 
             $donemler->chunk(200, function ($rows) use ($handle) {
                 foreach ($rows as $donem) {
@@ -82,6 +86,7 @@ class KresDonemController extends Controller
                         $donem->bitis?->format('d.m.Y') ?? '',
                         $donem->gruplar_count,
                         $donem->aktif ? 'Aktif' : 'Pasif',
+                        $donem->portaldaYayinda() ? 'Yayında' : 'Yayında değil',
                         $donem->created_at?->format('d.m.Y H:i') ?? '',
                     ], ';');
                 }
@@ -103,7 +108,13 @@ class KresDonemController extends Controller
         if ($request->filled('q')) {
             $q = trim((string) $request->string('q'));
             if ($q !== '') {
-                $query->where('ad', 'like', "%{$q}%");
+                $mode = (string) $request->input('q_mode', 'contains');
+                match ($mode) {
+                    'starts' => $query->where('ad', 'like', $q.'%'),
+                    'ends' => $query->where('ad', 'like', '%'.$q),
+                    'exact' => $query->where('ad', $q),
+                    default => $query->where('ad', 'like', '%'.$q.'%'),
+                };
             }
         }
 
@@ -137,7 +148,7 @@ class KresDonemController extends Controller
             ? (int) $request->input('per_page')
             : 20;
 
-        $filters = $request->only(['q', 'durum', 'per_page', 'sort', 'direction']);
+        $filters = $request->only(['q', 'q_mode', 'durum', 'per_page', 'sort', 'direction']);
         $filters['durum'] = $durum;
 
         if ($paginate) {
@@ -162,6 +173,7 @@ class KresDonemController extends Controller
             'baslangic' => ['nullable', 'date'],
             'bitis' => ['nullable', 'date', 'after_or_equal:baslangic'],
             'aktif' => ['nullable', 'boolean'],
+            'yayinla' => ['nullable', 'boolean'],
         ], [
             'ad.required' => 'Dönem adı zorunludur.',
             'ad.unique' => 'Bu dönem adı zaten kayıtlı.',
@@ -169,7 +181,65 @@ class KresDonemController extends Controller
         ]);
 
         $validated['aktif'] = $request->boolean('aktif');
+        $validated['yayinla'] = $validated['aktif'] && $request->boolean('yayinla');
 
         return $validated;
+    }
+
+    private function kaydet(Request $request, ?KresDonem $donem = null): KresDonem
+    {
+        $validated = $this->validated($request, $donem);
+
+        $kayit = DB::transaction(function () use ($validated, $donem) {
+            if ($validated['aktif']) {
+                $digerler = KresDonem::query()->where('aktif', true);
+                if ($donem) {
+                    $digerler->whereKeyNot($donem->id);
+                }
+                $digerler->update(['aktif' => false, 'yayinla' => false]);
+            }
+
+            if ($donem) {
+                $donem->update($validated);
+
+                return $donem->refresh();
+            }
+
+            return KresDonem::query()->create($validated);
+        });
+
+        if ($kayit->aktif) {
+            app(KresDonemBaglami::class)->set($kayit, $request);
+        }
+
+        return $kayit;
+    }
+
+    /**
+     * @return list<array{id: int, ad: string}>
+     */
+    private function aktifDonemOzeti(): array
+    {
+        return KresDonem::query()
+            ->where('aktif', true)
+            ->orderBy('ad')
+            ->get(['id', 'ad'])
+            ->map(fn (KresDonem $donem) => [
+                'id' => $donem->id,
+                'ad' => $donem->ad,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{message: string, aktif_donemler: list<array{id: int, ad: string}>}
+     */
+    private function jsonSonuc(string $message): array
+    {
+        return [
+            'message' => $message,
+            'aktif_donemler' => $this->aktifDonemOzeti(),
+        ];
     }
 }

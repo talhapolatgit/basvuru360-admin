@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Cinsiyet;
 use App\Http\Controllers\Concerns\ResolvesKresDonem;
 use App\Models\Kisi;
 use App\Models\KresBasvuru;
@@ -12,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class KresBasvuruController extends Controller
 {
@@ -43,6 +45,21 @@ class KresBasvuruController extends Controller
             'durum_id.required' => 'Durum seçimi zorunludur.',
             'basvuran_id.different' => 'Başvuran ile öğrenci aynı kişi olamaz.',
         ]);
+
+        $kisi = Kisi::query()->find($validated['kisi_id']);
+        if ($kresGrup->cinsiyet_sarti instanceof Cinsiyet) {
+            if (! $kisi?->cinsiyet) {
+                throw ValidationException::withMessages([
+                    'kisi_id' => 'Bu grup için öğrencinin cinsiyeti kayıtlı olmalıdır.',
+                ]);
+            }
+
+            if ($kisi->cinsiyet !== $kresGrup->cinsiyet_sarti) {
+                throw ValidationException::withMessages([
+                    'kisi_id' => 'Bu grup yalnızca '.$kresGrup->cinsiyet_sarti->label().' öğrenciler içindir.',
+                ]);
+            }
+        }
 
         $durumKod = KresBasvuruDurum::query()->whereKey($validated['durum_id'])->value('kod');
         if ($durumKod !== 'yedek') {

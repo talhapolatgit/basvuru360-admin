@@ -25,6 +25,16 @@ class PortalSayfaServisi
     /** @var list<string> */
     public const ARKAPLAN_MODLARI = [self::ARKAPLAN_MOD_KAPLA, self::ARKAPLAN_MOD_SIGDIR];
 
+    /** Portal uygulamasının kendi rotaları; hiçbir sayfa bu slug’ı alamaz. */
+    /** @var list<string> */
+    public const UYGULAMA_SLUGS = [
+        'giris',
+        'kayit',
+        'sayfa',
+        'api',
+        'hizli-arama',
+    ];
+
     /** @var list<string> */
     public const REZERVE_SLUGS = [
         'kurslar',
@@ -33,6 +43,8 @@ class PortalSayfaServisi
         'kayit',
         'basvurularim',
         'profil',
+        'kres-basvuru',
+        'kres',
         'sayfa',
         'api',
         'hizli-arama',
@@ -43,6 +55,7 @@ class PortalSayfaServisi
     public const AUTH_SAYFA_KODLARI = [
         'basvurularim',
         'profil',
+        'kres-basvuru',
     ];
 
     public function icerikKurallariDestekler(?PortalSayfa $sayfa): bool
@@ -497,6 +510,12 @@ class PortalSayfaServisi
     {
         $sayfa = $ignoreId !== null ? PortalSayfa::query()->find($ignoreId) : null;
         $sistemSlug = $sayfa?->sistem === true;
+
+        if (in_array($slug, self::UYGULAMA_SLUGS, true)) {
+            throw ValidationException::withMessages([
+                'slug' => 'Bu URL adresi sistem tarafından rezerve edilmiştir.',
+            ]);
+        }
 
         if (! $sistemSlug && in_array($slug, self::REZERVE_SLUGS, true)) {
             throw ValidationException::withMessages([

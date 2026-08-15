@@ -55,6 +55,6 @@ class PortalSayfa extends Model
 
     public function isAuthSayfa(): bool
     {
-        return in_array((string) $this->kod, ['basvurularim', 'profil'], true);
+        return in_array((string) $this->kod, ['basvurularim', 'profil', 'kres-basvuru'], true);
     }
 }

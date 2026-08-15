@@ -24,7 +24,7 @@
     <div class="table-toolbar">
         <div>
             <div class="table-title">Portal Sayfaları</div>
-            <p class="table-subtitle">Ana Sayfa sabittir. Kurslar, Etkinlikler, Başvurularım, Profil ve özel sayfalar buradan yönetilir.</p>
+            <p class="table-subtitle">Ana Sayfa sabittir. Kurslar, Etkinlikler, Kreş Başvuru, Başvurularım, Profil ve özel sayfalar buradan yönetilir.</p>
         </div>
     </div>
 
@@ -48,6 +48,7 @@
                             $icerik = match ($sayfa->kod) {
                                 'basvurularim' => 'Başvurular',
                                 'profil' => 'Profil',
+                                'kres-basvuru' => 'Kreş Başvuru',
                                 default => '—',
                             };
                         } else {

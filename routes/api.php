@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\EtkinlikBasvuruController;
 use App\Http\Controllers\Api\V1\EtkinlikController;
 use App\Http\Controllers\Api\V1\GenelAyarController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\KresBasvuruController;
 use App\Http\Controllers\Api\V1\KursBasvuruController;
 use App\Http\Controllers\Api\V1\KursController;
 use App\Http\Controllers\Api\V1\LookupController;
@@ -67,6 +68,14 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('jwt')->group(function () {
         Route::get('/basvurularim', [BasvurularimController::class, 'index'])->name('api.v1.basvurularim');
+
+        Route::get('/kres-basvuru', [KresBasvuruController::class, 'durum'])->name('api.v1.kres-basvuru.durum');
+        Route::get('/kres-basvuru/okullar', [KresBasvuruController::class, 'okullar'])->name('api.v1.kres-basvuru.okullar');
+        Route::get('/kres-basvuru/okullar/{okulId}/gruplar', [KresBasvuruController::class, 'gruplar'])->name('api.v1.kres-basvuru.gruplar');
+        Route::get('/kres-basvuru/soru-formu', [KresBasvuruController::class, 'soruFormu'])->name('api.v1.kres-basvuru.soru-formu');
+        Route::post('/kres-basvuru', [KresBasvuruController::class, 'store'])
+            ->middleware('throttle:20,1')
+            ->name('api.v1.kres-basvuru.store');
 
         Route::post('/kurs-basvurulari', [KursBasvuruController::class, 'store'])
             ->middleware('throttle:20,1')

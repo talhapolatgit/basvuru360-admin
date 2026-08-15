@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Cinsiyet;
 use App\Http\Controllers\Concerns\ResolvesKresDonem;
 use App\Models\KresBasvuru;
 use App\Models\KresBasvuruDurum;
@@ -27,6 +28,8 @@ class KresGrupController extends Controller
             $request->merge(['durum' => 'tumu']);
         }
 
+        $varsayilanDonemId = $this->varsayilanDonemFiltresi($request);
+
         [$gruplar, $sort, $direction, $filters] = $this->search($request);
 
         $viewData = [
@@ -43,6 +46,7 @@ class KresGrupController extends Controller
         return view('kres.gruplar.index', $viewData + [
             'okullar' => KresOkul::query()->orderBy('ad')->get(),
             'donemler' => KresDonem::query()->orderByDesc('aktif')->orderByDesc('baslangic')->orderBy('ad')->get(),
+            'varsayilanDonemId' => $varsayilanDonemId,
         ]);
     }
 
@@ -86,13 +90,15 @@ class KresGrupController extends Controller
             $request->merge(['durum' => 'tumu']);
         }
 
+        $this->varsayilanDonemFiltresi($request);
+
         [$gruplar] = $this->search($request, paginate: false);
         $filename = 'kres-gruplar-'.now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($gruplar) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($handle, ['Ad', 'Okul', 'Dönem', 'Yaş Aralığı', 'Kontenjan', 'Durum', 'Oluşturma Tarihi'], ';');
+            fputcsv($handle, ['Ad', 'Okul', 'Dönem', 'Yaş Aralığı', 'Kontenjan', 'Cinsiyet', 'Durum', 'Oluşturma Tarihi'], ';');
 
             $gruplar->chunk(200, function ($rows) use ($handle) {
                 foreach ($rows as $grup) {
@@ -102,6 +108,7 @@ class KresGrupController extends Controller
                         $grup->donem?->ad ?? '',
                         $grup->yasAraligiLabel(),
                         $grup->kontenjan,
+                        $grup->cinsiyetSartiLabel(),
                         $grup->aktif ? 'Aktif' : 'Pasif',
                         $grup->created_at?->format('d.m.Y H:i') ?? '',
                     ], ';');
@@ -182,7 +189,7 @@ class KresGrupController extends Controller
 
             fputcsv($handle, [
                 'Öğrenci', 'T.C. Kimlik No', 'Doğum T.', 'Telefon',
-                'Başvuran', 'Durum', 'Yedek Sıra', 'Not', 'Kaydeden', 'Başvuru Tarihi',
+                'Başvuran', 'Veli', 'Durum', 'Yedek Sıra', 'Not', 'Kaydeden', 'Başvuru Tarihi',
             ], ';');
 
             $basvurular->chunk(200, function ($rows) use ($handle) {
@@ -192,6 +199,7 @@ class KresGrupController extends Controller
                         $basvuru->kisi?->tc_kimlik_no ?? '',
                         $basvuru->kisi?->dogum_tarihi?->format('d.m.Y') ?? '',
                         $basvuru->kisi?->telefon ?? '',
+                        $basvuru->basvuran?->tam_adi ?? '',
                         $basvuru->basvuran?->tam_adi ?? '',
                         $basvuru->durum?->ad ?? '',
                         $basvuru->durum?->kod === 'yedek' ? ($basvuru->yedek_sira ?? '') : '',
@@ -218,7 +226,13 @@ class KresGrupController extends Controller
         if ($request->filled('q')) {
             $q = trim((string) $request->string('q'));
             if ($q !== '') {
-                $query->where('ad', 'like', "%{$q}%");
+                $mode = (string) $request->input('q_mode', 'contains');
+                match ($mode) {
+                    'starts' => $query->where('ad', 'like', $q.'%'),
+                    'ends' => $query->where('ad', 'like', '%'.$q),
+                    'exact' => $query->where('ad', $q),
+                    default => $query->where('ad', 'like', '%'.$q.'%'),
+                };
             }
         }
 
@@ -226,7 +240,7 @@ class KresGrupController extends Controller
             $query->where('okul_id', $request->integer('okul_id'));
         }
 
-        if ($request->filled('donem_id')) {
+        if ($this->donemFiltresiSecili($request)) {
             $query->where('donem_id', $request->integer('donem_id'));
         }
 
@@ -256,6 +270,7 @@ class KresGrupController extends Controller
             $sortable = [
                 'ad' => 'ad',
                 'kontenjan' => 'kontenjan',
+                'yedek' => 'yedek_kontenjan',
                 'olusturma' => 'created_at',
             ];
 
@@ -271,7 +286,7 @@ class KresGrupController extends Controller
             ? (int) $request->input('per_page')
             : 20;
 
-        $filters = $request->only(['q', 'okul_id', 'donem_id', 'durum', 'per_page', 'sort', 'direction']);
+        $filters = $request->only(['q', 'q_mode', 'okul_id', 'donem_id', 'durum', 'per_page', 'sort', 'direction']);
         $filters['durum'] = $durum;
 
         if ($paginate) {
@@ -279,6 +294,27 @@ class KresGrupController extends Controller
         }
 
         return [$query, $sort, $direction, $filters];
+    }
+
+    private function varsayilanDonemFiltresi(Request $request): ?int
+    {
+        $aktifId = KresDonem::query()->where('aktif', true)->value('id');
+        $aktifId = $aktifId !== null ? (int) $aktifId : null;
+
+        if (! $request->has('donem_id') && $aktifId) {
+            $request->merge(['donem_id' => $aktifId]);
+        }
+
+        return $aktifId;
+    }
+
+    private function donemFiltresiSecili(Request $request): bool
+    {
+        if (! $request->filled('donem_id')) {
+            return false;
+        }
+
+        return (string) $request->input('donem_id') !== 'tumu';
     }
 
     /**
@@ -325,6 +361,7 @@ class KresGrupController extends Controller
             'dogum' => 'kisi.dogum_tarihi',
             'telefon' => 'kisi.telefon',
             'basvuran' => 'basvuran.ad',
+            'veli' => 'basvuran.ad',
             'durum' => 'kres_basvuru_durumlari.ad',
             'yedek_sira' => 'kres_basvurulari.yedek_sira',
             'kaydeden' => 'olusturan.ad',
@@ -343,7 +380,7 @@ class KresGrupController extends Controller
                 $query->leftJoin('kisiler as kisi', 'kisi.id', '=', 'kres_basvurulari.kisi_id')
                     ->orderBy($sortable[$sort], $direction)
                     ->select('kres_basvurulari.*');
-            } elseif ($sort === 'basvuran') {
+            } elseif (in_array($sort, ['basvuran', 'veli'], true)) {
                 $query->leftJoin('kisiler as basvuran', 'basvuran.id', '=', 'kres_basvurulari.basvuran_id')
                     ->orderBy('basvuran.ad', $direction)
                     ->select('kres_basvurulari.*');
@@ -382,6 +419,7 @@ class KresGrupController extends Controller
                 'dogum' => 'Doğum T.',
                 'telefon' => 'Telefon',
                 'basvuran' => 'Başvuran',
+                'veli' => 'Veli',
                 'durum' => 'Durum',
                 'yedek_sira' => 'Yedek Sıra',
                 'notlar' => 'Not',
@@ -393,7 +431,7 @@ class KresGrupController extends Controller
                 'ogrenci', 'kimlik', 'basvuran', 'durum', 'yedek_sira', 'basvuru_tarihi', 'islemler',
             ],
             'sortable' => [
-                'ogrenci', 'kimlik', 'dogum', 'telefon', 'basvuran', 'durum', 'yedek_sira', 'kaydeden', 'basvuru_tarihi',
+                'ogrenci', 'kimlik', 'dogum', 'telefon', 'basvuran', 'veli', 'durum', 'yedek_sira', 'kaydeden', 'basvuru_tarihi',
             ],
         ];
     }
@@ -407,6 +445,10 @@ class KresGrupController extends Controller
         int $donemId,
         ?KresGrup $grup = null,
     ): array {
+        if ($request->input('cinsiyet_sarti') === '') {
+            $request->merge(['cinsiyet_sarti' => null]);
+        }
+
         $validated = $request->validate([
             'ad' => [
                 'required',
@@ -419,6 +461,8 @@ class KresGrupController extends Controller
             'min_yas' => ['nullable', 'integer', 'min:0', 'max:18'],
             'max_yas' => ['nullable', 'integer', 'min:0', 'max:18', 'gte:min_yas'],
             'kontenjan' => ['required', 'integer', 'min:0', 'max:500'],
+            'yedek_kontenjan' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'cinsiyet_sarti' => ['nullable', Rule::enum(Cinsiyet::class)],
             'aktif' => ['nullable', 'boolean'],
         ], [
             'ad.required' => 'Grup adı zorunludur.',
@@ -428,6 +472,8 @@ class KresGrupController extends Controller
         ]);
 
         $validated['aktif'] = $request->boolean('aktif');
+        $validated['cinsiyet_sarti'] = $validated['cinsiyet_sarti'] ?? null;
+        $validated['yedek_kontenjan'] = $validated['yedek_kontenjan'] ?? 0;
 
         return $validated;
     }

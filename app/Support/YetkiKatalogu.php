@@ -114,6 +114,7 @@ class YetkiKatalogu
             ['kod' => 'kres.donem_yonet', 'ad' => 'Kreş Dönemi Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.okul_yonet', 'ad' => 'Kreş Okulu Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.grup_yonet', 'ad' => 'Kreş Grubu Yönet', 'modul' => 'kres'],
+            ['kod' => 'kres.soru_formu_yonet', 'ad' => 'Kreş Soru Formu Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_goruntule', 'ad' => 'Kreş Başvurularını Görüntüle', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_olustur', 'ad' => 'Kreş Başvurusu Oluştur', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_guncelle', 'ad' => 'Kreş Başvurusu Güncelle', 'modul' => 'kres'],

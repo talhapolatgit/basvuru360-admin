@@ -41,11 +41,16 @@
                     <td data-column="bitis">{{ $donem->bitis?->format('d.m.Y') ?? '—' }}</td>
                     <td data-column="grup_sayisi">{{ number_format($donem->gruplar_count) }}</td>
                     <td data-column="durum">
-                        @if ($donem->aktif)
-                            <span class="status status-aktif">Aktif</span>
-                        @else
-                            <span class="status status-hazirlik">Pasif</span>
-                        @endif
+                        <div class="kres-donem-durumlar">
+                            @if ($donem->aktif)
+                                <span class="status status-aktif">Aktif</span>
+                            @else
+                                <span class="status status-hazirlik">Pasif</span>
+                            @endif
+                            @if ($donem->portaldaYayinda())
+                                <span class="status status-tamamlanan">Yayında</span>
+                            @endif
+                        </div>
                     </td>
                     <td data-column="olusturma">{{ $donem->created_at?->format('d.m.Y') }}</td>
                     <td data-column="islemler">
@@ -62,6 +67,7 @@
                                     data-baslangic="{{ $donem->baslangic?->format('Y-m-d') }}"
                                     data-bitis="{{ $donem->bitis?->format('Y-m-d') }}"
                                     data-aktif="{{ $donem->aktif ? '1' : '0' }}"
+                                    data-yayinla="{{ $donem->yayinla ? '1' : '0' }}"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                     Düzenle
