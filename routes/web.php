@@ -289,6 +289,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kisiler/{kisi}/foto', [KisiController::class, 'deleteFoto'])->middleware('yetki:kisi.guncelle')->name('kisiler.foto.delete');
     Route::get('/kisiler/{kisi}', [KisiController::class, 'show'])->middleware('yetki:kisi.goruntule')->name('kisiler.show');
     Route::get('/kisiler/{kisi}/basvurular', [KisiController::class, 'basvurular'])->middleware('yetki:kisi.goruntule')->name('kisiler.basvurular');
+    Route::get('/kisiler/{kisi}/ara', [KisiController::class, 'kisiAra'])->middleware('yetki:kisi.guncelle')->name('kisiler.ara');
+    Route::post('/kisiler/{kisi}/yakinlar', [KisiController::class, 'storeYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.store');
+    Route::delete('/kisiler/{kisi}/yakinlar/{yakin}', [KisiController::class, 'destroyYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.destroy');
     Route::get('/kisiler/{kisi}/duzenle', [KisiController::class, 'edit'])->middleware('yetki:kisi.guncelle')->name('kisiler.edit');
     Route::put('/kisiler/{kisi}', [KisiController::class, 'update'])->middleware('yetki:kisi.guncelle')->name('kisiler.update');
 

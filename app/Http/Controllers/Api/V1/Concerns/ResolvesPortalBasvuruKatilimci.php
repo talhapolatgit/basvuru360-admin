@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api\V1\Concerns;
 
 use App\Models\Kisi;
+use App\Models\KisiYakin;
+use App\Models\YakinlikDerecesi;
 use App\Services\Entegrasyon\EntegrasyonAyarServisi;
+use App\Services\GenelAyarServisi;
 use App\Services\Kimlik\KimlikSorgulama;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -21,15 +24,39 @@ trait ResolvesPortalBasvuruKatilimci
     }
 
     /**
-     * 18 yaşından küçük başvuranlar çocuk adına başvuru yapamaz.
+     * 18 yaşından küçük başvuranlar yakın adına başvuru yapamaz.
      */
     protected function cocukBasvurusuIcinBasvuranUygunMu(Kisi $basvuran): void
     {
+        if (! app(GenelAyarServisi::class)->yakinIcinBasvuruAktif()) {
+            throw ValidationException::withMessages([
+                'basvuru_icin' => 'Yakın adına başvuru şu anda kapalıdır.',
+            ]);
+        }
+
         $yas = $this->yasHesapla($basvuran->dogum_tarihi?->format('Y-m-d'));
 
         if ($yas !== null && $yas < 18) {
             throw ValidationException::withMessages([
-                'basvuru_icin' => '18 yaşından küçük kişiler çocuk adına başvuru yapamaz.',
+                'basvuru_icin' => '18 yaşından küçük kişiler yakın adına başvuru yapamaz.',
+            ]);
+        }
+    }
+
+    protected function manuelYakinEklemeIzinliMi(Kisi $basvuran, string $yakinTc): void
+    {
+        if (app(GenelAyarServisi::class)->manuelYakinEklemeAktif()) {
+            return;
+        }
+
+        $kayitli = KisiYakin::query()
+            ->where('kisi_id', $basvuran->id)
+            ->whereHas('yakin', fn ($q) => $q->where('tc_kimlik_no', $yakinTc))
+            ->exists();
+
+        if (! $kayitli) {
+            throw ValidationException::withMessages([
+                'cocuk_tc_kimlik_no' => 'Manuel yakın ekleme kapalıdır. Yalnızca kayıtlı yakınlarınız için başvuru yapabilirsiniz.',
             ]);
         }
     }
@@ -49,6 +76,7 @@ trait ResolvesPortalBasvuruKatilimci
                 Rule::notIn([(string) $basvuran->tc_kimlik_no]),
             ],
             'cocuk_dogum_tarihi' => ['required', 'date', 'before:today'],
+            'yakinlik_derecesi' => ['nullable', Rule::in(['ESI', 'OGLU', 'KIZI'])],
         ];
     }
 
@@ -58,14 +86,15 @@ trait ResolvesPortalBasvuruKatilimci
     protected function cocukBasvuruMesajlari(): array
     {
         return [
-            'cocuk_ad.required' => 'Çocuk adı zorunludur.',
-            'cocuk_soyad.required' => 'Çocuk soyadı zorunludur.',
-            'cocuk_tc_kimlik_no.required' => 'Çocuk TC Kimlik No zorunludur.',
-            'cocuk_tc_kimlik_no.digits' => 'Çocuk TC Kimlik No 11 haneli olmalıdır.',
-            'cocuk_tc_kimlik_no.not_in' => 'Çocuk TC Kimlik No başvuran kişiden farklı olmalıdır.',
-            'cocuk_dogum_tarihi.required' => 'Çocuk doğum tarihi zorunludur.',
-            'cocuk_dogum_tarihi.date' => 'Geçerli bir çocuk doğum tarihi girin.',
-            'cocuk_dogum_tarihi.before' => 'Çocuk doğum tarihi bugünden önce olmalıdır.',
+            'cocuk_ad.required' => 'Yakın adı zorunludur.',
+            'cocuk_soyad.required' => 'Yakın soyadı zorunludur.',
+            'cocuk_tc_kimlik_no.required' => 'Yakın TC Kimlik No zorunludur.',
+            'cocuk_tc_kimlik_no.digits' => 'Yakın TC Kimlik No 11 haneli olmalıdır.',
+            'cocuk_tc_kimlik_no.not_in' => 'Yakın TC Kimlik No başvuran kişiden farklı olmalıdır.',
+            'cocuk_dogum_tarihi.required' => 'Yakın doğum tarihi zorunludur.',
+            'cocuk_dogum_tarihi.date' => 'Geçerli bir yakın doğum tarihi girin.',
+            'cocuk_dogum_tarihi.before' => 'Yakın doğum tarihi bugünden önce olmalıdır.',
+            'yakinlik_derecesi.in' => 'Geçersiz yakınlık derecesi.',
         ];
     }
 
@@ -105,7 +134,7 @@ trait ResolvesPortalBasvuruKatilimci
 
         if (! ($sonuc['ok'] ?? false)) {
             throw ValidationException::withMessages([
-                'cocuk_tc_kimlik_no' => $sonuc['message'] ?? 'Çocuk kimlik bilgileri doğrulanamadı.',
+                'cocuk_tc_kimlik_no' => $sonuc['message'] ?? 'Yakın kimlik bilgileri doğrulanamadı.',
             ]);
         }
 
@@ -232,6 +261,43 @@ trait ResolvesPortalBasvuruKatilimci
         }
 
         return Kisi::query()->create($payload);
+    }
+
+    /**
+     * Yakın başvurusunda başvuran–yakın ilişkisini (Eşi/Oğlu/Kızı) kaydeder.
+     */
+    protected function cocukYakinligiKaydet(
+        Kisi $kisi,
+        Kisi $cocuk,
+        mixed $cinsiyet = null,
+        ?string $dereceKod = null,
+    ): void {
+        $derece = null;
+        $kod = $dereceKod ? strtoupper(trim($dereceKod)) : null;
+
+        if ($kod && in_array($kod, ['ESI', 'OGLU', 'KIZI'], true)) {
+            $derece = YakinlikDerecesi::query()->where('kod', $kod)->first();
+        }
+
+        if (! $derece) {
+            $cinsiyetKod = $this->cozulmusCinsiyet($cinsiyet)
+                ?? $cocuk->cinsiyet?->value;
+            $derece = YakinlikDerecesi::cocuktan($cinsiyetKod);
+        }
+
+        if (! $derece) {
+            return;
+        }
+
+        KisiYakin::query()->updateOrCreate(
+            [
+                'kisi_id' => $kisi->id,
+                'yakin_kisi_id' => $cocuk->id,
+            ],
+            [
+                'yakinlik_derecesi_id' => $derece->id,
+            ],
+        );
     }
 
     protected function yasHesapla(?string $dogumTarihi): ?int

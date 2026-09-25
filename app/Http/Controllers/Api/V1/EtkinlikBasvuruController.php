@@ -77,6 +77,7 @@ class EtkinlikBasvuruController extends ApiController
             'cocuk_soyad' => ['nullable', 'string', 'max:100'],
             'cocuk_tc_kimlik_no' => ['nullable', 'digits:11'],
             'cocuk_dogum_tarihi' => ['nullable', 'date'],
+            'yakinlik_derecesi' => ['nullable', Rule::in(['ESI', 'OGLU', 'KIZI'])],
         ];
 
         $onayKodlari = collect(app(EtkinlikAyarServisi::class)->basvuruOnaylari())
@@ -138,6 +139,7 @@ class EtkinlikBasvuruController extends ApiController
 
         if ($cocukAdina) {
             $this->cocukBasvurusuIcinBasvuranUygunMu($basvuran);
+            $this->manuelYakinEklemeIzinliMi($basvuran, (string) $validated['cocuk_tc_kimlik_no']);
             $kimlikCinsiyet = $this->cocukKimlikDogrula([
                 'cocuk_tc_kimlik_no' => $validated['cocuk_tc_kimlik_no'],
                 'cocuk_dogum_tarihi' => $validated['cocuk_dogum_tarihi'],
@@ -155,6 +157,13 @@ class EtkinlikBasvuruController extends ApiController
                 'soyad' => $validated['cocuk_soyad'],
                 'cinsiyet' => $cinsiyet,
             ]);
+
+            $this->cocukYakinligiKaydet(
+                $basvuran,
+                $katilimci,
+                $cinsiyet,
+                $validated['yakinlik_derecesi'] ?? null,
+            );
 
             $yas = $this->yasHesapla($validated['cocuk_dogum_tarihi']);
             $katilimciPayload = [
@@ -323,7 +332,7 @@ class EtkinlikBasvuruController extends ApiController
                 islem: 'etkinlik_basvuru.olusturuldu',
                 kurs: null,
                 aciklama: $basvuran->tam_adi.' portal üzerinden etkinlik başvurusu oluşturdu'
-                    .($cocukAdina ? ' (çocuk: '.$katilimci->tam_adi.')' : '')
+                    .($cocukAdina ? ' (yakın: '.$katilimci->tam_adi.')' : '')
                     .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
                 konu: $basvuru,
                 yeni: [

@@ -217,7 +217,7 @@ class KresBasvuruController extends ApiController
         ]);
 
         $telefon = $this->cepTelefonuDogrula((string) $validated['veli_telefon']);
-        $this->cocukKimlikDogrula([
+        $ogrenciCinsiyet = $this->cocukKimlikDogrula([
             'cocuk_tc_kimlik_no' => $validated['ogrenci_tc_kimlik_no'],
             'cocuk_dogum_tarihi' => $validated['ogrenci_dogum_tarihi'],
             'cocuk_ad' => $validated['ogrenci_ad'],
@@ -259,7 +259,7 @@ class KresBasvuruController extends ApiController
             ]);
         }
 
-        $basvuru = DB::transaction(function () use ($validated, $telefon, $oturum, $grup, $durumId, $cevaplar) {
+        $basvuru = DB::transaction(function () use ($validated, $telefon, $oturum, $grup, $durumId, $cevaplar, $ogrenciCinsiyet) {
             $veli = $this->kisiUpsert([
                 'ad' => $validated['veli_ad'],
                 'soyad' => $validated['veli_soyad'],
@@ -283,7 +283,10 @@ class KresBasvuruController extends ApiController
                 'soyad' => $validated['ogrenci_soyad'],
                 'tc_kimlik_no' => $validated['ogrenci_tc_kimlik_no'],
                 'dogum_tarihi' => $validated['ogrenci_dogum_tarihi'],
+                'cinsiyet' => $ogrenciCinsiyet,
             ]);
+
+            $this->cocukYakinligiKaydet($veli, $ogrenci, $ogrenciCinsiyet);
 
             $iptalId = KresBasvuruDurum::idByKod('iptal');
             $mevcut = KresBasvuru::query()

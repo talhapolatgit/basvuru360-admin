@@ -505,6 +505,56 @@
 
         <div class="sertifika-ayarlar-block">
             <div class="sertifika-ayarlar-block-head">
+                <h3 class="sertifika-ayarlar-title">Başvuru ayarları</h3>
+                <p class="sertifika-ayarlar-desc">Portalda kurs ve etkinlik başvurularında yakın adına başvuru seçeneklerini yönetin.</p>
+            </div>
+
+            @php
+                $yakinIcinAktif = old('yakin_icin_basvuru_aktif') !== null
+                    ? (string) old('yakin_icin_basvuru_aktif') === '1'
+                    : (bool) ($form['yakin_icin_basvuru_aktif'] ?? true);
+                $manuelYakinAktif = old('manuel_yakin_ekleme_aktif') !== null
+                    ? (string) old('manuel_yakin_ekleme_aktif') === '1'
+                    : (bool) ($form['manuel_yakin_ekleme_aktif'] ?? true);
+            @endphp
+
+            <div class="form-grid form-grid-2">
+                <div class="form-group form-group-switch">
+                    <label class="switch-label" for="genel-yakin-icin-basvuru">
+                        <input type="hidden" name="yakin_icin_basvuru_aktif" value="0">
+                        <input
+                            type="checkbox"
+                            id="genel-yakin-icin-basvuru"
+                            name="yakin_icin_basvuru_aktif"
+                            value="1"
+                            @checked($yakinIcinAktif)
+                            @disabled(! $guncelleyebilir)
+                        >
+                        <span>Yakını için başvurabilsin</span>
+                    </label>
+                    <p class="form-hint">Pasifken portalda “Çocuğum veya eşim için” seçeneği gizlenir.</p>
+                </div>
+
+                <div class="form-group form-group-switch">
+                    <label class="switch-label" for="genel-manuel-yakin-ekleme">
+                        <input type="hidden" name="manuel_yakin_ekleme_aktif" value="0">
+                        <input
+                            type="checkbox"
+                            id="genel-manuel-yakin-ekleme"
+                            name="manuel_yakin_ekleme_aktif"
+                            value="1"
+                            @checked($manuelYakinAktif)
+                            @disabled(! $guncelleyebilir)
+                        >
+                        <span>Manuel yakın eklenebilsin</span>
+                    </label>
+                    <p class="form-hint">Pasifken yalnızca kayıtlı yakınlar seçilebilir; yeni yakın bilgisi elle girilemez.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sertifika-ayarlar-block">
+            <div class="sertifika-ayarlar-block-head">
                 <h3 class="sertifika-ayarlar-title">Adres</h3>
                 <p class="sertifika-ayarlar-desc">Kurumun il, ilçe ve açık adresi.</p>
             </div>

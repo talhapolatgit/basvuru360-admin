@@ -63,6 +63,7 @@ function validationMessage(error) {
 export function initEgitmenDetailPage() {
     initEgitmenTabs();
     initKisiBasvuruTuruTabs();
+    initKisiAileModal();
 
     const smsModal = document.getElementById('egitmen-sms-modal');
     const epostaModal = document.getElementById('egitmen-eposta-modal');
@@ -75,6 +76,91 @@ export function initEgitmenDetailPage() {
     initSmsModal(smsModal);
     initEpostaModal(epostaModal);
     initSifreModal(sifreModal);
+}
+
+function initKisiAileModal() {
+    const modal = document.getElementById('kisi-aile-modal');
+    const panel = document.querySelector('[data-egitmen-panel="aile"]');
+    if (!modal || !panel) return;
+
+    const araUrl = panel.dataset.kisiAraUrl || '';
+
+    document.querySelectorAll('[data-kisi-aile-open]').forEach((btn) => {
+        btn.addEventListener('click', () => openModal(modal));
+    });
+
+    modal.querySelectorAll('[data-kisi-aile-close]').forEach((el) => {
+        el.addEventListener('click', () => closeModal(modal));
+    });
+
+    modal.querySelectorAll('[data-kisi-search]').forEach((input) => {
+        wireKisiSearch(input, araUrl);
+    });
+
+    const form = document.getElementById('kisi-aile-form');
+    form?.addEventListener('submit', (e) => {
+        const hidden = document.getElementById('aile_yakin_kisi_id');
+        if (!hidden?.value) {
+            e.preventDefault();
+            showToast('Yakın kişi seçmelisiniz.', 'error');
+        }
+    });
+
+    if (modal.dataset.openOnLoad === '1') {
+        openModal(modal);
+    }
+}
+
+function wireKisiSearch(input, araUrl) {
+    const targetId = input.dataset.kisiTarget;
+    const labelKey = input.dataset.kisiLabel;
+    const wrap = input.closest('.form-group');
+    const hidden = document.getElementById(targetId);
+    const picked = wrap?.querySelector(`[data-kisi-picked="${labelKey}"]`);
+    const results = wrap?.querySelector('[data-kisi-results]');
+    if (!hidden || !results) return;
+
+    let timer = null;
+    const clearPick = () => {
+        hidden.value = '';
+        if (picked) picked.textContent = 'Kişi seçilmedi';
+    };
+
+    input.addEventListener('input', () => {
+        clearPick();
+        const q = input.value.trim();
+        clearTimeout(timer);
+        if (q.length < 2) {
+            results.hidden = true;
+            results.innerHTML = '';
+            return;
+        }
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`${araUrl}?q=${encodeURIComponent(q)}`, {
+                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                const data = await res.json();
+                results.innerHTML = '';
+                (data.items || []).forEach((item) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'kres-kisi-result';
+                    btn.textContent = item.label;
+                    btn.addEventListener('click', () => {
+                        hidden.value = item.id;
+                        if (picked) picked.textContent = item.label;
+                        input.value = item.tam_adi;
+                        results.hidden = true;
+                    });
+                    results.appendChild(btn);
+                });
+                results.hidden = !(data.items || []).length;
+            } catch {
+                results.hidden = true;
+            }
+        }, 250);
+    });
 }
 
 function initKisiBasvuruTuruTabs() {

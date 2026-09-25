@@ -45,6 +45,8 @@ class GenelAyarController extends ApiController
                 'label' => $yontem->label(),
             ],
             'kisi_giris_yontemi_secenekler' => $form['kisi_giris_yontemi_secenekler'],
+            'yakin_icin_basvuru_aktif' => $servis->yakinIcinBasvuruAktif(),
+            'manuel_yakin_ekleme_aktif' => $servis->manuelYakinEklemeAktif(),
             'kimlik_sorgulama_aktif' => $entegrasyon->turAktifMi('kimlik_sorgulama'),
         ]);
     }

@@ -60,6 +60,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('jwt')->group(function () {
             Route::get('/me', [AuthController::class, 'me'])->name('api.v1.auth.me');
+            Route::get('/yakinlar', [AuthController::class, 'yakinlar'])->name('api.v1.auth.yakinlar');
             Route::put('/profil', [AuthController::class, 'updateProfil'])->name('api.v1.auth.profil');
             Route::put('/sifre', [AuthController::class, 'updateSifre'])->name('api.v1.auth.sifre');
             Route::post('/logout', [AuthController::class, 'logout'])->name('api.v1.auth.logout');

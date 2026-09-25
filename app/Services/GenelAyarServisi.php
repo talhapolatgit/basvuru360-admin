@@ -32,6 +32,8 @@ class GenelAyarServisi
      *     web_sitesi: string,
      *     kisi_giris_yontemi: string,
      *     kisi_giris_yontemi_secenekler: list<array{value: string, label: string}>,
+     *     yakin_icin_basvuru_aktif: bool,
+     *     manuel_yakin_ekleme_aktif: bool,
      *     sidebar_logo: string|null,
      *     sidebar_logo_url: string|null,
      *     sidebar_logo_adi: string|null,
@@ -72,6 +74,8 @@ class GenelAyarServisi
             'site_aciklama' => (string) ($ayarlar['site_aciklama'] ?? ''),
             'kisi_giris_yontemi' => $girisYontemi->value,
             'kisi_giris_yontemi_secenekler' => KisiGirisYontemi::secenekler(),
+            'yakin_icin_basvuru_aktif' => $this->yakinIcinBasvuruAktif(),
+            'manuel_yakin_ekleme_aktif' => $this->manuelYakinEklemeAktif(),
             'sidebar_logo' => $sidebarLogo,
             'sidebar_logo_url' => $this->logoUrl($sidebarLogo),
             'sidebar_logo_adi' => $sidebarLogo ? basename($sidebarLogo) : null,
@@ -101,6 +105,26 @@ class GenelAyarServisi
     {
         return KisiGirisYontemi::tryFrom((string) (GenelAyar::deger('kisi_giris_yontemi') ?? ''))
             ?? KisiGirisYontemi::TcSifre;
+    }
+
+    public function yakinIcinBasvuruAktif(): bool
+    {
+        return $this->boolAyar('yakin_icin_basvuru_aktif', true);
+    }
+
+    public function manuelYakinEklemeAktif(): bool
+    {
+        return $this->boolAyar('manuel_yakin_ekleme_aktif', true);
+    }
+
+    private function boolAyar(string $anahtar, bool $varsayilan = false): bool
+    {
+        $deger = GenelAyar::deger($anahtar);
+        if ($deger === null || $deger === '') {
+            return $varsayilan;
+        }
+
+        return in_array(strtolower(trim($deger)), ['1', 'true', 'evet', 'aktif'], true);
     }
 
     /**
@@ -187,6 +211,8 @@ class GenelAyarServisi
             'web_sitesi' => $this->normalize($payload['web_sitesi'] ?? null),
             'site_aciklama' => $this->normalize($payload['site_aciklama'] ?? null),
             'kisi_giris_yontemi' => $girisYontemi->value,
+            'yakin_icin_basvuru_aktif' => ! empty($payload['yakin_icin_basvuru_aktif']) ? '1' : '0',
+            'manuel_yakin_ekleme_aktif' => ! empty($payload['manuel_yakin_ekleme_aktif']) ? '1' : '0',
             'logo' => $logoPath,
             'sidebar_logo' => $sidebarLogoPath,
             'header_logo' => $headerLogoPath,

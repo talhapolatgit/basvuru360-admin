@@ -148,6 +148,26 @@ class Kisi extends Authenticatable
     }
 
     /**
+     * Bu kişinin yakınları (ör. çocukları).
+     *
+     * @return HasMany<KisiYakin, $this>
+     */
+    public function yakinlar(): HasMany
+    {
+        return $this->hasMany(KisiYakin::class, 'kisi_id');
+    }
+
+    /**
+     * Bu kişinin yakın olarak göründüğü kayıtlar (ör. ebeveynleri).
+     *
+     * @return HasMany<KisiYakin, $this>
+     */
+    public function yakinOlduguKayitlar(): HasMany
+    {
+        return $this->hasMany(KisiYakin::class, 'yakin_kisi_id');
+    }
+
+    /**
      * @return HasMany<KursYoklama, $this>
      */
     public function yoklamalar(): HasMany

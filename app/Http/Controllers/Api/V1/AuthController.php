@@ -7,6 +7,7 @@ use App\Enums\KisiGirisYontemi;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Resources\Api\V1\KisiResource;
 use App\Models\Kisi;
+use App\Models\KisiYakin;
 use App\Services\GenelAyarServisi;
 use App\Services\Jwt\JwtTokenServisi;
 use Illuminate\Http\JsonResponse;
@@ -158,6 +159,34 @@ class AuthController extends ApiController
         $kisi = $request->user();
 
         return $this->success(new KisiResource($kisi));
+    }
+
+    public function yakinlar(Request $request): JsonResponse
+    {
+        /** @var Kisi $kisi */
+        $kisi = $request->user();
+
+        $items = KisiYakin::query()
+            ->where('kisi_id', $kisi->id)
+            ->whereHas('yakinlikDerecesi', fn ($q) => $q->whereIn('kod', ['ESI', 'OGLU', 'KIZI']))
+            ->with(['yakin', 'yakinlikDerecesi'])
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn (KisiYakin $kayit) => $kayit->yakin !== null)
+            ->map(fn (KisiYakin $kayit) => [
+                'id' => $kayit->yakin->id,
+                'ad' => $kayit->yakin->ad,
+                'soyad' => $kayit->yakin->soyad,
+                'tam_adi' => $kayit->yakin->tam_adi,
+                'tc_kimlik_no' => $kayit->yakin->tc_kimlik_no,
+                'dogum_tarihi' => $kayit->yakin->dogum_tarihi?->format('Y-m-d'),
+                'cinsiyet' => $kayit->yakin->cinsiyet?->value,
+                'yakinlik_derecesi' => $kayit->yakinlikDerecesi?->kod,
+                'yakinlik_label' => $kayit->yakinlikDerecesi?->ad,
+            ])
+            ->values();
+
+        return $this->success(['items' => $items]);
     }
 
     public function updateProfil(Request $request): JsonResponse

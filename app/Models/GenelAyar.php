@@ -25,6 +25,8 @@ class GenelAyar extends Model
         'logo',
         'web_sitesi',
         'kisi_giris_yontemi',
+        'yakin_icin_basvuru_aktif',
+        'manuel_yakin_ekleme_aktif',
         'sidebar_logo',
         'sidebar_baslik',
         'sidebar_alt_baslik',

@@ -193,6 +193,7 @@
     <button type="button" class="lesson-tab is-active" data-egitmen-tab="basvurular" role="tab" aria-selected="true">Başvurular</button>
     <button type="button" class="lesson-tab" data-egitmen-tab="yoklamalar" role="tab" aria-selected="false">Yoklamalar</button>
     <button type="button" class="lesson-tab" data-egitmen-tab="mesajlar" role="tab" aria-selected="false">Mesajlar</button>
+    <button type="button" class="lesson-tab" data-egitmen-tab="aile" role="tab" aria-selected="false">Aile</button>
 </div>
 
 {{-- Başvurular --}}
@@ -490,6 +491,167 @@
         </div>
     </div>
 </div>
+
+{{-- Aile --}}
+@php
+    $aileColumns = [
+        'ad_soyad' => 'Ad Soyad',
+        'tc' => 'T.C. Kimlik No',
+        'dogum' => 'Doğum Tarihi',
+        'yakinlik' => 'Yakınlık',
+    ];
+    $aileOrder = array_keys($aileColumns);
+    $canEditKisi = auth()->user()?->hasYetki('kisi.guncelle');
+@endphp
+<div
+    class="lesson-tab-panel"
+    data-egitmen-panel="aile"
+    data-kisi-ara-url="{{ route('kisiler.ara', $kisi) }}"
+    role="tabpanel"
+>
+    <div class="card table-card">
+        <div class="table-toolbar">
+            <div>
+                <div class="table-title">Aile</div>
+                <p class="table-subtitle">Bu kişinin kayıtlı yakınları.</p>
+            </div>
+            <div class="table-toolbar-actions" style="display:flex; align-items:center; gap:0.5rem;">
+                <x-detail-table-tools :columns="$aileColumns" :visible="$aileOrder" excel-name="kisi-aile" />
+                @if ($canEditKisi)
+                    <x-back-button type="button" icon="plus" data-kisi-aile-open>Yakın Ekle</x-back-button>
+                @endif
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table
+                class="data-table"
+                data-detail-table="kisi_aile_cols"
+                data-default-order='@json($aileOrder)'
+                data-default-visible='@json($aileOrder)'
+            >
+                <thead>
+                    <tr>
+                        @foreach ($aileColumns as $key => $label)
+                            <th data-column="{{ $key }}" data-sortable="1">{{ $label }}</th>
+                        @endforeach
+                        @if ($canEditKisi)
+                            <th data-column="islemler">İşlemler</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($yakinlar as $kayit)
+                        @php
+                            $yakinKisi = $kayit->yakin;
+                        @endphp
+                        <tr>
+                            <td data-column="ad_soyad" data-sort-value="{{ $yakinKisi?->tam_adi }}">
+                                @if ($yakinKisi)
+                                    <a href="{{ route('kisiler.show', $yakinKisi) }}" class="kurs-no">{{ $yakinKisi->tam_adi }}</a>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td data-column="tc">{{ $yakinKisi?->tc_kimlik_no ?: '—' }}</td>
+                            <td data-column="dogum" data-sort-value="{{ $yakinKisi?->dogum_tarihi?->toDateString() }}">
+                                {{ $yakinKisi?->dogum_tarihi?->format('d.m.Y') ?? '—' }}
+                            </td>
+                            <td data-column="yakinlik">{{ $kayit->yakinlikDerecesi?->ad ?? '—' }}</td>
+                            @if ($canEditKisi)
+                                <td data-column="islemler">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('kisiler.yakinlar.destroy', [$kisi, $kayit]) }}"
+                                        onsubmit="return confirm('Bu yakını listeden kaldırmak istediğinize emin misiniz?');"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Kaldır">Kaldır</button>
+                                    </form>
+                                </td>
+                            @endif
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="{{ $canEditKisi ? 5 : 4 }}">
+                                <div class="empty-state">
+                                    <div class="empty-state-title">Yakın bulunamadı</div>
+                                    <p class="empty-state-text">Bu kişi için henüz aile kaydı eklenmemiş.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- Yakın ekle modal --}}
+@if ($canEditKisi)
+<div
+    class="confirm-modal"
+    id="kisi-aile-modal"
+    @if ($errors->has('yakin_kisi_id') || $errors->has('yakinlik_derecesi_id')) data-open-on-load="1" @endif
+    hidden
+>
+    <div class="confirm-modal-backdrop" data-kisi-aile-close></div>
+    <div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="kisi-aile-modal-title">
+        <div class="confirm-modal-header">
+            <h3 id="kisi-aile-modal-title" class="confirm-modal-title">Yakın Ekle</h3>
+            <button type="button" class="confirm-modal-x" data-kisi-aile-close aria-label="Kapat">&times;</button>
+        </div>
+        <form method="POST" action="{{ route('kisiler.yakinlar.store', $kisi) }}" id="kisi-aile-form">
+            @csrf
+            <div class="confirm-modal-body">
+                <div class="form-group">
+                    <label for="aile_kisi_ara">Kişi ara <span class="req">*</span></label>
+                    <input
+                        id="aile_kisi_ara"
+                        type="search"
+                        class="form-control"
+                        placeholder="Ad, soyad veya T.C. kimlik no"
+                        autocomplete="off"
+                        data-kisi-search
+                        data-kisi-target="aile_yakin_kisi_id"
+                        data-kisi-label="aile_yakin_label"
+                    >
+                    <input type="hidden" name="yakin_kisi_id" id="aile_yakin_kisi_id" required value="{{ old('yakin_kisi_id') }}">
+                    <p class="kres-kisi-picked" data-kisi-picked="aile_yakin_label">Kişi seçilmedi</p>
+                    <div class="kres-kisi-results" data-kisi-results hidden></div>
+                    @error('yakin_kisi_id')
+                        <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="aile_yakinlik_derecesi_id">Yakınlık derecesi <span class="req">*</span></label>
+                    <select
+                        id="aile_yakinlik_derecesi_id"
+                        name="yakinlik_derecesi_id"
+                        class="form-control"
+                        required
+                    >
+                        <option value="">Seçiniz</option>
+                        @foreach ($yakinlikDereceleri as $derece)
+                            <option value="{{ $derece->id }}" @selected((string) old('yakinlik_derecesi_id') === (string) $derece->id)>
+                                {{ $derece->ad }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('yakinlik_derecesi_id')
+                        <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn btn-secondary btn-wide" data-kisi-aile-close>Vazgeç</button>
+                <button type="submit" class="btn btn-primary btn-wide">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 {{-- SMS modal --}}
 <div class="confirm-modal" id="egitmen-sms-modal" hidden
