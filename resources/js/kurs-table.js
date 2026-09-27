@@ -627,7 +627,18 @@ function fieldHasValue(field) {
         return false;
     }
 
-    return String(field.value || '').trim() !== '';
+    const value = String(field.value || '').trim();
+    if (value === '') {
+        return false;
+    }
+
+    // "Tümü" gibi varsayılan seçimler filtre uygulanmış sayılmaz
+    const resetValue = field.dataset.resetValue;
+    if (resetValue !== undefined && value === resetValue) {
+        return false;
+    }
+
+    return value !== 'tumu';
 }
 
 function initMoreFilters() {
@@ -688,11 +699,14 @@ function initMoreFilters() {
         applyVisibility();
     };
 
-    const savedOpen = localStorage.getItem('kurslar_more_filters') === '1';
-    // Önce kapalı ölç, gizli alanda değer varsa aç
+    // Varsayılan kapalı; yalnızca gizli satırlarda gerçek bir filtre değeri varsa aç
     isOpen = false;
     applyVisibility();
-    setOpen(savedOpen || hasCollapsedValues());
+    if (hasCollapsedValues()) {
+        setOpen(true);
+    } else {
+        localStorage.setItem('kurslar_more_filters', '0');
+    }
 
     toggle.addEventListener('click', () => {
         setOpen(!isOpen);
