@@ -137,7 +137,7 @@
             </a>
         </div>
 
-        <div class="table-wrapper">
+        <div class="table-wrapper table-wrapper--scroll" data-scroll-rows="10">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -248,7 +248,6 @@
                 </span>
                 <span>
                     <span class="quick-link-label">Kurs Başvuruları</span>
-                    <span class="quick-link-hint">Kurs başvuruları</span>
                 </span>
             </a>
             @endyetki
@@ -259,7 +258,6 @@
                 </span>
                 <span>
                     <span class="quick-link-label">Etkinlik Başvuruları</span>
-                    <span class="quick-link-hint">Etkinlik başvuruları</span>
                 </span>
             </a>
             @endyetki
@@ -290,6 +288,62 @@
     @endanyYetki
 </div>
 
+{{-- Bekleyen Yoklamalar --}}
+@if ($bekleyenYoklamaGoster)
+<div class="card table-card" style="margin-top:24px;">
+    <div class="table-toolbar">
+        <div>
+            <div class="table-title">Bekleyen Yoklamalar</div>
+            <p class="table-subtitle">Yoklaması henüz alınmamış son 10 ders.</p>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Saat</th>
+                    <th>Kurs</th>
+                    <th>Merkez</th>
+                    <th>Sınıf</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($bekleyenYoklamalar as $ders)
+                    @php
+                        $yoklamaUrl = route('kurslar.show', ['kurs' => $ders->kurs_id, 'tab' => 'yoklamalar', 'ders' => $ders->id]);
+                    @endphp
+                    <tr>
+                        <td>{{ $ders->tarih?->locale('tr')->isoFormat('D MMM, ddd') ?? '—' }}</td>
+                        <td>{{ substr((string) $ders->baslangic_saati, 0, 5) }} – {{ substr((string) $ders->bitis_saati, 0, 5) }}</td>
+                        <td>
+                            <a href="{{ $yoklamaUrl }}" class="kurs-no">{{ $ders->kurs?->brans?->ad ?? ('Kurs #'.$ders->kurs?->kurs_no) }}</a>
+                            <div class="takvim-kurs-no">Kurs #{{ $ders->kurs?->kurs_no }}</div>
+                        </td>
+                        <td>{{ $ders->kurs?->merkez?->ad ?? '—' }}</td>
+                        <td>{{ $ders->sinif ?: '—' }}</td>
+                        <td style="text-align:right;">
+                            <a href="{{ $yoklamaUrl }}" class="btn btn-secondary btn-sm">Yoklama Al</a>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-title">Bekleyen yoklama yok</div>
+                                <p class="empty-state-text">Yoklaması alınmamış geçmiş dersiniz bulunmuyor.</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 {{-- Yaklaşan Etkinlikler --}}
 <div class="card table-card" style="margin-top:24px;">
     <div class="table-toolbar">
@@ -307,7 +361,7 @@
         @endyetki
     </div>
 
-    <div class="table-wrapper">
+    <div class="table-wrapper table-wrapper--scroll" data-scroll-rows="10">
         <table class="data-table">
             <thead>
                 <tr>

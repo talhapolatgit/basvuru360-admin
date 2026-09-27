@@ -264,8 +264,42 @@ function initChipSelects() {
     });
 }
 
+function initScrollTables() {
+    const wrappers = document.querySelectorAll('.table-wrapper[data-scroll-rows]');
+    if (!wrappers.length) {
+        return;
+    }
+
+    const apply = () => {
+        wrappers.forEach((wrapper) => {
+            const limit = parseInt(wrapper.dataset.scrollRows, 10) || 10;
+            const rows = wrapper.querySelectorAll('tbody > tr');
+
+            wrapper.style.maxHeight = '';
+            wrapper.classList.remove('is-scrollable');
+
+            if (rows.length <= limit) {
+                return;
+            }
+
+            const headHeight = wrapper.querySelector('thead')?.offsetHeight ?? 0;
+            let height = headHeight;
+            for (let i = 0; i < limit; i += 1) {
+                height += rows[i].offsetHeight;
+            }
+
+            wrapper.style.maxHeight = `${height}px`;
+            wrapper.classList.add('is-scrollable');
+        });
+    };
+
+    apply();
+    window.addEventListener('resize', apply);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
+    initScrollTables();
     initSearchableSelects();
     initChipSelects();
     initKursTable();

@@ -76,7 +76,7 @@ class DashboardController extends Controller
             ->with(['kurs.brans', 'kurs.merkez'])
             ->orderBy('tarih')
             ->orderBy('baslangic_saati')
-            ->limit(12)
+            ->limit(100)
             ->get();
 
         $yaklasanEtkinliklerQuery = Etkinlik::query()
@@ -87,8 +87,35 @@ class DashboardController extends Controller
         $etkinlikKapsamiUygula($yaklasanEtkinliklerQuery);
         $yaklasanEtkinlikler = $yaklasanEtkinliklerQuery
             ->orderBy('baslangic_tarihi')
-            ->limit(12)
+            ->limit(100)
             ->get();
+
+        $bekleyenYoklamaGoster = $user && $user->hasRolKodu('ogretmen');
+        $bekleyenYoklamalar = collect();
+
+        if ($bekleyenYoklamaGoster) {
+            $simdi = now();
+
+            $bekleyenYoklamalar = KursDers::query()
+                ->where('iptal_edildi', false)
+                ->where('yoklama_alindi', false)
+                ->where(function (Builder $q) use ($simdi) {
+                    $q->whereDate('tarih', '<', $simdi->toDateString())
+                        ->orWhere(function (Builder $b) use ($simdi) {
+                            $b->whereDate('tarih', $simdi->toDateString())
+                                ->where('baslangic_saati', '<=', $simdi->format('H:i:s'));
+                        });
+                })
+                ->whereHas('kurs', function (Builder $q) use ($atananKursKapsami) {
+                    $q->whereIn('durum', [KursDurum::Aktif, KursDurum::Tamamlanan])
+                        ->where($atananKursKapsami);
+                })
+                ->with(['kurs.brans', 'kurs.merkez'])
+                ->orderByDesc('tarih')
+                ->orderByDesc('baslangic_saati')
+                ->limit(10)
+                ->get();
+        }
 
         $sonBasvurularQuery = KursBasvuru::query()
             ->with(['kisi', 'basvuran', 'durum', 'kurs.brans', 'kurs.merkez']);
@@ -163,6 +190,8 @@ class DashboardController extends Controller
             'etkinlikKesinKayitSayisi' => $etkinlikKesinKayitQuery?->count() ?? 0,
             'yaklasanEtkinlikler' => $yaklasanEtkinlikler,
             'sonEtkinlikBasvurulari' => $sonEtkinlikBasvurulari,
+            'bekleyenYoklamaGoster' => $bekleyenYoklamaGoster,
+            'bekleyenYoklamalar' => $bekleyenYoklamalar,
         ]);
     }
 
