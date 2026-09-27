@@ -34,7 +34,7 @@
     </div>
     <div class="flex items-center gap-2">
         @yetki('etkinlik.olustur')
-            <x-cta-button :href="route('etkinlikler.create')" />
+            <x-cta-button :href="route('etkinlikler.create')">Yeni Etkinlik</x-cta-button>
         @endyetki
     </div>
 </div>
