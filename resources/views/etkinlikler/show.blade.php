@@ -97,6 +97,10 @@
                 <div class="lesson-info-value">{{ $etkinlik->merkez?->ad ?? '—' }}</div>
             </div>
             <div class="lesson-info-card">
+                <div class="lesson-info-label">Etkinlik Yeri</div>
+                <div class="lesson-info-value">{{ $etkinlik->etkinlik_yeri ?: '—' }}</div>
+            </div>
+            <div class="lesson-info-card">
                 <div class="lesson-info-label">Kurum</div>
                 <div class="lesson-info-value">
                     @if ($etkinlik->kurumlar->isNotEmpty())

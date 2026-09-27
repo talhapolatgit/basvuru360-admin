@@ -23,6 +23,7 @@ class Etkinlik extends Model
         'ad',
         'aciklama',
         'merkez_id',
+        'etkinlik_yeri',
         'etkinlik_tipi_id',
         'kontenjan',
         'yedek_kontenjan',

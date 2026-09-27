@@ -33,6 +33,7 @@ class EtkinlikResource extends JsonResource
                     'ilce' => $etkinlik->merkez->ilce,
                 ]
                 : null,
+            'etkinlik_yeri' => $etkinlik->etkinlik_yeri,
             'etkinlik_tipi' => $etkinlik->relationLoaded('etkinlikTipi') && $etkinlik->etkinlikTipi
                 ? [
                     'id' => $etkinlik->etkinlikTipi->id,

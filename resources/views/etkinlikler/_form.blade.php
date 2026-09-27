@@ -76,6 +76,12 @@
         </div>
 
         <div class="form-group">
+            <label for="etkinlik_yeri">Etkinlik Yeri</label>
+            <input type="text" id="etkinlik_yeri" name="etkinlik_yeri" value="{{ $val('etkinlik_yeri') }}" class="form-control @error('etkinlik_yeri') is-invalid @enderror" maxlength="255" placeholder="Örn. Kültür Merkezi Konferans Salonu">
+            @error('etkinlik_yeri') <div class="form-error">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="form-group">
             <label>Kurum</label>
             <div class="chip-select @error('kurumlar') is-invalid @enderror" data-chip-select data-input-name="kurumlar[]" data-placeholder="Kurum seçin">
                 <div class="chip-select-control form-control" data-chip-select-toggle tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
