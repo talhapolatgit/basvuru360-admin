@@ -324,8 +324,13 @@
                         </td>
                         <td>{{ $ders->kurs?->merkez?->ad ?? '—' }}</td>
                         <td>{{ $ders->sinif ?: '—' }}</td>
-                        <td style="text-align:right;">
-                            <a href="{{ $yoklamaUrl }}" class="btn btn-secondary btn-sm">Yoklama Al</a>
+                        <td style="text-align:right; width:1%;">
+                            <a href="{{ $yoklamaUrl }}" class="btn-cta btn-cta-sm" aria-label="{{ $ders->ozet() }} dersi için yoklama al">
+                                <span class="btn-cta-mark" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                                </span>
+                                <span class="btn-cta-text">Yoklama Al</span>
+                            </a>
                         </td>
                     </tr>
                 @empty
