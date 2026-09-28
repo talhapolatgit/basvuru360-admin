@@ -11,6 +11,7 @@ import { initSabitTanimlarPage } from './sabit-tanimlar';
 import { initRichTextEditors } from './rich-text-editor';
 import { initEntegrasyonlarPage } from './entegrasyonlar';
 import { initGenelAyarlarPage } from './genel-ayarlar';
+import { initGuvenilirIpPage } from './guvenilir-ip';
 import { initPortalAyarlarPage } from './portal-ayarlar';
 import { initEgitmenDetailPage } from './egitmen-detail';
 import { initMerkezDetailPage } from './merkez-detail';
@@ -333,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initRichTextEditors();
     initEntegrasyonlarPage();
     initGenelAyarlarPage();
+    initGuvenilirIpPage();
     initPortalAyarlarPage();
     initEgitmenDetailPage();
     initMerkezDetailPage();

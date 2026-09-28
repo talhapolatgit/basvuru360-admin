@@ -23,6 +23,7 @@ class YetkiKatalogu
         'sabit' => 'Sabit Tanımlar',
         'entegrasyon' => 'Entegrasyonlar',
         'genel_ayar' => 'Genel Ayarlar',
+        'guvenilir_ip' => 'Güvenilir IP Adresleri',
         'portal_ayar' => 'Portal Ayarları',
         'takvim' => 'Takvim',
         'log' => 'İşlem Kayıtları',
@@ -146,6 +147,9 @@ class YetkiKatalogu
 
             ['kod' => 'genel_ayar.goruntule', 'ad' => 'Genel Ayarları Görüntüle', 'modul' => 'genel_ayar'],
             ['kod' => 'genel_ayar.guncelle', 'ad' => 'Genel Ayarları Güncelle', 'modul' => 'genel_ayar'],
+
+            ['kod' => 'guvenilir_ip.goruntule', 'ad' => 'Güvenilir IP Adreslerini Görüntüle', 'modul' => 'guvenilir_ip'],
+            ['kod' => 'guvenilir_ip.guncelle', 'ad' => 'Güvenilir IP Adreslerini Yönet', 'modul' => 'guvenilir_ip'],
 
             ['kod' => 'portal_ayar.goruntule', 'ad' => 'Portal Ayarlarını Görüntüle', 'modul' => 'portal_ayar'],
             ['kod' => 'portal_ayar.guncelle', 'ad' => 'Portal Ayarlarını Güncelle', 'modul' => 'portal_ayar'],

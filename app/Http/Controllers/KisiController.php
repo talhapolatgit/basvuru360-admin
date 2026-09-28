@@ -16,6 +16,7 @@ use App\Services\Adres\AdresSorgulama;
 use App\Services\Email\EmailSender;
 use App\Services\Kimlik\KimlikSorgulama;
 use App\Services\LogKaydedici;
+use App\Services\PortalGirisKilitServisi;
 use App\Services\Sms\PhoneNormalizer;
 use App\Services\Sms\SmsSender;
 use RuntimeException;
@@ -405,6 +406,25 @@ class KisiController extends Controller
         return redirect()
             ->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile'])
             ->with('success', "{$ad} aile listesinden kaldırıldı.");
+    }
+
+    public function girisKilidiniKaldir(Kisi $kisi, PortalGirisKilitServisi $kilit): RedirectResponse
+    {
+        $kilitliydi = $kisi->girisKilitliMi();
+        $kilit->sifirla($kisi);
+
+        if ($kilitliydi) {
+            LogKaydedici::kaydet(
+                islem: 'kisi.guncellendi',
+                aciklama: '"'.$kisi->tam_adi.'" kişisinin portal giriş kilidi kaldırıldı.',
+                konu: $kisi,
+                konuAdi: $kisi->tam_adi,
+            );
+        }
+
+        return redirect()
+            ->route('kisiler.show', $kisi)
+            ->with('success', 'Portal giriş kilidi kaldırıldı.');
     }
 
     public function basvurular(Request $request, Kisi $kisi): JsonResponse

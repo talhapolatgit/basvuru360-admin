@@ -10,6 +10,7 @@ use App\Models\Kisi;
 use App\Models\KisiYakin;
 use App\Services\GenelAyarServisi;
 use App\Services\Jwt\JwtTokenServisi;
+use App\Services\PortalGirisKilitServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,9 @@ class AuthController extends ApiController
         $rules = [
             'ad' => ['required', 'string', 'max:100'],
             'soyad' => ['required', 'string', 'max:100'],
-            'telefon' => ['nullable', 'string', 'max:20'],
+            'telefon' => ['required', 'string', 'max:20'],
+            'tc_kimlik_no' => ['required', 'digits:11', 'unique:kisiler,tc_kimlik_no'],
+            'dogum_tarihi' => ['required', 'date_format:Y-m-d'],
             'il' => ['nullable', 'string', 'max:100'],
             'ilce' => ['nullable', 'string', 'max:100'],
             'adres' => ['nullable', 'string', 'max:500'],
@@ -37,25 +40,22 @@ class AuthController extends ApiController
         $messages = [
             'ad.required' => 'Ad zorunludur.',
             'soyad.required' => 'Soyad zorunludur.',
+            'telefon.required' => 'Telefon zorunludur.',
+            'tc_kimlik_no.required' => 'T.C. kimlik numarası zorunludur.',
+            'tc_kimlik_no.digits' => 'T.C. kimlik numarası 11 haneli olmalıdır.',
+            'tc_kimlik_no.unique' => 'Bu T.C. kimlik numarası ile kayıt zaten var.',
+            'dogum_tarihi.required' => 'Doğum tarihi zorunludur.',
         ];
 
         if ($yontem === KisiGirisYontemi::EpostaSifre) {
             $rules['email'] = ['required', 'email', 'max:150', 'unique:kisiler,email'];
-            $rules['tc_kimlik_no'] = ['nullable', 'digits:11', 'unique:kisiler,tc_kimlik_no'];
-            $rules['dogum_tarihi'] = ['nullable', 'date_format:Y-m-d'];
             $rules['password'] = ['required', 'confirmed', Password::defaults()];
             $messages['email.required'] = 'E-posta adresi zorunludur.';
             $messages['email.unique'] = 'Bu e-posta adresi ile kayıt zaten var.';
             $messages['password.required'] = 'Şifre zorunludur.';
             $messages['password.confirmed'] = 'Şifre onayı eşleşmiyor.';
         } else {
-            $rules['tc_kimlik_no'] = ['required', 'digits:11', 'unique:kisiler,tc_kimlik_no'];
-            $rules['dogum_tarihi'] = ['required', 'date_format:Y-m-d'];
             $rules['email'] = ['nullable', 'email', 'max:150', 'unique:kisiler,email'];
-            $messages['tc_kimlik_no.required'] = 'T.C. kimlik numarası zorunludur.';
-            $messages['tc_kimlik_no.digits'] = 'T.C. kimlik numarası 11 haneli olmalıdır.';
-            $messages['tc_kimlik_no.unique'] = 'Bu T.C. kimlik numarası ile kayıt zaten var.';
-            $messages['dogum_tarihi.required'] = 'Doğum tarihi zorunludur.';
 
             if ($yontem === KisiGirisYontemi::TcSifre) {
                 $rules['password'] = ['required', 'confirmed', Password::defaults()];
@@ -69,9 +69,9 @@ class AuthController extends ApiController
         $kisi = Kisi::query()->create([
             'ad' => trim($validated['ad']),
             'soyad' => trim($validated['soyad']),
-            'tc_kimlik_no' => $validated['tc_kimlik_no'] ?? null,
-            'dogum_tarihi' => $validated['dogum_tarihi'] ?? null,
-            'telefon' => $validated['telefon'] ?? null,
+            'tc_kimlik_no' => $validated['tc_kimlik_no'],
+            'dogum_tarihi' => $validated['dogum_tarihi'],
+            'telefon' => trim($validated['telefon']),
             'email' => isset($validated['email']) ? mb_strtolower(trim($validated['email'])) : null,
             'password' => $validated['password'] ?? null,
             'cinsiyet' => $validated['cinsiyet'] ?? null,
@@ -93,7 +93,7 @@ class AuthController extends ApiController
         ], 'Kayıt başarılı.', 201);
     }
 
-    public function login(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar): JsonResponse
+    public function login(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalGirisKilitServisi $kilit): JsonResponse
     {
         $yontem = $ayarlar->kisiGirisYontemi();
         $credentials = $this->dogrulaKimlikBilgileri($request, $yontem);
@@ -112,9 +112,19 @@ class AuthController extends ApiController
             return $this->error('Bu hesap bloke edilmiş veya pasif durumda.', 403);
         }
 
+        if ($kisi?->girisKilitliMi()) {
+            return $this->error($kilit->kilitMesaji($kisi), 423);
+        }
+
         if (! $kisi || ! $this->kimlikDogrula($kisi, $yontem, $credentials)) {
+            if ($kisi && $kilit->hataliDenemeKaydet($kisi)) {
+                return $this->error($kilit->kilitMesaji($kisi), 423);
+            }
+
             return $this->error('Girdiğiniz bilgiler kayıtlarımızla eşleşmiyor.', 401);
         }
+
+        $kilit->sifirla($kisi);
 
         $tokens = $jwt->tokenCiftiOlustur($kisi);
 

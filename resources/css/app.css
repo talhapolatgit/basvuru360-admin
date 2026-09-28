@@ -454,6 +454,109 @@
         color: #f64e60;
     }
 
+    .guvenilir-ip-mevcut {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        border: 1px dashed #e4e6ef;
+        border-radius: 10px;
+        background: #f9f9fb;
+    }
+
+    .guvenilir-ip-mevcut.is-guvenilir {
+        border-style: solid;
+        border-color: #c9f7f5;
+        background: #f3fdfc;
+    }
+
+    .guvenilir-ip-mevcut-text {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .guvenilir-ip-mevcut-label {
+        font-size: 13px;
+        color: #7e8299;
+    }
+
+    .guvenilir-ip-mevcut-ip {
+        font-size: 14px;
+        font-weight: 600;
+        color: #181c32;
+    }
+
+    .kilit-banner {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        margin-bottom: 24px;
+        border: 1px solid #ffe2e5;
+        border-left: 4px solid #f64e60;
+        border-radius: 10px;
+        background: #fff5f8;
+        flex-wrap: wrap;
+    }
+
+    .kilit-banner-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #ffe2e5;
+        color: #f64e60;
+        flex-shrink: 0;
+    }
+
+    .kilit-banner-text {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+
+    .kilit-banner-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #181c32;
+    }
+
+    .kilit-banner-desc {
+        margin: 2px 0 0;
+        font-size: 13px;
+        color: #5e6278;
+    }
+
+    .kilit-banner-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        border: 1px solid #f64e60;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #f64e60;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .kilit-banner-btn:hover,
+    .kilit-banner-btn:focus-visible {
+        background: #f64e60;
+        color: #ffffff;
+    }
+
     .form-control.is-invalid {
         border-color: #f64e60;
         background: #fff5f8;
@@ -5554,6 +5657,13 @@
     cursor: not-allowed;
     opacity: 0.85;
     transform: none;
+}
+
+.login-submit.is-cooldown {
+    background: #b5b5c3;
+    box-shadow: none;
+    opacity: 1;
+    font-variant-numeric: tabular-nums;
 }
 
 .login-submit-spinner {

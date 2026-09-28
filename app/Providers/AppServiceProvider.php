@@ -7,6 +7,7 @@ use App\Services\Adres\AdresSorgulama;
 use App\Services\Email\EmailSender;
 use App\Services\Email\LoggingEmailSender;
 use App\Services\Entegrasyon\EntegrasyonCozumleyici;
+use App\Services\GuvenilirIpServisi;
 use App\Services\Kimlik\KimlikSorgulama;
 use App\Services\LogKaydedici;
 use App\Services\Sms\LoggingSmsSender;
@@ -14,11 +15,14 @@ use App\Services\Sms\SmsSender;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -58,6 +62,56 @@ class AppServiceProvider extends ServiceProvider
 
         $this->yetkiSisteminiKaydet();
         $this->oturumLoglariniDinle();
+        $this->girisHizSinirlariniKaydet();
+    }
+
+    /**
+     * Admin ve portal girişi için IP bazlı istek sınırları. Güvenilir IP adresleri hiçbir sınıra takılmaz.
+     */
+    private function girisHizSinirlariniKaydet(): void
+    {
+        $sinir = fn (Request $request, Limit $limit) => app(GuvenilirIpServisi::class)->guvenilirMi($request->ip())
+            ? Limit::none()
+            : $limit;
+
+        $asimYaniti = fn (string $alan) => function (Request $request, array $headers) use ($alan) {
+            $saniye = max(1, (int) ($headers['Retry-After'] ?? 60));
+            $mesaj = 'Çok fazla deneme yapıldı. Lütfen '
+                .($saniye >= 60 ? (int) ceil($saniye / 60).' dakika' : $saniye.' saniye')
+                .' sonra tekrar deneyin.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $mesaj,
+                    'errors' => [$alan => [$mesaj]],
+                ], 429, $headers);
+            }
+
+            return back()
+                ->withInput($request->except('password', 'kod'))
+                ->withErrors([$alan => $mesaj]);
+        };
+
+        RateLimiter::for('admin-giris', fn (Request $request) => $sinir($request, Limit::perMinute(30)
+            ->by('admin-giris|'.$request->ip())
+            ->response($asimYaniti('email'))));
+
+        RateLimiter::for('admin-giris-dogrulama', fn (Request $request) => $sinir($request, Limit::perMinute(30)
+            ->by('admin-giris-dogrulama|'.$request->ip())
+            ->response($asimYaniti('kod'))));
+
+        RateLimiter::for('admin-giris-kod-yenile', fn (Request $request) => $sinir($request, Limit::perMinutes(10, 15)
+            ->by('admin-giris-kod-yenile|'.$request->ip())
+            ->response($asimYaniti('kod'))));
+
+        RateLimiter::for('portal-kayit', fn (Request $request) => $sinir($request, Limit::perMinute(30)
+            ->by('portal-kayit|'.$request->ip())));
+
+        RateLimiter::for('portal-giris', fn (Request $request) => $sinir($request, Limit::perMinute(30)
+            ->by('portal-giris|'.$request->ip())));
+
+        RateLimiter::for('portal-token-yenile', fn (Request $request) => $sinir($request, Limit::perMinute(90)
+            ->by('portal-token-yenile|'.$request->ip())));
     }
 
     /**

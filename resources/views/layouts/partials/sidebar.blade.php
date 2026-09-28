@@ -233,7 +233,7 @@
   @endyetki
 
   @php
-    $sistemMenuGoster = auth()->user()?->hasAnyYetki(['kullanici.goruntule', 'rol.goruntule', 'log.goruntule', 'entegrasyon.goruntule', 'genel_ayar.goruntule', 'portal_ayar.goruntule']);
+    $sistemMenuGoster = auth()->user()?->hasAnyYetki(['kullanici.goruntule', 'rol.goruntule', 'log.goruntule', 'entegrasyon.goruntule', 'genel_ayar.goruntule', 'portal_ayar.goruntule', 'guvenilir_ip.goruntule']);
   @endphp
   @if ($sistemMenuGoster)
   <div class="menu-section-label">Sistem</div>
@@ -259,6 +259,12 @@
   <a href="{{ route('entegrasyonlar.index') }}" class="menu-item {{ request()->routeIs('entegrasyonlar.*') ? 'menu-item-active' : '' }}">
     <svg class="menu-item-icon {{ request()->routeIs('entegrasyonlar.*') ? 'menu-item-icon-accent' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
     Entegrasyonlar
+  </a>
+  @endyetki
+  @yetki('guvenilir_ip.goruntule')
+  <a href="{{ route('guvenilir-ip-adresleri.index') }}" class="menu-item {{ request()->routeIs('guvenilir-ip-adresleri.*') ? 'menu-item-active' : '' }}">
+    <svg class="menu-item-icon {{ request()->routeIs('guvenilir-ip-adresleri.*') ? 'menu-item-icon-accent' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6M12 9v6"/></svg>
+    Güvenilir IP Adresleri
   </a>
   @endyetki
   @yetki('kullanici.goruntule')

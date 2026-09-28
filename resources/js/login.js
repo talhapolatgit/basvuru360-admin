@@ -1,3 +1,75 @@
+function retryAfterSaniye(error) {
+    const header = Number.parseInt(String(error?.response?.headers?.['retry-after'] ?? ''), 10);
+    if (header > 0) return header;
+
+    const match = String(error?.response?.data?.message ?? '').match(/(\d+)\s*(saniye|dakika)/i);
+    if (!match) return 60;
+
+    return Number(match[1]) * (match[2].toLowerCase() === 'dakika' ? 60 : 1);
+}
+
+/**
+ * 429 sonrası gönder butonunu bekleme süresi boyunca kapatır ve üzerinde geri sayım gösterir.
+ * Bitiş zamanı sessionStorage'da tutulur; sayfa yenilense de geri sayım sürer.
+ */
+function createSubmitCooldown(button, storageKey) {
+    const label = button?.querySelector('.login-submit-text');
+    const defaultText = label?.textContent ?? '';
+    let timer = null;
+    let untilMs = 0;
+
+    function kalanSaniye() {
+        return Math.max(0, Math.ceil((untilMs - Date.now()) / 1000));
+    }
+
+    function format(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function stop() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        untilMs = 0;
+        sessionStorage.removeItem(storageKey);
+        button?.classList.remove('is-cooldown');
+        if (button) button.disabled = false;
+        if (label) label.textContent = defaultText;
+    }
+
+    function tick() {
+        const kalan = kalanSaniye();
+        if (kalan <= 0) {
+            stop();
+            return;
+        }
+        if (label) label.textContent = `Tekrar deneyin (${format(kalan)})`;
+    }
+
+    function startUntil(ms) {
+        untilMs = ms;
+        sessionStorage.setItem(storageKey, String(ms));
+        button?.classList.add('is-cooldown');
+        if (button) button.disabled = true;
+        if (timer) window.clearInterval(timer);
+        tick();
+        timer = window.setInterval(tick, 1000);
+    }
+
+    const kayitli = Number(sessionStorage.getItem(storageKey) || 0);
+    if (kayitli > Date.now()) {
+        startUntil(kayitli);
+    } else {
+        sessionStorage.removeItem(storageKey);
+    }
+
+    return {
+        start: (seconds) => startUntil(Date.now() + Math.max(1, seconds) * 1000),
+        active: () => kalanSaniye() > 0,
+    };
+}
+
 /**
  * Giriş sayfası — sayfa yenilenmeden (AJAX) kimlik doğrulama.
  */
@@ -28,6 +100,7 @@ export function initLoginPage() {
     };
 
     let submitting = false;
+    const cooldown = createSubmitCooldown(submitBtn, 'admin_login_cooldown_until');
 
     function hideAlert() {
         if (!alertBox) return;
@@ -67,7 +140,7 @@ export function initLoginPage() {
     function setLoading(loading) {
         submitting = loading;
         submitBtn?.classList.toggle('is-loading', loading);
-        if (submitBtn) submitBtn.disabled = loading;
+        if (submitBtn) submitBtn.disabled = loading || cooldown.active();
     }
 
     Object.entries(fields).forEach(([key, input]) => {
@@ -83,11 +156,39 @@ export function initLoginPage() {
         form.querySelector('[data-login-eye-closed]')?.toggleAttribute('hidden', showing);
     });
 
+    function validate() {
+        const errors = {};
+        const email = (fields.email?.value ?? '').trim();
+
+        if (email === '') {
+            errors.email = 'E-posta adresi zorunludur.';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.email = 'Geçerli bir e-posta adresi girin.';
+        }
+
+        if ((fields.password?.value ?? '') === '') {
+            errors.password = 'Şifre zorunludur.';
+        }
+
+        return errors;
+    }
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (submitting) return;
+        if (submitting || cooldown.active()) return;
 
         clearAllErrors();
+
+        const clientErrors = validate();
+        const errorKeys = Object.keys(clientErrors);
+        if (errorKeys.length > 0) {
+            errorKeys.forEach((key) => setFieldError(key, clientErrors[key]));
+            showAlert(clientErrors[errorKeys[0]]);
+            triggerShake();
+            fields[errorKeys[0]]?.focus();
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -129,6 +230,13 @@ export function initLoginPage() {
                 return;
             }
 
+            if (status === 429) {
+                showAlert(responseData?.message || 'Çok fazla deneme yapıldı. Lütfen biraz bekleyin.');
+                cooldown.start(retryAfterSaniye(error));
+                triggerShake();
+                return;
+            }
+
             showAlert('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
             triggerShake();
         }
@@ -149,6 +257,7 @@ function initOtpPage(form) {
     let resending = false;
     let cooldownTimer = null;
     let cooldownLeft = Number.parseInt(String(form.dataset.resendWait || '0'), 10) || 0;
+    const submitCooldown = createSubmitCooldown(submitBtn, 'admin_otp_cooldown_until');
 
     function showAlert(message, isError = true) {
         if (!alertBox || !alertText) return;
@@ -161,7 +270,7 @@ function initOtpPage(form) {
     function setLoading(loading) {
         submitting = loading;
         submitBtn?.classList.toggle('is-loading', loading);
-        if (submitBtn) submitBtn.disabled = loading;
+        if (submitBtn) submitBtn.disabled = loading || submitCooldown.active();
     }
 
     function triggerShake() {
@@ -225,10 +334,24 @@ function initOtpPage(form) {
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (submitting) return;
+        if (submitting || submitCooldown.active()) return;
 
         if (kodError) kodError.textContent = '';
         kodInput?.classList.remove('is-invalid');
+
+        const kodRakamlar = (kodInput?.value ?? '').replace(/\D+/g, '');
+        const kodHatasi = kodRakamlar === ''
+            ? 'Doğrulama kodu zorunludur.'
+            : (kodRakamlar.length !== 6 ? 'Doğrulama kodu 6 haneli olmalıdır.' : null);
+        if (kodHatasi) {
+            if (kodError) kodError.textContent = kodHatasi;
+            kodInput?.classList.add('is-invalid');
+            showAlert(kodHatasi);
+            triggerShake();
+            kodInput?.focus();
+            return;
+        }
+
         setLoading(true);
         syncResendButton();
 
@@ -247,6 +370,9 @@ function initOtpPage(form) {
         } catch (error) {
             setLoading(false);
             syncResendButton();
+            if (error?.response?.status === 429) {
+                submitCooldown.start(retryAfterSaniye(error));
+            }
             const errors = error?.response?.data?.errors;
             const message = errors?.kod?.[0]
                 || error?.response?.data?.message

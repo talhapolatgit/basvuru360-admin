@@ -47,15 +47,15 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('auth')->group(function () {
         Route::post('/register', [AuthController::class, 'register'])
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:portal-kayit')
             ->name('api.v1.auth.register');
 
         Route::post('/login', [AuthController::class, 'login'])
-            ->middleware('throttle:10,1')
+            ->middleware('throttle:portal-giris')
             ->name('api.v1.auth.login');
 
         Route::post('/refresh', [AuthController::class, 'refresh'])
-            ->middleware('throttle:30,1')
+            ->middleware('throttle:portal-token-yenile')
             ->name('api.v1.auth.refresh');
 
         Route::middleware('jwt')->group(function () {

@@ -64,6 +64,7 @@ export function initEgitmenDetailPage() {
     initEgitmenTabs();
     initKisiBasvuruTuruTabs();
     initKisiAileModal();
+    initGirisKilidiModal();
 
     const smsModal = document.getElementById('egitmen-sms-modal');
     const epostaModal = document.getElementById('egitmen-eposta-modal');
@@ -76,6 +77,28 @@ export function initEgitmenDetailPage() {
     initSmsModal(smsModal);
     initEpostaModal(epostaModal);
     initSifreModal(sifreModal);
+}
+
+function initGirisKilidiModal() {
+    const modal = document.getElementById('giris-kilidi-modal');
+    if (!modal) return;
+
+    document.querySelectorAll('[data-giris-kilidi-open]').forEach((btn) => {
+        btn.addEventListener('click', () => openModal(modal));
+    });
+
+    modal.querySelectorAll('[data-giris-kilidi-close]').forEach((el) => {
+        el.addEventListener('click', () => closeModal(modal));
+    });
+
+    const form = modal.querySelector('[data-giris-kilidi-form]');
+    const submit = modal.querySelector('[data-giris-kilidi-submit]');
+    form?.addEventListener('submit', () => {
+        if (submit) {
+            submit.disabled = true;
+            submit.textContent = 'Kaldırılıyor…';
+        }
+    });
 }
 
 function initKisiAileModal() {

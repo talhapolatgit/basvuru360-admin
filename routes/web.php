@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EgitmenController;
 use App\Http\Controllers\EntegrasyonController;
 use App\Http\Controllers\GenelAyarController;
+use App\Http\Controllers\GuvenilirIpAdresiController;
 use App\Http\Controllers\PortalAyarController;
 use App\Http\Controllers\EtkinlikBasvuruController;
 use App\Http\Controllers\EtkinlikController;
@@ -33,10 +34,10 @@ Route::get('/', [LoginController::class, 'home'])->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/giris', [LoginController::class, 'create'])->name('login');
-    Route::post('/giris', [LoginController::class, 'store']);
+    Route::post('/giris', [LoginController::class, 'store'])->middleware('throttle:admin-giris');
     Route::get('/giris/dogrulama', [LoginController::class, 'dogrulamaForm'])->name('login.dogrulama');
-    Route::post('/giris/dogrulama', [LoginController::class, 'dogrulama'])->name('login.dogrulama.submit');
-    Route::post('/giris/dogrulama/yenile', [LoginController::class, 'kodYenile'])->name('login.dogrulama.yenile');
+    Route::post('/giris/dogrulama', [LoginController::class, 'dogrulama'])->middleware('throttle:admin-giris-dogrulama')->name('login.dogrulama.submit');
+    Route::post('/giris/dogrulama/yenile', [LoginController::class, 'kodYenile'])->middleware('throttle:admin-giris-kod-yenile')->name('login.dogrulama.yenile');
 });
 
 Route::middleware('auth')->group(function () {
@@ -147,6 +148,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/entegrasyonlar', [EntegrasyonController::class, 'index'])->middleware('yetki:entegrasyon.goruntule')->name('entegrasyonlar.index');
     Route::put('/entegrasyonlar', [EntegrasyonController::class, 'update'])->middleware('yetki:entegrasyon.guncelle')->name('entegrasyonlar.update');
     Route::put('/entegrasyonlar/{tur}/{saglayici}/ayarlar', [EntegrasyonController::class, 'updateAyarlar'])->middleware('yetki:entegrasyon.guncelle')->name('entegrasyonlar.ayarlar.update');
+    Route::get('/guvenilir-ip-adresleri', [GuvenilirIpAdresiController::class, 'index'])->middleware('yetki:guvenilir_ip.goruntule')->name('guvenilir-ip-adresleri.index');
+    Route::post('/guvenilir-ip-adresleri', [GuvenilirIpAdresiController::class, 'store'])->middleware('yetki:guvenilir_ip.guncelle')->name('guvenilir-ip-adresleri.store');
+    Route::put('/guvenilir-ip-adresleri/{guvenilirIpAdresi}', [GuvenilirIpAdresiController::class, 'update'])->middleware('yetki:guvenilir_ip.guncelle')->name('guvenilir-ip-adresleri.update');
+    Route::delete('/guvenilir-ip-adresleri/{guvenilirIpAdresi}', [GuvenilirIpAdresiController::class, 'destroy'])->middleware('yetki:guvenilir_ip.guncelle')->name('guvenilir-ip-adresleri.destroy');
     Route::get('/log-kayitlari/excel', [LogController::class, 'export'])->middleware('yetki:log.export')->name('loglar.export');
     Route::get('/takvim', [TakvimController::class, 'index'])->middleware('yetki:takvim.goruntule')->name('takvim.index');
     Route::get('/takvim/veri', [TakvimController::class, 'data'])->middleware('yetki:takvim.goruntule')->name('takvim.data');
@@ -292,6 +297,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/kisiler/{kisi}/ara', [KisiController::class, 'kisiAra'])->middleware('yetki:kisi.guncelle')->name('kisiler.ara');
     Route::post('/kisiler/{kisi}/yakinlar', [KisiController::class, 'storeYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.store');
     Route::delete('/kisiler/{kisi}/yakinlar/{yakin}', [KisiController::class, 'destroyYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.destroy');
+    Route::delete('/kisiler/{kisi}/giris-kilidi', [KisiController::class, 'girisKilidiniKaldir'])->middleware('yetki:kisi.guncelle')->name('kisiler.giris-kilidi.destroy');
     Route::get('/kisiler/{kisi}/duzenle', [KisiController::class, 'edit'])->middleware('yetki:kisi.guncelle')->name('kisiler.edit');
     Route::put('/kisiler/{kisi}', [KisiController::class, 'update'])->middleware('yetki:kisi.guncelle')->name('kisiler.update');
 

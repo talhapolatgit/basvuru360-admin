@@ -49,7 +49,15 @@ class Kisi extends Authenticatable
             'cinsiyet' => Cinsiyet::class,
             'aktif' => 'boolean',
             'password' => 'hashed',
+            'hatali_giris_sayisi' => 'integer',
+            'ilk_hatali_giris_at' => 'datetime',
+            'giris_kilit_bitis' => 'datetime',
         ];
+    }
+
+    public function girisKilitliMi(): bool
+    {
+        return $this->giris_kilit_bitis !== null && $this->giris_kilit_bitis->isFuture();
     }
 
     public function getTamAdiAttribute(): string

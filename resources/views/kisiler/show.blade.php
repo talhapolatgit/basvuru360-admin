@@ -46,6 +46,58 @@
     </div>
 </div>
 
+@if ($kisi->girisKilitliMi())
+    @php
+        $kilitBitis = app(\App\Services\PortalGirisKilitServisi::class)->kilitBitisMetni($kisi);
+        $kilitKalanDakika = max(1, (int) ceil(now()->diffInSeconds($kisi->giris_kilit_bitis) / 60));
+        $kilitKalan = $kilitKalanDakika >= 60
+            ? intdiv($kilitKalanDakika, 60).' sa '.($kilitKalanDakika % 60).' dk'
+            : $kilitKalanDakika.' dk';
+    @endphp
+    <div class="kilit-banner" role="status">
+        <span class="kilit-banner-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <div class="kilit-banner-text">
+            <div class="kilit-banner-title">Portal girişi geçici olarak kilitli</div>
+            <p class="kilit-banner-desc">
+                Art arda hatalı giriş denemeleri nedeniyle bu kişi <strong>{{ $kilitBitis }}</strong> saatine kadar
+                portala giriş yapamaz (kalan süre: {{ $kilitKalan }}).
+            </p>
+        </div>
+        @yetki('kisi.guncelle')
+        <button type="button" class="kilit-banner-btn" data-giris-kilidi-open>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+            <span>Kilidi Kaldır</span>
+        </button>
+        @endyetki
+    </div>
+
+    @yetki('kisi.guncelle')
+    <div class="confirm-modal" id="giris-kilidi-modal" hidden>
+        <div class="confirm-modal-backdrop" data-giris-kilidi-close></div>
+        <div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="giris-kilidi-modal-title">
+            <div class="confirm-modal-header">
+                <h3 id="giris-kilidi-modal-title" class="confirm-modal-title">Giriş Kilidini Kaldır</h3>
+                <button type="button" class="confirm-modal-x" data-giris-kilidi-close aria-label="Kapat">&times;</button>
+            </div>
+            <form method="POST" action="{{ route('kisiler.giris-kilidi.destroy', $kisi) }}" data-giris-kilidi-form>
+                @csrf
+                @method('DELETE')
+                <div class="confirm-modal-body">
+                    <p><strong>{{ $kisi->tam_adi }}</strong> kişisinin portal giriş kilidi kaldırılacak ve hatalı deneme sayacı sıfırlanacak.</p>
+                    <p class="form-hint" style="margin-top:10px;">Kilidi yalnızca kişinin kimliğini doğruladıktan sonra kaldırın. Bu işlem log kayıtlarına yazılır.</p>
+                </div>
+                <div class="confirm-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-wide" data-giris-kilidi-close>Vazgeç</button>
+                    <button type="submit" class="btn btn-primary btn-wide" data-giris-kilidi-submit>Kilidi Kaldır</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endyetki
+@endif
+
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-label">Cinsiyet</div>
@@ -56,10 +108,12 @@
     <div class="stat-card">
         <div class="stat-label">Durum</div>
         <div class="stat-value" style="font-size:16px;">
-            @if ($kisi->aktif)
-                <span class="status status-aktif">Aktif</span>
-            @else
+            @if (! $kisi->aktif)
                 <span class="status status-hazirlik">Pasif</span>
+            @elseif ($kisi->girisKilitliMi())
+                <span class="status status-iptal">Geçici Kilitli</span>
+            @else
+                <span class="status status-aktif">Aktif</span>
             @endif
         </div>
     </div>
