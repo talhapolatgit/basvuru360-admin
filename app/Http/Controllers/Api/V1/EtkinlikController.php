@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Resources\Api\V1\EtkinlikResource;
 use App\Models\Etkinlik;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -80,10 +81,22 @@ class EtkinlikController extends ApiController
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
+        $kisi = $this->opsiyonelKisi($request);
+
         $etkinlik = Etkinlik::query()
-            ->portaldeAktif()
+            ->where(function (Builder $q) use ($kisi) {
+                $q->where(fn (Builder $a) => $a->portaldeAktif());
+
+                if ($kisi) {
+                    $q->orWhereHas('basvurular', fn (Builder $b) => $b->where(function (Builder $w) use ($kisi) {
+                        $w->where('kisi_id', $kisi->id)
+                            ->orWhere('basvuran_id', $kisi->id)
+                            ->orWhere('veli_id', $kisi->id);
+                    }));
+                }
+            })
             ->with([
                 'merkez',
                 'etkinlikTipi',

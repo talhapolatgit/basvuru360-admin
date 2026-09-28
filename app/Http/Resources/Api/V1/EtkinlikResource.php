@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\EtkinlikDurum;
 use App\Models\Etkinlik;
 use App\Services\EtkinlikAyarServisi;
 use Illuminate\Http\Request;
@@ -59,10 +60,9 @@ class EtkinlikResource extends JsonResource
                 'kod' => $etkinlik->durum?->value,
                 'label' => $etkinlik->durum?->label(),
             ],
-            'basvuru_durumu' => [
-                'kod' => $etkinlik->basvuruDurumuKod(),
-                'label' => $etkinlik->basvuruDurumuLabel(),
-            ],
+            'basvuru_durumu' => $etkinlik->durum === EtkinlikDurum::Aktif
+                ? ['kod' => $etkinlik->basvuruDurumuKod(), 'label' => $etkinlik->basvuruDurumuLabel()]
+                : ['kod' => 'kapandi', 'label' => 'Kapandı'],
             'evrak_zorunlu' => (bool) $etkinlik->evrak_zorunlu,
             'evrak_tipleri' => $etkinlik->relationLoaded('evrakTipleri')
                 ? $etkinlik->evrakTipleri->map(fn ($tip) => [

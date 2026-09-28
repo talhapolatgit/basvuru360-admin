@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Kisi;
+use App\Services\Jwt\JwtTokenServisi;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 abstract class ApiController extends Controller
 {
@@ -29,5 +32,22 @@ abstract class ApiController extends Controller
             'message' => $message,
             'errors' => $errors,
         ], $status);
+    }
+
+    /**
+     * Herkese açık uç noktalarda: geçerli bir access token varsa kişiyi döndürür, yoksa null.
+     */
+    protected function opsiyonelKisi(Request $request): ?Kisi
+    {
+        $header = $request->header('Authorization', '');
+        if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $header, $matches) !== 1) {
+            return null;
+        }
+
+        try {
+            return app(JwtTokenServisi::class)->kisi($matches[1], JwtTokenServisi::TIP_ACCESS);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

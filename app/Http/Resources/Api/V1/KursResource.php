@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Enums\KursDurum;
 use App\Models\Kurs;
 use App\Services\KursAyarServisi;
 use Illuminate\Http\Request;
@@ -69,10 +70,9 @@ class KursResource extends JsonResource
                 'kod' => $kurs->durum?->value,
                 'label' => $kurs->durum?->label(),
             ],
-            'basvuru_durumu' => [
-                'kod' => $kurs->basvuruDurumuKod(),
-                'label' => $kurs->basvuruDurumuLabel(),
-            ],
+            'basvuru_durumu' => $kurs->durum === KursDurum::Aktif
+                ? ['kod' => $kurs->basvuruDurumuKod(), 'label' => $kurs->basvuruDurumuLabel()]
+                : ['kod' => 'kapandi', 'label' => 'Kapandı'],
             'evrak_zorunlu' => (bool) $kurs->evrak_zorunlu,
             'aciklama' => $kurs->aciklama,
             'evrak_tipleri' => $kurs->relationLoaded('evrakTipleri')
