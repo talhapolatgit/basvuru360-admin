@@ -36,7 +36,7 @@ class AuthController extends ApiController
         $rules = [
             'ad' => ['required', 'string', 'max:100'],
             'soyad' => ['required', 'string', 'max:100'],
-            'telefon' => ['required', 'string', 'max:20'],
+            'telefon' => ['required', 'string', 'regex:/^05\d{9}$/'],
             'tc_kimlik_no' => ['required', 'digits:11', 'unique:kisiler,tc_kimlik_no'],
             'dogum_tarihi' => ['required', 'date_format:Y-m-d'],
             'il' => ['nullable', 'string', 'max:100'],
@@ -49,6 +49,7 @@ class AuthController extends ApiController
             'ad.required' => 'Ad zorunludur.',
             'soyad.required' => 'Soyad zorunludur.',
             'telefon.required' => 'Telefon zorunludur.',
+            'telefon.regex' => 'Telefon 05XXXXXXXXX biçiminde, 11 haneli cep telefonu numarası olmalıdır.',
             'tc_kimlik_no.required' => 'T.C. kimlik numarası zorunludur.',
             'tc_kimlik_no.digits' => 'T.C. kimlik numarası 11 haneli olmalıdır.',
             'tc_kimlik_no.unique' => 'Bu T.C. kimlik numarası ile kayıt zaten var.',
@@ -72,10 +73,6 @@ class AuthController extends ApiController
             }
         }
 
-        if (in_array('sms', $kanallar, true)) {
-            $rules['telefon'] = ['required', 'string', 'regex:/^05\d{9}$/'];
-            $messages['telefon.regex'] = 'Doğrulama kodu gönderilebilmesi için telefon numarasını 05XXXXXXXXX formatında girin.';
-        }
         if ($kanallar === ['eposta']) {
             $rules['email'] = ['required', 'email', 'max:150', 'unique:kisiler,email'];
             $messages['email.required'] = 'Doğrulama kodu gönderilebilmesi için e-posta adresi zorunludur.';
