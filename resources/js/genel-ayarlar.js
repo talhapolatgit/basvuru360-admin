@@ -32,6 +32,17 @@ export function initGenelAyarlarPage() {
         return;
     }
 
+    root.querySelectorAll('[data-dogrulama-blok]').forEach((blok) => {
+        const toggle = blok.querySelector('[data-dogrulama-toggle]');
+        const kanallar = blok.querySelector('[data-dogrulama-kanallar]');
+        if (!toggle || !kanallar) {
+            return;
+        }
+        toggle.addEventListener('change', () => {
+            kanallar.hidden = !toggle.checked;
+        });
+    });
+
     bindLogoPreview(
         root,
         '[data-genel-logo-input]',

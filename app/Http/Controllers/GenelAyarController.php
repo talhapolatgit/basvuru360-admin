@@ -8,6 +8,7 @@ use App\Services\LogKaydedici;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class GenelAyarController extends Controller
@@ -31,6 +32,12 @@ class GenelAyarController extends Controller
             'web_sitesi' => ['nullable', 'string', 'max:255'],
             'site_aciklama' => ['nullable', 'string', 'max:320'],
             'kisi_giris_yontemi' => ['required', 'string', Rule::in(KisiGirisYontemi::values())],
+            'portal_iki_asamali_aktif' => ['nullable', 'boolean'],
+            'portal_iki_asamali_sms' => ['nullable', 'boolean'],
+            'portal_iki_asamali_eposta' => ['nullable', 'boolean'],
+            'basvuru_dogrulama_aktif' => ['nullable', 'boolean'],
+            'basvuru_dogrulama_sms' => ['nullable', 'boolean'],
+            'basvuru_dogrulama_eposta' => ['nullable', 'boolean'],
             'yakin_icin_basvuru_aktif' => ['nullable', 'boolean'],
             'manuel_yakin_ekleme_aktif' => ['nullable', 'boolean'],
             'logo' => ['nullable', 'file', 'max:5120', 'extensions:png,jpg,jpeg,svg,webp'],
@@ -63,6 +70,24 @@ class GenelAyarController extends Controller
             'sidebar_arkaplan_tip.required' => 'Sidebar arka plan tipi zorunludur.',
             'sidebar_arkaplan_tip.in' => 'Sidebar arka plan tipi Düz renk veya Gradient olmalıdır.',
         ]);
+
+        $kanalHatalari = [];
+        foreach ([
+            'portal_iki_asamali' => '2 aşamalı doğrulama',
+            'basvuru_dogrulama' => 'Başvurularda doğrulama',
+        ] as $onEk => $baslik) {
+            foreach (['aktif', 'sms', 'eposta'] as $alan) {
+                $validated["{$onEk}_{$alan}"] = $request->boolean("{$onEk}_{$alan}");
+            }
+
+            if ($validated["{$onEk}_aktif"] && ! $validated["{$onEk}_sms"] && ! $validated["{$onEk}_eposta"]) {
+                $kanalHatalari["{$onEk}_kanal"] = "{$baslik} açıkken en az bir yöntem (SMS veya E-posta) seçilmelidir.";
+            }
+        }
+
+        if ($kanalHatalari !== []) {
+            throw ValidationException::withMessages($kanalHatalari);
+        }
 
         $validated['sidebar_logo_arkaplan_seffaf'] = $request->boolean('sidebar_logo_arkaplan_seffaf');
         $validated['yakin_icin_basvuru_aktif'] = $request->boolean('yakin_icin_basvuru_aktif');
@@ -121,6 +146,12 @@ class GenelAyarController extends Controller
             'logo' => $form['logo'] ?? null,
             'favicon' => $form['favicon'] ?? null,
             'kisi_giris_yontemi' => $form['kisi_giris_yontemi'] ?? null,
+            'portal_iki_asamali_aktif' => $form['portal_iki_asamali_aktif'] ?? null,
+            'portal_iki_asamali_sms' => $form['portal_iki_asamali_sms'] ?? null,
+            'portal_iki_asamali_eposta' => $form['portal_iki_asamali_eposta'] ?? null,
+            'basvuru_dogrulama_aktif' => $form['basvuru_dogrulama_aktif'] ?? null,
+            'basvuru_dogrulama_sms' => $form['basvuru_dogrulama_sms'] ?? null,
+            'basvuru_dogrulama_eposta' => $form['basvuru_dogrulama_eposta'] ?? null,
             'yakin_icin_basvuru_aktif' => $form['yakin_icin_basvuru_aktif'] ?? null,
             'manuel_yakin_ekleme_aktif' => $form['manuel_yakin_ekleme_aktif'] ?? null,
             'sidebar_logo' => $form['sidebar_logo'] ?? null,

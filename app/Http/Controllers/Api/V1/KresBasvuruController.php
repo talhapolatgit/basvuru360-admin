@@ -6,6 +6,7 @@ use App\Enums\Cinsiyet;
 use App\Enums\KresSoruTipi;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesPortalBasvuruKatilimci;
+use App\Http\Controllers\Api\V1\Concerns\VerifiesBasvuruDogrulamaKodu;
 use App\Http\Resources\Api\V1\KresBasvuruResource;
 use App\Models\Kisi;
 use App\Models\KresBasvuru;
@@ -27,6 +28,7 @@ use Illuminate\Validation\ValidationException;
 class KresBasvuruController extends ApiController
 {
     use ResolvesPortalBasvuruKatilimci;
+    use VerifiesBasvuruDogrulamaKodu;
 
     public function durum(): JsonResponse
     {
@@ -216,6 +218,8 @@ class KresBasvuruController extends ApiController
             'grup_id.required' => 'Grup seçimi zorunludur.',
         ]);
 
+        $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $oturum);
+
         $telefon = $this->cepTelefonuDogrula((string) $validated['veli_telefon']);
         $ogrenciCinsiyet = $this->cocukKimlikDogrula([
             'cocuk_tc_kimlik_no' => $validated['ogrenci_tc_kimlik_no'],
@@ -319,6 +323,8 @@ class KresBasvuruController extends ApiController
 
             return $kayit->load(['grup.okul', 'grup.donem', 'kisi', 'durum', 'basvuran']);
         });
+
+        $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
 
         return $this->success([
             'basvuru' => (new KresBasvuruResource($basvuru))->resolve(),

@@ -110,6 +110,15 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('portal-giris', fn (Request $request) => $sinir($request, Limit::perMinute(30)
             ->by('portal-giris|'.$request->ip())));
 
+        RateLimiter::for('portal-giris-dogrulama', fn (Request $request) => $sinir($request, Limit::perMinute(30)
+            ->by('portal-giris-dogrulama|'.$request->ip())));
+
+        RateLimiter::for('portal-basvuru-dogrulama-kod', fn (Request $request) => $sinir($request, Limit::perMinutes(10, 15)
+            ->by('portal-basvuru-dogrulama-kod|'.$request->ip())));
+
+        RateLimiter::for('portal-giris-kod-yenile', fn (Request $request) => $sinir($request, Limit::perMinutes(10, 15)
+            ->by('portal-giris-kod-yenile|'.$request->ip())));
+
         RateLimiter::for('portal-token-yenile', fn (Request $request) => $sinir($request, Limit::perMinute(90)
             ->by('portal-token-yenile|'.$request->ip())));
     }

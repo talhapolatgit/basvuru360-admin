@@ -32,6 +32,12 @@ class GenelAyarServisi
      *     web_sitesi: string,
      *     kisi_giris_yontemi: string,
      *     kisi_giris_yontemi_secenekler: list<array{value: string, label: string}>,
+     *     portal_iki_asamali_aktif: bool,
+     *     portal_iki_asamali_sms: bool,
+     *     portal_iki_asamali_eposta: bool,
+     *     basvuru_dogrulama_aktif: bool,
+     *     basvuru_dogrulama_sms: bool,
+     *     basvuru_dogrulama_eposta: bool,
      *     yakin_icin_basvuru_aktif: bool,
      *     manuel_yakin_ekleme_aktif: bool,
      *     sidebar_logo: string|null,
@@ -74,6 +80,12 @@ class GenelAyarServisi
             'site_aciklama' => (string) ($ayarlar['site_aciklama'] ?? ''),
             'kisi_giris_yontemi' => $girisYontemi->value,
             'kisi_giris_yontemi_secenekler' => KisiGirisYontemi::secenekler(),
+            'portal_iki_asamali_aktif' => $this->boolAyar('portal_iki_asamali_aktif'),
+            'portal_iki_asamali_sms' => $this->boolAyar('portal_iki_asamali_sms'),
+            'portal_iki_asamali_eposta' => $this->boolAyar('portal_iki_asamali_eposta'),
+            'basvuru_dogrulama_aktif' => $this->boolAyar('basvuru_dogrulama_aktif'),
+            'basvuru_dogrulama_sms' => $this->boolAyar('basvuru_dogrulama_sms'),
+            'basvuru_dogrulama_eposta' => $this->boolAyar('basvuru_dogrulama_eposta'),
             'yakin_icin_basvuru_aktif' => $this->yakinIcinBasvuruAktif(),
             'manuel_yakin_ekleme_aktif' => $this->manuelYakinEklemeAktif(),
             'sidebar_logo' => $sidebarLogo,
@@ -105,6 +117,41 @@ class GenelAyarServisi
     {
         return KisiGirisYontemi::tryFrom((string) (GenelAyar::deger('kisi_giris_yontemi') ?? ''))
             ?? KisiGirisYontemi::TcSifre;
+    }
+
+    /**
+     * Portal girişinde doğrulama kodunun gönderileceği kanallar; iki aşamalı doğrulama kapalıysa boş.
+     *
+     * @return list<'sms'|'eposta'>
+     */
+    public function portalIkiAsamaliKanallari(): array
+    {
+        return $this->dogrulamaKanallari('portal_iki_asamali');
+    }
+
+    /**
+     * Portal başvurularının son adımında doğrulama kodunun gönderileceği kanallar; ayar kapalıysa boş.
+     *
+     * @return list<'sms'|'eposta'>
+     */
+    public function basvuruDogrulamaKanallari(): array
+    {
+        return $this->dogrulamaKanallari('basvuru_dogrulama');
+    }
+
+    /**
+     * @return list<'sms'|'eposta'>
+     */
+    private function dogrulamaKanallari(string $onEk): array
+    {
+        if (! $this->boolAyar("{$onEk}_aktif")) {
+            return [];
+        }
+
+        return array_values(array_filter([
+            $this->boolAyar("{$onEk}_sms") ? 'sms' : null,
+            $this->boolAyar("{$onEk}_eposta") ? 'eposta' : null,
+        ]));
     }
 
     public function yakinIcinBasvuruAktif(): bool
@@ -211,6 +258,12 @@ class GenelAyarServisi
             'web_sitesi' => $this->normalize($payload['web_sitesi'] ?? null),
             'site_aciklama' => $this->normalize($payload['site_aciklama'] ?? null),
             'kisi_giris_yontemi' => $girisYontemi->value,
+            'portal_iki_asamali_aktif' => ! empty($payload['portal_iki_asamali_aktif']) ? '1' : '0',
+            'portal_iki_asamali_sms' => ! empty($payload['portal_iki_asamali_sms']) ? '1' : '0',
+            'portal_iki_asamali_eposta' => ! empty($payload['portal_iki_asamali_eposta']) ? '1' : '0',
+            'basvuru_dogrulama_aktif' => ! empty($payload['basvuru_dogrulama_aktif']) ? '1' : '0',
+            'basvuru_dogrulama_sms' => ! empty($payload['basvuru_dogrulama_sms']) ? '1' : '0',
+            'basvuru_dogrulama_eposta' => ! empty($payload['basvuru_dogrulama_eposta']) ? '1' : '0',
             'yakin_icin_basvuru_aktif' => ! empty($payload['yakin_icin_basvuru_aktif']) ? '1' : '0',
             'manuel_yakin_ekleme_aktif' => ! empty($payload['manuel_yakin_ekleme_aktif']) ? '1' : '0',
             'logo' => $logoPath,

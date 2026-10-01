@@ -11,12 +11,14 @@ use App\Models\KisiYakin;
 use App\Services\GenelAyarServisi;
 use App\Services\Jwt\JwtTokenServisi;
 use App\Services\PortalGirisKilitServisi;
+use App\Services\PortalIkiAsamaliDogrulamaServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 use UnexpectedValueException;
 
 class AuthController extends ApiController
@@ -93,7 +95,7 @@ class AuthController extends ApiController
         ], 'Kayıt başarılı.', 201);
     }
 
-    public function login(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalGirisKilitServisi $kilit): JsonResponse
+    public function login(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalGirisKilitServisi $kilit, PortalIkiAsamaliDogrulamaServisi $otp): JsonResponse
     {
         $yontem = $ayarlar->kisiGirisYontemi();
         $credentials = $this->dogrulaKimlikBilgileri($request, $yontem);
@@ -126,6 +128,69 @@ class AuthController extends ApiController
 
         $kilit->sifirla($kisi);
 
+        $kanallar = $ayarlar->portalIkiAsamaliKanallari();
+        if ($kanallar !== []) {
+            try {
+                $dogrulama = $otp->baslat($kisi, $kanallar);
+            } catch (RuntimeException $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+
+            return $this->success([
+                'iki_asamali' => true,
+                ...$dogrulama,
+            ], 'Doğrulama kodu gönderildi.');
+        }
+
+        return $this->girisYaniti($kisi, $jwt, $yontem);
+    }
+
+    public function loginDogrulama(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalGirisKilitServisi $kilit, PortalIkiAsamaliDogrulamaServisi $otp): JsonResponse
+    {
+        $validated = $request->validate([
+            'dogrulama_token' => ['required', 'string'],
+            'kod' => ['required', 'string', 'max:12'],
+        ], [
+            'dogrulama_token.required' => 'Doğrulama oturumu bulunamadı. Lütfen tekrar giriş yapın.',
+            'kod.required' => 'Doğrulama kodu zorunludur.',
+        ]);
+
+        try {
+            $kisi = $otp->dogrula($validated['dogrulama_token'], $validated['kod']);
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422, ['kod' => [$e->getMessage()]]);
+        }
+
+        if (! $kisi->aktif) {
+            return $this->error('Bu hesap bloke edilmiş veya pasif durumda.', 403);
+        }
+
+        if ($kisi->girisKilitliMi()) {
+            return $this->error($kilit->kilitMesaji($kisi), 423);
+        }
+
+        return $this->girisYaniti($kisi, $jwt, $ayarlar->kisiGirisYontemi());
+    }
+
+    public function loginKodYenile(Request $request, PortalIkiAsamaliDogrulamaServisi $otp): JsonResponse
+    {
+        $validated = $request->validate([
+            'dogrulama_token' => ['required', 'string'],
+        ], [
+            'dogrulama_token.required' => 'Doğrulama oturumu bulunamadı. Lütfen tekrar giriş yapın.',
+        ]);
+
+        try {
+            $sonuc = $otp->yenidenGonder($validated['dogrulama_token']);
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success($sonuc, 'Yeni doğrulama kodu gönderildi.');
+    }
+
+    private function girisYaniti(Kisi $kisi, JwtTokenServisi $jwt, KisiGirisYontemi $yontem): JsonResponse
+    {
         $tokens = $jwt->tokenCiftiOlustur($kisi);
 
         return $this->success([
@@ -204,8 +269,12 @@ class AuthController extends ApiController
         /** @var Kisi $kisi */
         $kisi = $request->user();
 
+        $request->merge([
+            'telefon' => preg_replace('/\s+/', '', (string) $request->input('telefon')),
+        ]);
+
         $validated = $request->validate([
-            'telefon' => ['required', 'string', 'max:20'],
+            'telefon' => ['required', 'string', 'regex:/^05\d{9}$/'],
             'email' => [
                 'nullable',
                 'email',
@@ -215,6 +284,7 @@ class AuthController extends ApiController
             'diger_adres' => ['nullable', 'string', 'max:500'],
         ], [
             'telefon.required' => 'Telefon zorunludur.',
+            'telefon.regex' => 'Telefon 05XXXXXXXXX biçiminde, 11 haneli cep telefonu numarası olmalıdır.',
             'email.email' => 'Geçerli bir e-posta adresi girin.',
             'email.unique' => 'Bu e-posta adresi başka bir hesapta kullanılıyor.',
         ]);

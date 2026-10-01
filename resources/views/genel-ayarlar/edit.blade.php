@@ -503,6 +503,141 @@
             </div>
         </div>
 
+        @php
+            $eskiDeger = fn (string $alan, bool $mevcut) => old($alan) !== null ? (string) old($alan) === '1' : $mevcut;
+            $ikiAsamaliAktif = $eskiDeger('portal_iki_asamali_aktif', (bool) ($form['portal_iki_asamali_aktif'] ?? false));
+            $ikiAsamaliSms = $eskiDeger('portal_iki_asamali_sms', (bool) ($form['portal_iki_asamali_sms'] ?? false));
+            $ikiAsamaliEposta = $eskiDeger('portal_iki_asamali_eposta', (bool) ($form['portal_iki_asamali_eposta'] ?? false));
+        @endphp
+
+        <div class="sertifika-ayarlar-block" data-dogrulama-blok>
+            <div class="sertifika-ayarlar-block-head">
+                <h3 class="sertifika-ayarlar-title">2 Aşamalı Doğrulama</h3>
+                <p class="sertifika-ayarlar-desc">Açıkken vatandaşlar portala giriş yaparken bilgilerine ek olarak seçilen yöntemle gönderilen doğrulama kodunu girer.</p>
+            </div>
+
+            <div class="form-group form-group-switch">
+                <label class="switch-label" for="genel-iki-asamali-aktif">
+                    <input type="hidden" name="portal_iki_asamali_aktif" value="0">
+                    <input
+                        type="checkbox"
+                        id="genel-iki-asamali-aktif"
+                        name="portal_iki_asamali_aktif"
+                        value="1"
+                        data-dogrulama-toggle
+                        @checked($ikiAsamaliAktif)
+                        @disabled(! $guncelleyebilir)
+                    >
+                    <span>2 aşamalı doğrulama aktif</span>
+                </label>
+            </div>
+
+            <div class="form-group" data-dogrulama-kanallar @if (! $ikiAsamaliAktif) hidden @endif>
+                <label>Doğrulama kodu gönderim yöntemi</label>
+                <div class="form-grid form-grid-2">
+                    <div class="form-group form-group-switch">
+                        <label class="switch-label" for="genel-iki-asamali-sms">
+                            <input type="hidden" name="portal_iki_asamali_sms" value="0">
+                            <input
+                                type="checkbox"
+                                id="genel-iki-asamali-sms"
+                                name="portal_iki_asamali_sms"
+                                value="1"
+                                @checked($ikiAsamaliSms)
+                                @disabled(! $guncelleyebilir)
+                            >
+                            <span>SMS</span>
+                        </label>
+                    </div>
+                    <div class="form-group form-group-switch">
+                        <label class="switch-label" for="genel-iki-asamali-eposta">
+                            <input type="hidden" name="portal_iki_asamali_eposta" value="0">
+                            <input
+                                type="checkbox"
+                                id="genel-iki-asamali-eposta"
+                                name="portal_iki_asamali_eposta"
+                                value="1"
+                                @checked($ikiAsamaliEposta)
+                                @disabled(! $guncelleyebilir)
+                            >
+                            <span>E-posta</span>
+                        </label>
+                    </div>
+                </div>
+                <p class="form-hint">İkisi birden seçilirse aynı doğrulama kodu hem telefona hem e-posta adresine gönderilir. Kod yalnızca kişinin kayıtlı telefonuna / e-posta adresine gönderilebilir.</p>
+                @error('portal_iki_asamali_kanal')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
+        @php
+            $basvuruDogrulamaAktif = $eskiDeger('basvuru_dogrulama_aktif', (bool) ($form['basvuru_dogrulama_aktif'] ?? false));
+            $basvuruDogrulamaSms = $eskiDeger('basvuru_dogrulama_sms', (bool) ($form['basvuru_dogrulama_sms'] ?? false));
+            $basvuruDogrulamaEposta = $eskiDeger('basvuru_dogrulama_eposta', (bool) ($form['basvuru_dogrulama_eposta'] ?? false));
+        @endphp
+
+        <div class="sertifika-ayarlar-block" data-dogrulama-blok>
+            <div class="sertifika-ayarlar-block-head">
+                <h3 class="sertifika-ayarlar-title">Başvurularda Doğrulama</h3>
+                <p class="sertifika-ayarlar-desc">Açıkken vatandaşlar portalda kurs, etkinlik ve kreş başvurusunu tamamlamadan önce seçilen yöntemle gönderilen doğrulama kodunu girer.</p>
+            </div>
+
+            <div class="form-group form-group-switch">
+                <label class="switch-label" for="genel-basvuru-dogrulama-aktif">
+                    <input type="hidden" name="basvuru_dogrulama_aktif" value="0">
+                    <input
+                        type="checkbox"
+                        id="genel-basvuru-dogrulama-aktif"
+                        name="basvuru_dogrulama_aktif"
+                        value="1"
+                        data-dogrulama-toggle
+                        @checked($basvuruDogrulamaAktif)
+                        @disabled(! $guncelleyebilir)
+                    >
+                    <span>Başvurularda doğrulama aktif</span>
+                </label>
+            </div>
+
+            <div class="form-group" data-dogrulama-kanallar @if (! $basvuruDogrulamaAktif) hidden @endif>
+                <label>Doğrulama kodu gönderim yöntemi</label>
+                <div class="form-grid form-grid-2">
+                    <div class="form-group form-group-switch">
+                        <label class="switch-label" for="genel-basvuru-dogrulama-sms">
+                            <input type="hidden" name="basvuru_dogrulama_sms" value="0">
+                            <input
+                                type="checkbox"
+                                id="genel-basvuru-dogrulama-sms"
+                                name="basvuru_dogrulama_sms"
+                                value="1"
+                                @checked($basvuruDogrulamaSms)
+                                @disabled(! $guncelleyebilir)
+                            >
+                            <span>SMS</span>
+                        </label>
+                    </div>
+                    <div class="form-group form-group-switch">
+                        <label class="switch-label" for="genel-basvuru-dogrulama-eposta">
+                            <input type="hidden" name="basvuru_dogrulama_eposta" value="0">
+                            <input
+                                type="checkbox"
+                                id="genel-basvuru-dogrulama-eposta"
+                                name="basvuru_dogrulama_eposta"
+                                value="1"
+                                @checked($basvuruDogrulamaEposta)
+                                @disabled(! $guncelleyebilir)
+                            >
+                            <span>E-posta</span>
+                        </label>
+                    </div>
+                </div>
+                <p class="form-hint">İkisi birden seçilirse aynı doğrulama kodu hem telefona hem e-posta adresine gönderilir. Kod, başvuruyu yapan kişinin kayıtlı telefonuna / e-posta adresine gönderilir.</p>
+                @error('basvuru_dogrulama_kanal')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
         <div class="sertifika-ayarlar-block">
             <div class="sertifika-ayarlar-block-head">
                 <h3 class="sertifika-ayarlar-title">Başvuru ayarları</h3>

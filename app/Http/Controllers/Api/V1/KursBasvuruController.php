@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\Cinsiyet;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesPortalBasvuruKatilimci;
+use App\Http\Controllers\Api\V1\Concerns\VerifiesBasvuruDogrulamaKodu;
 use App\Http\Resources\Api\V1\KisiResource;
 use App\Http\Resources\Api\V1\KursBasvuruResource;
 use App\Models\BasariDurum;
@@ -30,6 +31,7 @@ use Symfony\Component\HttpFoundation\Response;
 class KursBasvuruController extends ApiController
 {
     use ResolvesPortalBasvuruKatilimci;
+    use VerifiesBasvuruDogrulamaKodu;
 
     public function store(Request $request): JsonResponse
     {
@@ -135,6 +137,8 @@ class KursBasvuruController extends ApiController
             'kvkk_onay.accepted' => 'Başvuru için KVKK metnini onaylamanız gerekir.',
             'aydinlatma_onay.accepted' => 'Başvuru için aydınlatma metnini onaylamanız gerekir.',
         ], $this->cocukBasvuruMesajlari()));
+
+        $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $basvuran);
 
         if (! $basvuran->ad || ! $basvuran->soyad || ! $basvuran->tc_kimlik_no) {
             throw ValidationException::withMessages([
@@ -356,6 +360,8 @@ class KursBasvuruController extends ApiController
 
             return $basvuru;
         });
+
+        $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
 
         $durumKod = (string) $basvuru->getAttribute('_olusturma_durum_kod');
         $yedekSira = $basvuru->getAttribute('_olusturma_yedek_sira');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BasvuruDogrulamaController;
 use App\Http\Controllers\Api\V1\BasvurularimController;
 use App\Http\Controllers\Api\V1\EtkinlikBasvuruController;
 use App\Http\Controllers\Api\V1\EtkinlikController;
@@ -54,6 +55,14 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:portal-giris')
             ->name('api.v1.auth.login');
 
+        Route::post('/login/dogrulama', [AuthController::class, 'loginDogrulama'])
+            ->middleware('throttle:portal-giris-dogrulama')
+            ->name('api.v1.auth.login.dogrulama');
+
+        Route::post('/login/dogrulama/yenile', [AuthController::class, 'loginKodYenile'])
+            ->middleware('throttle:portal-giris-kod-yenile')
+            ->name('api.v1.auth.login.dogrulama.yenile');
+
         Route::post('/refresh', [AuthController::class, 'refresh'])
             ->middleware('throttle:portal-token-yenile')
             ->name('api.v1.auth.refresh');
@@ -69,6 +78,13 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('jwt')->group(function () {
         Route::get('/basvurularim', [BasvurularimController::class, 'index'])->name('api.v1.basvurularim');
+
+        Route::post('/basvuru-dogrulama/kod', [BasvuruDogrulamaController::class, 'gonder'])
+            ->middleware('throttle:portal-basvuru-dogrulama-kod')
+            ->name('api.v1.basvuru-dogrulama.kod');
+        Route::post('/basvuru-dogrulama/kod/yenile', [BasvuruDogrulamaController::class, 'yenile'])
+            ->middleware('throttle:portal-basvuru-dogrulama-kod')
+            ->name('api.v1.basvuru-dogrulama.kod.yenile');
 
         Route::get('/kres-basvuru', [KresBasvuruController::class, 'durum'])->name('api.v1.kres-basvuru.durum');
         Route::get('/kres-basvuru/okullar', [KresBasvuruController::class, 'okullar'])->name('api.v1.kres-basvuru.okullar');
