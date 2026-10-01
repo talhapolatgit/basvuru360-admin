@@ -51,6 +51,14 @@ Route::prefix('v1')->group(function () {
             ->middleware('throttle:portal-kayit')
             ->name('api.v1.auth.register');
 
+        Route::post('/register/dogrulama', [AuthController::class, 'registerDogrulama'])
+            ->middleware('throttle:portal-giris-dogrulama')
+            ->name('api.v1.auth.register.dogrulama');
+
+        Route::post('/register/dogrulama/yenile', [AuthController::class, 'registerKodYenile'])
+            ->middleware('throttle:portal-giris-kod-yenile')
+            ->name('api.v1.auth.register.dogrulama.yenile');
+
         Route::post('/login', [AuthController::class, 'login'])
             ->middleware('throttle:portal-giris')
             ->name('api.v1.auth.login');

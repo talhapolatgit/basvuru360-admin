@@ -513,7 +513,7 @@
         <div class="sertifika-ayarlar-block" data-dogrulama-blok>
             <div class="sertifika-ayarlar-block-head">
                 <h3 class="sertifika-ayarlar-title">2 Aşamalı Doğrulama</h3>
-                <p class="sertifika-ayarlar-desc">Açıkken vatandaşlar portala giriş yaparken bilgilerine ek olarak seçilen yöntemle gönderilen doğrulama kodunu girer.</p>
+                <p class="sertifika-ayarlar-desc">Açıkken vatandaşlar portala giriş yaparken ve yeni üyelik oluştururken seçilen yöntemle gönderilen doğrulama kodunu girer. Üyelik, kod doğrulanmadan oluşturulmaz.</p>
             </div>
 
             <div class="form-group form-group-switch">

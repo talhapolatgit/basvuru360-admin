@@ -12,6 +12,7 @@ use App\Services\GenelAyarServisi;
 use App\Services\Jwt\JwtTokenServisi;
 use App\Services\PortalGirisKilitServisi;
 use App\Services\PortalIkiAsamaliDogrulamaServisi;
+use App\Services\PortalKayitDogrulamaServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,14 @@ use UnexpectedValueException;
 
 class AuthController extends ApiController
 {
-    public function register(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar): JsonResponse
+    public function register(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalKayitDogrulamaServisi $otp): JsonResponse
     {
         $yontem = $ayarlar->kisiGirisYontemi();
+        $kanallar = $ayarlar->portalIkiAsamaliKanallari();
+
+        $request->merge([
+            'telefon' => preg_replace('/\s+/', '', (string) $request->input('telefon', '')),
+        ]);
 
         $rules = [
             'ad' => ['required', 'string', 'max:100'],
@@ -66,22 +72,103 @@ class AuthController extends ApiController
             }
         }
 
+        if (in_array('sms', $kanallar, true)) {
+            $rules['telefon'] = ['required', 'string', 'regex:/^05\d{9}$/'];
+            $messages['telefon.regex'] = 'Doğrulama kodu gönderilebilmesi için telefon numarasını 05XXXXXXXXX formatında girin.';
+        }
+        if ($kanallar === ['eposta']) {
+            $rules['email'] = ['required', 'email', 'max:150', 'unique:kisiler,email'];
+            $messages['email.required'] = 'Doğrulama kodu gönderilebilmesi için e-posta adresi zorunludur.';
+            $messages['email.unique'] = 'Bu e-posta adresi ile kayıt zaten var.';
+        }
+
         $validated = $request->validate($rules, $messages);
 
-        $kisi = Kisi::query()->create([
+        $kayit = [
             'ad' => trim($validated['ad']),
             'soyad' => trim($validated['soyad']),
             'tc_kimlik_no' => $validated['tc_kimlik_no'],
             'dogum_tarihi' => $validated['dogum_tarihi'],
             'telefon' => trim($validated['telefon']),
             'email' => isset($validated['email']) ? mb_strtolower(trim($validated['email'])) : null,
-            'password' => $validated['password'] ?? null,
+            'password' => isset($validated['password']) ? Hash::make($validated['password']) : null,
             'cinsiyet' => $validated['cinsiyet'] ?? null,
             'il' => $validated['il'] ?? null,
             'ilce' => $validated['ilce'] ?? null,
             'adres' => $validated['adres'] ?? null,
-            'aktif' => true,
+        ];
+
+        if ($kanallar !== []) {
+            try {
+                $dogrulama = $otp->baslat(PortalKayitDogrulamaServisi::geciciKisi($kayit), $kanallar, $kayit);
+            } catch (RuntimeException $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+
+            return $this->success([
+                'iki_asamali' => true,
+                ...$dogrulama,
+            ], 'Doğrulama kodu gönderildi.');
+        }
+
+        return $this->kayitOlustur($kayit, $jwt, $yontem);
+    }
+
+    public function registerDogrulama(Request $request, JwtTokenServisi $jwt, GenelAyarServisi $ayarlar, PortalKayitDogrulamaServisi $otp): JsonResponse
+    {
+        $validated = $request->validate([
+            'dogrulama_token' => ['required', 'string'],
+            'kod' => ['required', 'string', 'max:12'],
+        ], [
+            'dogrulama_token.required' => 'Doğrulama oturumu bulunamadı. Lütfen kayıt formunu tekrar gönderin.',
+            'kod.required' => 'Doğrulama kodu zorunludur.',
         ]);
+
+        try {
+            $kayit = $otp->kayitBilgileri($validated['dogrulama_token'], $validated['kod']);
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422, ['kod' => [$e->getMessage()]]);
+        }
+
+        $mevcut = Kisi::query()
+            ->where('tc_kimlik_no', $kayit['tc_kimlik_no'])
+            ->when($kayit['email'], fn ($q, $email) => $q->orWhereRaw('LOWER(email) = ?', [$email]))
+            ->exists();
+        if ($mevcut) {
+            $otp->tamamla($validated['dogrulama_token']);
+
+            return $this->error('Bu T.C. kimlik numarası veya e-posta adresi ile kayıt zaten var.', 422);
+        }
+
+        $yanit = $this->kayitOlustur($kayit, $jwt, $ayarlar->kisiGirisYontemi());
+        $otp->tamamla($validated['dogrulama_token']);
+
+        return $yanit;
+    }
+
+    public function registerKodYenile(Request $request, PortalKayitDogrulamaServisi $otp): JsonResponse
+    {
+        $validated = $request->validate([
+            'dogrulama_token' => ['required', 'string'],
+        ], [
+            'dogrulama_token.required' => 'Doğrulama oturumu bulunamadı. Lütfen kayıt formunu tekrar gönderin.',
+        ]);
+
+        try {
+            $sonuc = $otp->yenidenGonder($validated['dogrulama_token']);
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success($sonuc, 'Yeni doğrulama kodu gönderildi.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $kayit
+     */
+    private function kayitOlustur(array $kayit, JwtTokenServisi $jwt, KisiGirisYontemi $yontem): JsonResponse
+    {
+        $kisi = Kisi::query()->create([...$kayit, 'aktif' => true]);
 
         $tokens = $jwt->tokenCiftiOlustur($kisi);
 

@@ -44,15 +44,33 @@ abstract class PortalDogrulamaKoduServisi
     /** Oturum geçersiz olduğunda kullanıcıya ne yapması gerektiğini söyleyen cümle. */
     abstract protected function yenidenBaslatMesaji(): string;
 
+    /** Aynı kişiye ait önceki oturumu bulmak için kullanılan anahtar. */
+    protected function sahipAnahtari(Kisi $kisi): string
+    {
+        return (string) $kisi->id;
+    }
+
+    /**
+     * Kodun gönderileceği / doğrulama sonunda dönülecek kişi.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    protected function kisiCoz(array $payload): ?Kisi
+    {
+        return isset($payload['kisi_id']) ? Kisi::query()->find($payload['kisi_id']) : null;
+    }
+
     /**
      * @param  list<'sms'|'eposta'>  $kanallar
+     * @param  array<string, mixed>  $ek  Oturumla birlikte saklanacak ek veri.
      * @return array{dogrulama_token: string, hedefler: list<array{kanal: string, hedef: string}>, ttl_dakika: int, yeniden_gonderim_saniye: int}
      *
      * @throws RuntimeException
      */
-    public function baslat(Kisi $kisi, array $kanallar): array
+    public function baslat(Kisi $kisi, array $kanallar, array $ek = []): array
     {
-        $oncekiAnahtar = Cache::get($this->kisiKey($kisi->id));
+        $sahip = $this->sahipAnahtari($kisi);
+        $oncekiAnahtar = Cache::get($this->kisiKey($sahip));
         if (is_string($oncekiAnahtar)) {
             $onceki = Cache::get($oncekiAnahtar);
             if ($this->baslatmadaBeklemeUygula && is_array($onceki)) {
@@ -66,12 +84,14 @@ abstract class PortalDogrulamaKoduServisi
 
         Cache::put($this->cacheKey($token), [
             'kisi_id' => $kisi->id,
+            'sahip' => $sahip,
             'kanallar' => $kanallar,
+            'ek' => $ek,
             'hash' => Hash::make($kod),
             'attempts' => 0,
             'sent_at' => now()->timestamp,
         ], self::TTL_SECONDS);
-        Cache::put($this->kisiKey($kisi->id), $this->cacheKey($token), self::TTL_SECONDS);
+        Cache::put($this->kisiKey($sahip), $this->cacheKey($token), self::TTL_SECONDS);
 
         return [
             'dogrulama_token' => $token,
@@ -89,7 +109,7 @@ abstract class PortalDogrulamaKoduServisi
     public function yenidenGonder(string $token, ?Kisi $sahip = null): array
     {
         $payload = $this->payload($token, $sahip);
-        $kisi = $sahip ?? Kisi::query()->find($payload['kisi_id']);
+        $kisi = $sahip ?? $this->kisiCoz($payload);
         if (! $kisi) {
             throw new RuntimeException($this->gecersizMesaji());
         }
@@ -104,7 +124,7 @@ abstract class PortalDogrulamaKoduServisi
             'attempts' => 0,
             'sent_at' => now()->timestamp,
         ], self::TTL_SECONDS);
-        Cache::put($this->kisiKey($kisi->id), $this->cacheKey($token), self::TTL_SECONDS);
+        Cache::put($this->kisiKey($payload['sahip'] ?? (string) $payload['kisi_id']), $this->cacheKey($token), self::TTL_SECONDS);
 
         return [
             'hedefler' => $hedefler,
@@ -119,6 +139,26 @@ abstract class PortalDogrulamaKoduServisi
      * @throws RuntimeException
      */
     public function kontrol(string $token, string $kod, ?Kisi $sahip = null): Kisi
+    {
+        $payload = $this->kodKontrol($token, $kod, $sahip);
+
+        $kisi = $sahip ?? $this->kisiCoz($payload);
+        if (! $kisi) {
+            $this->tamamla($token);
+            throw new RuntimeException($this->gecersizMesaji());
+        }
+
+        return $kisi;
+    }
+
+    /**
+     * Kodu kontrol eder ve doğruysa oturum verisini döner; oturumu kapatmaz.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RuntimeException
+     */
+    protected function kodKontrol(string $token, string $kod, ?Kisi $sahip = null): array
     {
         $payload = $this->payload($token, $sahip);
         $attempts = (int) $payload['attempts'];
@@ -143,13 +183,7 @@ abstract class PortalDogrulamaKoduServisi
             throw new RuntimeException("Doğrulama kodu hatalı. Kalan deneme: {$kalan}.");
         }
 
-        $kisi = $sahip ?? Kisi::query()->find($payload['kisi_id']);
-        if (! $kisi) {
-            $this->tamamla($token);
-            throw new RuntimeException($this->gecersizMesaji());
-        }
-
-        return $kisi;
+        return $payload;
     }
 
     /**
@@ -170,14 +204,14 @@ abstract class PortalDogrulamaKoduServisi
         $payload = $token !== '' ? Cache::get($this->cacheKey($token)) : null;
         Cache::forget($this->cacheKey($token));
 
-        if (is_array($payload) && isset($payload['kisi_id'])
-            && Cache::get($this->kisiKey((int) $payload['kisi_id'])) === $this->cacheKey($token)) {
-            Cache::forget($this->kisiKey((int) $payload['kisi_id']));
+        $sahip = is_array($payload) ? ($payload['sahip'] ?? (string) ($payload['kisi_id'] ?? '')) : '';
+        if ($sahip !== '' && Cache::get($this->kisiKey($sahip)) === $this->cacheKey($token)) {
+            Cache::forget($this->kisiKey($sahip));
         }
     }
 
     /**
-     * @return array{kisi_id: int, kanallar: list<string>, hash: string, attempts: int, sent_at: int}
+     * @return array{kisi_id: int|null, sahip?: string, kanallar: list<string>, ek?: array<string, mixed>, hash: string, attempts: int, sent_at: int}
      */
     private function payload(string $token, ?Kisi $sahip): array
     {
@@ -271,9 +305,9 @@ abstract class PortalDogrulamaKoduServisi
         return $this->anahtarOnEki().':'.hash('sha256', $token);
     }
 
-    private function kisiKey(int $kisiId): string
+    private function kisiKey(string $sahip): string
     {
-        return $this->anahtarOnEki().'_kisi:'.$kisiId;
+        return $this->anahtarOnEki().'_kisi:'.$sahip;
     }
 
     private function ttlDakika(): int
