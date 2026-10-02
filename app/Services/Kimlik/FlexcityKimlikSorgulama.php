@@ -13,7 +13,7 @@ use Throwable;
  */
 class FlexcityKimlikSorgulama implements KimlikSorgulama
 {
-    private const VARSAYILAN_TIMEOUT = 15;
+    private const VARSAYILAN_TIMEOUT = 30;
 
     private const MEDENI_HAL = [
         'BEKAR' => 'Bekar',
@@ -43,18 +43,25 @@ class FlexcityKimlikSorgulama implements KimlikSorgulama
             return ['ok' => false, 'message' => 'Kimlik sorgulama için doğum tarihi zorunludur.'];
         }
 
+        $timeout = $this->timeout();
+
         try {
-            $response = Http::timeout($this->timeout())
-                ->acceptJson()
+            $response = Http::timeout($timeout)
+                ->connectTimeout(min($timeout, 10))
+                ->accept('*/*')
                 ->withHeaders(['Authorization' => $authorization])
-                ->asForm()
-                ->post($adres, [
+                ->withBody(http_build_query([
                     'dogumTarihi' => $this->servisTarihi($dogumTarihi),
                     'tcKimlikNo' => $tcKimlikNo,
-                ]);
+                ]), 'application/json')
+                ->post($adres);
         } catch (ConnectionException $e) {
             if (preg_match('/cURL error (35|51|58|59|60|77|83)\b/', $e->getMessage())) {
                 throw new RuntimeException('Kimlik servisinin SSL sertifikası doğrulanamadı. Sunucudaki PHP CA sertifika paketini (curl.cainfo) kontrol edin.');
+            }
+
+            if (str_contains($e->getMessage(), 'cURL error 28')) {
+                throw new RuntimeException("Kimlik servisi {$timeout} saniye içinde yanıt vermedi (zaman aşımı). Lütfen tekrar deneyin.");
             }
 
             throw new RuntimeException('Kimlik servisine şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin.');
@@ -65,7 +72,9 @@ class FlexcityKimlikSorgulama implements KimlikSorgulama
         }
 
         if ($response->failed()) {
-            throw new RuntimeException("Kimlik servisi hata döndürdü (HTTP {$response->status()}). Lütfen daha sonra tekrar deneyin.");
+            $detay = $this->servisMesaji($response->json());
+
+            throw new RuntimeException("Kimlik servisi hata döndürdü (HTTP {$response->status()})".($detay ? ": {$detay}" : '. Lütfen daha sonra tekrar deneyin.'));
         }
 
         $json = $response->json();
@@ -75,13 +84,10 @@ class FlexcityKimlikSorgulama implements KimlikSorgulama
 
         $kisi = $json['sbsKisiDto'] ?? null;
         if (! ($json['success'] ?? false) || ! is_array($kisi) || blank($kisi['adi'] ?? null)) {
-            $mesaj = $json['message'] ?? $json['errorMessage'] ?? $json['hata'] ?? null;
-
             return [
                 'ok' => false,
-                'message' => is_string($mesaj) && $mesaj !== ''
-                    ? $mesaj
-                    : 'T.C. kimlik numarası ve doğum tarihi ile eşleşen kimlik kaydı bulunamadı.',
+                'message' => $this->servisMesaji($json)
+                    ?? 'T.C. kimlik numarası ve doğum tarihi ile eşleşen kimlik kaydı bulunamadı.',
             ];
         }
 
@@ -140,6 +146,21 @@ class FlexcityKimlikSorgulama implements KimlikSorgulama
         $metin = trim((string) $deger);
 
         return $metin === '' ? null : $metin;
+    }
+
+    private function servisMesaji(mixed $json): ?string
+    {
+        if (! is_array($json)) {
+            return null;
+        }
+
+        foreach (['resultMessage', 'message', 'errorMessage', 'hata'] as $anahtar) {
+            if (is_string($json[$anahtar] ?? null) && trim($json[$anahtar]) !== '') {
+                return trim($json[$anahtar]);
+            }
+        }
+
+        return null;
     }
 
     private function timeout(): int
