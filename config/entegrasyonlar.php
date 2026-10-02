@@ -146,6 +146,34 @@ return [
             'aciklama' => 'Gerçek kimlik servisine bağlanmaz; sabit demo yanıt döner. Geliştirme ve test için uygundur.',
         ],
 
+        'flexcity_kimlik' => [
+            'tur' => 'kimlik_sorgulama',
+            'ad' => 'Flexcity',
+            'aciklama' => 'Flexcity SBS servisi üzerinden NVİ kimlik sorgulaması yapar (FindSbsKisiDtoByNvi).',
+            'alanlar' => [
+                'adres' => [
+                    'etiket' => 'Servis adresi',
+                    'tip' => 'text',
+                    'zorunlu' => true,
+                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/sbs/FindSbsKisiDtoByNvi',
+                    'placeholder' => 'https://.../FlexCityUi/rest/json/sbs/FindSbsKisiDtoByNvi',
+                ],
+                'authorization' => [
+                    'etiket' => 'Authorization',
+                    'tip' => 'password',
+                    'zorunlu' => true,
+                    'gizli' => true,
+                ],
+                'timeout' => [
+                    'etiket' => 'Zaman aşımı (saniye)',
+                    'tip' => 'number',
+                    'zorunlu' => false,
+                    'varsayilan' => '15',
+                    'placeholder' => '15',
+                ],
+            ],
+        ],
+
         'demo_adres' => [
             'tur' => 'adres_sorgulama',
             'ad' => 'Demo Adres Sorgulama',

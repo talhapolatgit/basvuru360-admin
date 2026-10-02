@@ -10,6 +10,7 @@ use App\Services\Email\GmailApiEmailSender;
 use App\Services\Email\LogEmailSender;
 use App\Services\Email\SmtpEmailSender;
 use App\Services\Kimlik\DemoKimlikSorgulama;
+use App\Services\Kimlik\FlexcityKimlikSorgulama;
 use App\Services\Kimlik\KimlikSorgulama;
 use App\Services\Sms\DemoSmsSender;
 use App\Services\Sms\HttpSmsSender;
@@ -31,43 +32,62 @@ class EntegrasyonCozumleyici
     {
         $this->assertTurAktif('sms', 'SMS');
 
-        return match ($this->ayarlar->aktifSaglayiciKod('sms')) {
-            'demo_sms' => new DemoSmsSender,
-            // İleride eklenecek sağlayıcı örnekleri:
-            // 'http_sms' => new HttpSmsSender,
-            default => $this->smsFallback(),
-        };
+        return $this->ornek('sms', $this->ayarlar->aktifSaglayiciKod('sms'));
     }
 
     public function emailSender(): EmailSender
     {
         $this->assertTurAktif('eposta', 'E-posta');
 
-        return match ($this->ayarlar->aktifSaglayiciKod('eposta')) {
-            'demo_eposta' => new DemoEmailSender,
-            'smtp' => new SmtpEmailSender($this->ayarlar->saglayiciAyarlari('eposta', 'smtp')),
-            'gmail_api' => new GmailApiEmailSender($this->ayarlar->saglayiciAyarlari('eposta', 'gmail_api')),
-            default => $this->emailFallback(),
-        };
+        return $this->ornek('eposta', $this->ayarlar->aktifSaglayiciKod('eposta'));
     }
 
     public function kimlikSorgulama(): KimlikSorgulama
     {
         $this->assertTurAktif('kimlik_sorgulama', 'Kimlik sorgulama');
 
-        return match ($this->ayarlar->aktifSaglayiciKod('kimlik_sorgulama')) {
-            'demo_kimlik' => new DemoKimlikSorgulama,
-            default => throw new RuntimeException('Aktif kimlik sorgulama sağlayıcısı bulunamadı.'),
-        };
+        return $this->ornek('kimlik_sorgulama', $this->ayarlar->aktifSaglayiciKod('kimlik_sorgulama'));
     }
 
     public function adresSorgulama(): AdresSorgulama
     {
         $this->assertTurAktif('adres_sorgulama', 'Adres sorgulama');
 
-        return match ($this->ayarlar->aktifSaglayiciKod('adres_sorgulama')) {
-            'demo_adres' => new DemoAdresSorgulama,
-            default => throw new RuntimeException('Aktif adres sorgulama sağlayıcısı bulunamadı.'),
+        return $this->ornek('adres_sorgulama', $this->ayarlar->aktifSaglayiciKod('adres_sorgulama'));
+    }
+
+    /**
+     * Sağlayıcı örneğini aktiflik kontrolü yapmadan üretir. Ayarlar verilmezse kayıtlı ayarlar kullanılır.
+     *
+     * @param  array<string, mixed>|null  $ayarlar
+     */
+    public function ornek(string $tur, string $kod, ?array $ayarlar = null): SmsSender|EmailSender|KimlikSorgulama|AdresSorgulama
+    {
+        $ayar = fn () => $ayarlar ?? $this->ayarlar->saglayiciAyarlari($tur, $kod);
+
+        return match ($tur) {
+            'sms' => match ($kod) {
+                'demo_sms' => new DemoSmsSender,
+                // İleride eklenecek sağlayıcı örnekleri:
+                // 'http_sms' => new HttpSmsSender,
+                default => $this->smsFallback(),
+            },
+            'eposta' => match ($kod) {
+                'demo_eposta' => new DemoEmailSender,
+                'smtp' => new SmtpEmailSender($ayar()),
+                'gmail_api' => new GmailApiEmailSender($ayar()),
+                default => $this->emailFallback(),
+            },
+            'kimlik_sorgulama' => match ($kod) {
+                'demo_kimlik' => new DemoKimlikSorgulama,
+                'flexcity_kimlik' => new FlexcityKimlikSorgulama($ayar()),
+                default => throw new RuntimeException('Aktif kimlik sorgulama sağlayıcısı bulunamadı.'),
+            },
+            'adres_sorgulama' => match ($kod) {
+                'demo_adres' => new DemoAdresSorgulama,
+                default => throw new RuntimeException('Aktif adres sorgulama sağlayıcısı bulunamadı.'),
+            },
+            default => throw new RuntimeException('Bilinmeyen entegrasyon türü.'),
         };
     }
 

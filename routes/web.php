@@ -148,6 +148,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/entegrasyonlar', [EntegrasyonController::class, 'index'])->middleware('yetki:entegrasyon.goruntule')->name('entegrasyonlar.index');
     Route::put('/entegrasyonlar', [EntegrasyonController::class, 'update'])->middleware('yetki:entegrasyon.guncelle')->name('entegrasyonlar.update');
     Route::put('/entegrasyonlar/{tur}/{saglayici}/ayarlar', [EntegrasyonController::class, 'updateAyarlar'])->middleware('yetki:entegrasyon.guncelle')->name('entegrasyonlar.ayarlar.update');
+    Route::post('/entegrasyonlar/{tur}/{saglayici}/test', [EntegrasyonController::class, 'test'])->middleware(['yetki:entegrasyon.guncelle', 'throttle:20,1'])->name('entegrasyonlar.test');
     Route::get('/guvenilir-ip-adresleri', [GuvenilirIpAdresiController::class, 'index'])->middleware('yetki:guvenilir_ip.goruntule')->name('guvenilir-ip-adresleri.index');
     Route::post('/guvenilir-ip-adresleri', [GuvenilirIpAdresiController::class, 'store'])->middleware('yetki:guvenilir_ip.guncelle')->name('guvenilir-ip-adresleri.store');
     Route::put('/guvenilir-ip-adresleri/{guvenilirIpAdresi}', [GuvenilirIpAdresiController::class, 'update'])->middleware('yetki:guvenilir_ip.guncelle')->name('guvenilir-ip-adresleri.update');

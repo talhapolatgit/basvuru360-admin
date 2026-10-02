@@ -4,6 +4,91 @@ function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
+const TEST_ALAN_ETIKETLERI = {
+    ad: 'Ad',
+    soyad: 'Soyad',
+    cinsiyet: 'Cinsiyet',
+    dogum_tarihi: 'Doğum tarihi',
+    dogum_yeri: 'Doğum yeri',
+    medeni_durum: 'Medeni durum',
+    uyruk: 'Uyruk',
+    anne_adi: 'Anne adı',
+    baba_adi: 'Baba adı',
+    il: 'İl',
+    ilce: 'İlçe',
+    mahalle: 'Mahalle',
+    adres: 'Adres',
+};
+
+function renderTestSonuc(kutu, data) {
+    kutu.replaceChildren();
+    kutu.hidden = false;
+    kutu.classList.toggle('is-basarili', Boolean(data.ok));
+    kutu.classList.toggle('is-hatali', !data.ok);
+
+    const baslik = document.createElement('p');
+    baslik.className = 'entegrasyon-test-sonuc-baslik';
+    const sure = Number.isFinite(data.sure_ms) ? ` (${data.sure_ms} ms)` : '';
+    baslik.textContent = `${data.ok ? 'Başarılı' : 'Başarısız'}${sure}: ${data.message || ''}`;
+    kutu.appendChild(baslik);
+
+    const satirlar = Object.entries(data.veri || {}).filter(
+        ([, deger]) => deger !== null && deger !== '' && typeof deger !== 'object'
+    );
+    if (satirlar.length === 0) return;
+
+    const dl = document.createElement('dl');
+    satirlar.forEach(([anahtar, deger]) => {
+        const dt = document.createElement('dt');
+        dt.textContent = TEST_ALAN_ETIKETLERI[anahtar] || anahtar;
+        const dd = document.createElement('dd');
+        dd.textContent = String(deger);
+        dl.append(dt, dd);
+    });
+    kutu.appendChild(dl);
+}
+
+async function runTest(testRoot) {
+    const form = testRoot.closest('form');
+    const btn = testRoot.querySelector('[data-entegrasyon-test-btn]');
+    const kutu = testRoot.querySelector('[data-entegrasyon-test-sonuc]');
+    if (!form || !btn || !kutu || btn.disabled) return;
+
+    const body = new FormData(form);
+    body.delete('_method');
+
+    const previousLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Test ediliyor...';
+    kutu.hidden = true;
+
+    try {
+        const response = await fetch(testRoot.dataset.url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': csrfToken(),
+            },
+            body,
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const firstError = data?.errors ? Object.values(data.errors).flat()[0] : data?.message;
+            renderTestSonuc(kutu, { ok: false, message: firstError || 'Test yapılamadı.' });
+            return;
+        }
+
+        renderTestSonuc(kutu, data);
+    } catch {
+        renderTestSonuc(kutu, { ok: false, message: 'Sunucuya ulaşılamadı.' });
+    } finally {
+        btn.disabled = false;
+        btn.textContent = previousLabel || 'Test Et';
+    }
+}
+
 function openModal(modal) {
     if (!modal) return;
     modal.hidden = false;
@@ -138,10 +223,30 @@ export function initEntegrasyonlarPage() {
             return;
         }
 
+        const testBtn = event.target.closest('[data-entegrasyon-test-btn]');
+        if (testBtn) {
+            runTest(testBtn.closest('[data-entegrasyon-test]'));
+            return;
+        }
+
         const closeBtn = event.target.closest('[data-entegrasyon-ayar-close]');
         if (closeBtn) {
             closeModal(closeBtn.closest('[data-entegrasyon-ayar-modal]'));
         }
+    });
+
+    root.querySelectorAll('[data-test-alan="tc_kimlik_no"], [data-test-alan="telefon"]').forEach((input) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '').slice(0, 11);
+        });
+    });
+
+    root.querySelectorAll('[data-entegrasyon-test] input').forEach((input) => {
+        input.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            runTest(input.closest('[data-entegrasyon-test]'));
+        });
     });
 
     root.addEventListener('keydown', (event) => {

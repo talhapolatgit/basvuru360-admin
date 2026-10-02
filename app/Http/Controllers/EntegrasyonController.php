@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Entegrasyon\EntegrasyonAyarServisi;
+use App\Services\Entegrasyon\EntegrasyonCozumleyici;
 use App\Services\LogKaydedici;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class EntegrasyonController extends Controller
 {
@@ -144,29 +147,10 @@ class EntegrasyonController extends Controller
             abort(404);
         }
 
-        $rules = [
+        $validated = $request->validate([
             'ayarlar' => ['required', 'array'],
-        ];
-
-        foreach ($alanTanimlari as $alan => $tanim) {
-            $tip = (string) ($tanim['tip'] ?? 'text');
-            $alanKurallari = ['nullable'];
-
-            $alanKurallari[] = match ($tip) {
-                'email' => 'email',
-                'number' => 'numeric',
-                'select' => Rule::in(array_map('strval', array_keys((array) ($tanim['secenekler'] ?? [])))),
-                default => 'string',
-            };
-
-            if ($tip !== 'number' && $tip !== 'select') {
-                $alanKurallari[] = 'max:500';
-            }
-
-            $rules["ayarlar.{$alan}"] = $alanKurallari;
-        }
-
-        $validated = $request->validate($rules, [
+            ...$this->ayarKurallari($alanTanimlari),
+        ], [
             'ayarlar.required' => 'Ayar alanları zorunludur.',
             'ayarlar.*.email' => 'Geçerli bir e-posta adresi girin.',
         ]);
@@ -197,5 +181,137 @@ class EntegrasyonController extends Controller
             'message' => $message,
             'turler' => $servis->ekranVerisi(),
         ]);
+    }
+
+    /**
+     * Ayar penceresindeki (henüz kaydedilmemiş olabilecek) değerlerle sağlayıcıyı dener.
+     * Boş bırakılan gizli alanlar için kayıtlı değer kullanılır.
+     */
+    public function test(
+        Request $request,
+        EntegrasyonAyarServisi $servis,
+        EntegrasyonCozumleyici $cozumleyici,
+        string $tur,
+        string $saglayici,
+    ): JsonResponse {
+        $izinli = $servis->saglayicilar($tur);
+
+        if (! array_key_exists($tur, $servis->turler()) || ! array_key_exists($saglayici, $izinli)) {
+            abort(404);
+        }
+
+        $alanTanimlari = (array) ($izinli[$saglayici]['alanlar'] ?? []);
+
+        $rules = [
+            'ayarlar' => ['nullable', 'array'],
+            ...$this->ayarKurallari($alanTanimlari),
+        ];
+        $rules += match ($tur) {
+            'kimlik_sorgulama', 'adres_sorgulama' => [
+                'test.tc_kimlik_no' => ['required', 'digits:11'],
+                'test.dogum_tarihi' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            ],
+            'sms' => ['test.telefon' => ['required', 'string', 'regex:/^05\d{9}$/']],
+            'eposta' => ['test.email' => ['required', 'email', 'max:150']],
+            default => [],
+        };
+
+        $validated = $request->validate($rules, [
+            'test.tc_kimlik_no.required' => 'Test için T.C. kimlik numarası girin.',
+            'test.tc_kimlik_no.digits' => 'T.C. kimlik numarası 11 haneli olmalıdır.',
+            'test.dogum_tarihi.required' => 'Test için doğum tarihi girin.',
+            'test.dogum_tarihi.*' => 'Geçerli bir doğum tarihi girin.',
+            'test.telefon.required' => 'Test için telefon numarası girin.',
+            'test.telefon.regex' => 'Telefon 05XXXXXXXXX biçiminde olmalıdır.',
+            'test.email.required' => 'Test için e-posta adresi girin.',
+            'test.email.email' => 'Geçerli bir e-posta adresi girin.',
+            'ayarlar.*.email' => 'Geçerli bir e-posta adresi girin.',
+        ]);
+
+        $kayitli = $servis->saglayiciAyarlari($tur, $saglayici);
+        $gelen = (array) ($validated['ayarlar'] ?? []);
+        $ayarlar = [];
+        foreach ($alanTanimlari as $alan => $tanim) {
+            $gizli = (bool) ($tanim['gizli'] ?? (($tanim['tip'] ?? '') === 'password'));
+            $deger = $gelen[$alan] ?? null;
+            $ayarlar[$alan] = ($deger === null || $deger === '') && $gizli ? ($kayitli[$alan] ?? null) : $deger;
+        }
+
+        $test = (array) ($validated['test'] ?? []);
+        $saglayiciAd = (string) ($izinli[$saglayici]['ad'] ?? $saglayici);
+        $baslangic = microtime(true);
+
+        try {
+            $ornek = $cozumleyici->ornek($tur, $saglayici, $ayarlar);
+            $sonuc = match ($tur) {
+                'kimlik_sorgulama', 'adres_sorgulama' => $ornek->sorgula($test['tc_kimlik_no'], $test['dogum_tarihi']),
+                'sms' => $ornek->send(
+                    $test['telefon'],
+                    'Başvuru360 entegrasyon testi: '.$saglayiciAd.' SMS gönderimi başarılı.',
+                    ['gonderen_id' => auth()->id(), 'kapsam' => 'entegrasyon_test'],
+                ),
+                'eposta' => $ornek->send(
+                    $test['email'],
+                    'Entegrasyon Testi',
+                    "Bu e-posta Başvuru360 entegrasyon ekranından {$saglayiciAd} sağlayıcısını test etmek için gönderildi.",
+                    ['gonderen_id' => auth()->id(), 'kapsam' => 'entegrasyon_test'],
+                ),
+                default => throw new RuntimeException('Bu entegrasyon türü için test desteklenmiyor.'),
+            };
+        } catch (RuntimeException $e) {
+            $sonuc = ['ok' => false, 'message' => $e->getMessage()];
+        } catch (Throwable $e) {
+            report($e);
+            $sonuc = ['ok' => false, 'message' => 'Test sırasında beklenmeyen bir hata oluştu: '.$e->getMessage()];
+        }
+
+        $ok = (bool) ($sonuc['ok'] ?? false);
+        $sureMs = (int) round((microtime(true) - $baslangic) * 1000);
+
+        LogKaydedici::kaydet(
+            islem: 'entegrasyon.test_edildi',
+            aciklama: "{$saglayiciAd} sağlayıcısı test edildi: ".($ok ? 'başarılı' : 'başarısız').'.',
+            konuAdi: 'Entegrasyonlar',
+            ekstra: ['tur' => $tur, 'saglayici' => $saglayici, 'basarili' => $ok, 'sure_ms' => $sureMs],
+        );
+
+        $veri = $sonuc;
+        unset($veri['ok'], $veri['message']);
+
+        return response()->json([
+            'ok' => $ok,
+            'message' => (string) ($sonuc['message'] ?? ($ok ? 'Test başarılı.' : 'Test başarısız.')),
+            'sure_ms' => $sureMs,
+            'veri' => $ok ? $veri : [],
+        ]);
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $alanTanimlari
+     * @return array<string, list<mixed>>
+     */
+    private function ayarKurallari(array $alanTanimlari): array
+    {
+        $rules = [];
+
+        foreach ($alanTanimlari as $alan => $tanim) {
+            $tip = (string) ($tanim['tip'] ?? 'text');
+            $alanKurallari = ['nullable'];
+
+            $alanKurallari[] = match ($tip) {
+                'email' => 'email',
+                'number' => 'numeric',
+                'select' => Rule::in(array_map('strval', array_keys((array) ($tanim['secenekler'] ?? [])))),
+                default => 'string',
+            };
+
+            if ($tip !== 'number' && $tip !== 'select') {
+                $alanKurallari[] = 'max:500';
+            }
+
+            $rules["ayarlar.{$alan}"] = $alanKurallari;
+        }
+
+        return $rules;
     }
 }

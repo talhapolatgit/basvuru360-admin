@@ -223,6 +223,61 @@
                                     </div>
                                 @endforeach
                             </div>
+
+                            @if ($guncelleyebilir)
+                                @php $testOnEk = 'modal-test-'.$tur['tur'].'-'.$saglayici['kod']; @endphp
+                                <div
+                                    class="entegrasyon-test"
+                                    data-entegrasyon-test
+                                    data-url="{{ route('entegrasyonlar.test', ['tur' => $tur['tur'], 'saglayici' => $saglayici['kod']]) }}"
+                                >
+                                    <div class="entegrasyon-test-head">
+                                        <h4 class="entegrasyon-test-title">Entegrasyonu Test Et</h4>
+                                        <p class="entegrasyon-test-desc">
+                                            @switch($tur['tur'])
+                                                @case('sms')
+                                                    Girilen numaraya gerçek bir test SMS'i gönderilir.
+                                                    @break
+                                                @case('eposta')
+                                                    Girilen adrese gerçek bir test e-postası gönderilir.
+                                                    @break
+                                                @default
+                                                    Girilen kişi için servise gerçek bir sorgu gönderilir.
+                                            @endswitch
+                                            Test, pencerede girili (kaydedilmemiş olsa da) ayarlarla yapılır.
+                                        </p>
+                                    </div>
+
+                                    <div class="entegrasyon-ayarlar-grid">
+                                        @if (in_array($tur['tur'], ['kimlik_sorgulama', 'adres_sorgulama'], true))
+                                            <div class="form-group">
+                                                <label for="{{ $testOnEk }}-tc">T.C. Kimlik No</label>
+                                                <input id="{{ $testOnEk }}-tc" type="text" name="test[tc_kimlik_no]" class="form-control" inputmode="numeric" maxlength="11" autocomplete="off" data-test-alan="tc_kimlik_no">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="{{ $testOnEk }}-dogum">Doğum Tarihi</label>
+                                                <input id="{{ $testOnEk }}-dogum" type="date" name="test[dogum_tarihi]" class="form-control" max="{{ now()->format('Y-m-d') }}" data-test-alan="dogum_tarihi">
+                                            </div>
+                                        @elseif ($tur['tur'] === 'sms')
+                                            <div class="form-group entegrasyon-ayar-span-2">
+                                                <label for="{{ $testOnEk }}-telefon">Telefon</label>
+                                                <input id="{{ $testOnEk }}-telefon" type="tel" name="test[telefon]" class="form-control" inputmode="numeric" maxlength="11" placeholder="05XXXXXXXXX" autocomplete="off" data-test-alan="telefon">
+                                            </div>
+                                        @elseif ($tur['tur'] === 'eposta')
+                                            <div class="form-group entegrasyon-ayar-span-2">
+                                                <label for="{{ $testOnEk }}-email">E-posta</label>
+                                                <input id="{{ $testOnEk }}-email" type="email" name="test[email]" class="form-control" placeholder="ornek@mail.com" autocomplete="off" data-test-alan="email">
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="entegrasyon-test-actions">
+                                        <button type="button" class="btn btn-secondary" data-entegrasyon-test-btn>Test Et</button>
+                                    </div>
+
+                                    <div class="entegrasyon-test-sonuc" data-entegrasyon-test-sonuc hidden></div>
+                                </div>
+                            @endif
                         </div>
                         <div class="confirm-modal-footer">
                             <button type="button" class="btn btn-secondary btn-wide" data-entegrasyon-ayar-close>Vazgeç</button>
