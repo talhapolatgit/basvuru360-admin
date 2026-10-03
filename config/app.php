@@ -55,6 +55,11 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | Vatandaş başvuru portalının adresi (e-postalardaki "Portala Giriş Yap" bağlantısı).
+    */
+    'portal_url' => env('PORTAL_URL'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

@@ -49,6 +49,7 @@ class GenelAyarController extends ApiController
             'manuel_yakin_ekleme_aktif' => $servis->manuelYakinEklemeAktif(),
             'basvuru_dogrulama_aktif' => $servis->basvuruDogrulamaKanallari() !== [],
             'kimlik_sorgulama_aktif' => $entegrasyon->turAktifMi('kimlik_sorgulama'),
+            'adres_sorgulama_aktif' => $entegrasyon->turAktifMi('adres_sorgulama'),
         ]);
     }
 

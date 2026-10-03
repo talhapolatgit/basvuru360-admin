@@ -15,7 +15,7 @@ class DemoEmailSender implements EmailSender
             'email' => $email,
             'konu' => $konu,
             'mesaj' => $mesaj,
-            'context' => $context,
+            'context' => array_diff_key($context, ['html' => true, 'gomulu_gorseller' => true]),
         ]);
 
         return ['ok' => true, 'message' => 'demo'];

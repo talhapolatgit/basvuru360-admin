@@ -20,6 +20,49 @@ const TEST_ALAN_ETIKETLERI = {
     adres: 'Adres',
 };
 
+const CINSIYET_ETIKETLERI = { erkek: 'Erkek', kadin: 'Kadın' };
+
+function tarihGoster(deger) {
+    const [yil, ay, gun] = String(deger || '').split('-');
+    return yil && ay && gun ? `${gun}.${ay}.${yil}` : '';
+}
+
+function yakinTablosu(yakinlar) {
+    if (yakinlar.length === 0) {
+        const bos = document.createElement('p');
+        bos.textContent = 'Kayıtlı 1. derece yakın bulunamadı.';
+        return bos;
+    }
+
+    const tablo = document.createElement('table');
+    tablo.className = 'entegrasyon-test-tablo';
+
+    const baslik = tablo.createTHead().insertRow();
+    ['Yakınlık', 'T.C. Kimlik No', 'Ad Soyad', 'Cinsiyet', 'Doğum Tarihi', 'Medeni Durum'].forEach((metin) => {
+        const th = document.createElement('th');
+        th.textContent = metin;
+        baslik.appendChild(th);
+    });
+
+    const govde = tablo.createTBody();
+    yakinlar.forEach((yakin) => {
+        const satir = govde.insertRow();
+        const vefat = yakin.olum_tarihi ? ` (Vefat: ${tarihGoster(yakin.olum_tarihi)})` : '';
+        [
+            yakin.yakinlik || yakin.yakinlik_kodu || '',
+            yakin.tc_kimlik_no || '',
+            `${[yakin.ad, yakin.soyad].filter(Boolean).join(' ')}${vefat}`,
+            CINSIYET_ETIKETLERI[yakin.cinsiyet] || '',
+            tarihGoster(yakin.dogum_tarihi),
+            yakin.medeni_durum || '',
+        ].forEach((deger) => {
+            satir.insertCell().textContent = deger;
+        });
+    });
+
+    return tablo;
+}
+
 function renderTestSonuc(kutu, data) {
     kutu.replaceChildren();
     kutu.hidden = false;
@@ -31,6 +74,10 @@ function renderTestSonuc(kutu, data) {
     const sure = Number.isFinite(data.sure_ms) ? ` (${data.sure_ms} ms)` : '';
     baslik.textContent = `${data.ok ? 'Başarılı' : 'Başarısız'}${sure}: ${data.message || ''}`;
     kutu.appendChild(baslik);
+
+    if (Array.isArray(data.veri?.yakinlar)) {
+        kutu.appendChild(yakinTablosu(data.veri.yakinlar));
+    }
 
     const satirlar = Object.entries(data.veri || {}).filter(
         ([, deger]) => deger !== null && deger !== '' && typeof deger !== 'object'

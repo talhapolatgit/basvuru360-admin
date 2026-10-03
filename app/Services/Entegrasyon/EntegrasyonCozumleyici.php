@@ -4,9 +4,10 @@ namespace App\Services\Entegrasyon;
 
 use App\Services\Adres\AdresSorgulama;
 use App\Services\Adres\DemoAdresSorgulama;
+use App\Services\Adres\FlexcityAdresSorgulama;
 use App\Services\Email\DemoEmailSender;
 use App\Services\Email\EmailSender;
-use App\Services\Email\GmailApiEmailSender;
+use App\Services\Email\GmailEmailSender;
 use App\Services\Email\LogEmailSender;
 use App\Services\Email\SmtpEmailSender;
 use App\Services\Kimlik\DemoKimlikSorgulama;
@@ -16,6 +17,9 @@ use App\Services\Sms\DemoSmsSender;
 use App\Services\Sms\HttpSmsSender;
 use App\Services\Sms\LogSmsSender;
 use App\Services\Sms\SmsSender;
+use App\Services\Yakin\DemoYakinSorgulama;
+use App\Services\Yakin\FlexcityYakinSorgulama;
+use App\Services\Yakin\YakinSorgulama;
 use RuntimeException;
 
 /**
@@ -56,12 +60,19 @@ class EntegrasyonCozumleyici
         return $this->ornek('adres_sorgulama', $this->ayarlar->aktifSaglayiciKod('adres_sorgulama'));
     }
 
+    public function yakinSorgulama(): YakinSorgulama
+    {
+        $this->assertTurAktif('yakin_sorgulama', 'Yakın sorgulama');
+
+        return $this->ornek('yakin_sorgulama', $this->ayarlar->aktifSaglayiciKod('yakin_sorgulama'));
+    }
+
     /**
      * Sağlayıcı örneğini aktiflik kontrolü yapmadan üretir. Ayarlar verilmezse kayıtlı ayarlar kullanılır.
      *
      * @param  array<string, mixed>|null  $ayarlar
      */
-    public function ornek(string $tur, string $kod, ?array $ayarlar = null): SmsSender|EmailSender|KimlikSorgulama|AdresSorgulama
+    public function ornek(string $tur, string $kod, ?array $ayarlar = null): SmsSender|EmailSender|KimlikSorgulama|AdresSorgulama|YakinSorgulama
     {
         $ayar = fn () => $ayarlar ?? $this->ayarlar->saglayiciAyarlari($tur, $kod);
 
@@ -75,7 +86,7 @@ class EntegrasyonCozumleyici
             'eposta' => match ($kod) {
                 'demo_eposta' => new DemoEmailSender,
                 'smtp' => new SmtpEmailSender($ayar()),
-                'gmail_api' => new GmailApiEmailSender($ayar()),
+                'gmail' => new GmailEmailSender($ayar()),
                 default => $this->emailFallback(),
             },
             'kimlik_sorgulama' => match ($kod) {
@@ -85,7 +96,13 @@ class EntegrasyonCozumleyici
             },
             'adres_sorgulama' => match ($kod) {
                 'demo_adres' => new DemoAdresSorgulama,
+                'flexcity_adres' => new FlexcityAdresSorgulama($ayar()),
                 default => throw new RuntimeException('Aktif adres sorgulama sağlayıcısı bulunamadı.'),
+            },
+            'yakin_sorgulama' => match ($kod) {
+                'demo_yakin' => new DemoYakinSorgulama,
+                'flexcity_yakin' => new FlexcityYakinSorgulama($ayar()),
+                default => throw new RuntimeException('Aktif yakın sorgulama sağlayıcısı bulunamadı.'),
             },
             default => throw new RuntimeException('Bilinmeyen entegrasyon türü.'),
         };

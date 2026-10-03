@@ -40,6 +40,7 @@ class GenelAyarController extends Controller
             'basvuru_dogrulama_eposta' => ['nullable', 'boolean'],
             'yakin_icin_basvuru_aktif' => ['nullable', 'boolean'],
             'manuel_yakin_ekleme_aktif' => ['nullable', 'boolean'],
+            'hosgeldin_eposta_aktif' => ['nullable', 'boolean'],
             'logo' => ['nullable', 'file', 'max:5120', 'extensions:png,jpg,jpeg,svg,webp'],
             'logo_kaldir' => ['nullable', 'boolean'],
             'favicon' => ['nullable', 'file', 'max:2048', 'extensions:ico,png,jpg,jpeg,svg,webp'],
@@ -92,6 +93,7 @@ class GenelAyarController extends Controller
         $validated['sidebar_logo_arkaplan_seffaf'] = $request->boolean('sidebar_logo_arkaplan_seffaf');
         $validated['yakin_icin_basvuru_aktif'] = $request->boolean('yakin_icin_basvuru_aktif');
         $validated['manuel_yakin_ekleme_aktif'] = $request->boolean('manuel_yakin_ekleme_aktif');
+        $validated['hosgeldin_eposta_aktif'] = $request->boolean('hosgeldin_eposta_aktif');
         $validated['sidebar_logo_arkaplan'] = $servis->normalizeArkaplan($validated['sidebar_logo_arkaplan'] ?? null);
         $validated['sidebar_arkaplan'] = $servis->normalizeHexRenk(
             $validated['sidebar_arkaplan'] ?? null,
@@ -154,6 +156,7 @@ class GenelAyarController extends Controller
             'basvuru_dogrulama_eposta' => $form['basvuru_dogrulama_eposta'] ?? null,
             'yakin_icin_basvuru_aktif' => $form['yakin_icin_basvuru_aktif'] ?? null,
             'manuel_yakin_ekleme_aktif' => $form['manuel_yakin_ekleme_aktif'] ?? null,
+            'hosgeldin_eposta_aktif' => $form['hosgeldin_eposta_aktif'] ?? null,
             'sidebar_logo' => $form['sidebar_logo'] ?? null,
             'header_logo' => $form['header_logo'] ?? null,
             'sidebar_baslik' => $form['sidebar_baslik'] ?? null,

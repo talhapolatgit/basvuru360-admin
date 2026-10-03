@@ -249,7 +249,7 @@
                                     </div>
 
                                     <div class="entegrasyon-ayarlar-grid">
-                                        @if (in_array($tur['tur'], ['kimlik_sorgulama', 'adres_sorgulama'], true))
+                                        @if (in_array($tur['tur'], ['kimlik_sorgulama', 'adres_sorgulama', 'yakin_sorgulama'], true))
                                             <div class="form-group">
                                                 <label for="{{ $testOnEk }}-tc">T.C. Kimlik No</label>
                                                 <input id="{{ $testOnEk }}-tc" type="text" name="test[tc_kimlik_no]" class="form-control" inputmode="numeric" maxlength="11" autocomplete="off" data-test-alan="tc_kimlik_no">

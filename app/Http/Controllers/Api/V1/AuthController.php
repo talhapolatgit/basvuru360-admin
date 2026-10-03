@@ -6,10 +6,15 @@ use App\Enums\Cinsiyet;
 use App\Enums\KisiGirisYontemi;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Resources\Api\V1\KisiResource;
+use App\Services\Adres\AdresSorgulama;
 use App\Models\Kisi;
 use App\Models\KisiYakin;
+use App\Services\Entegrasyon\EntegrasyonAyarServisi;
 use App\Services\GenelAyarServisi;
+use App\Services\HosgeldinEpostaServisi;
 use App\Services\Jwt\JwtTokenServisi;
+use App\Services\Kimlik\KimlikSorgulama;
+use App\Services\KisiYakinServisi;
 use App\Services\PortalGirisKilitServisi;
 use App\Services\PortalIkiAsamaliDogrulamaServisi;
 use App\Services\PortalKayitDogrulamaServisi;
@@ -17,9 +22,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Throwable;
 use UnexpectedValueException;
 
 class AuthController extends ApiController
@@ -33,11 +41,20 @@ class AuthController extends ApiController
             'telefon' => preg_replace('/\s+/', '', (string) $request->input('telefon', '')),
         ]);
 
+        $sahipsizId = $this->sahipsizKisi((string) $request->input('tc_kimlik_no', ''))?->id;
+        $emailBenzersiz = Rule::unique('kisiler', 'email')->ignore($sahipsizId);
+
         $rules = [
             'ad' => ['required', 'string', 'max:100'],
             'soyad' => ['required', 'string', 'max:100'],
             'telefon' => ['required', 'string', 'regex:/^05\d{9}$/'],
-            'tc_kimlik_no' => ['required', 'digits:11', 'unique:kisiler,tc_kimlik_no'],
+            'tc_kimlik_no' => [
+                'required',
+                'digits:11',
+                Rule::unique('kisiler', 'tc_kimlik_no')->where(
+                    fn ($q) => $q->where(fn ($q) => $q->whereNotNull('portal_hesap_at')->orWhereNotNull('deleted_at'))
+                ),
+            ],
             'dogum_tarihi' => ['required', 'date_format:Y-m-d'],
             'il' => ['nullable', 'string', 'max:100'],
             'ilce' => ['nullable', 'string', 'max:100'],
@@ -57,14 +74,14 @@ class AuthController extends ApiController
         ];
 
         if ($yontem === KisiGirisYontemi::EpostaSifre) {
-            $rules['email'] = ['required', 'email', 'max:150', 'unique:kisiler,email'];
+            $rules['email'] = ['required', 'email', 'max:150', $emailBenzersiz];
             $rules['password'] = ['required', 'confirmed', Password::defaults()];
             $messages['email.required'] = 'E-posta adresi zorunludur.';
             $messages['email.unique'] = 'Bu e-posta adresi ile kayıt zaten var.';
             $messages['password.required'] = 'Şifre zorunludur.';
             $messages['password.confirmed'] = 'Şifre onayı eşleşmiyor.';
         } else {
-            $rules['email'] = ['nullable', 'email', 'max:150', 'unique:kisiler,email'];
+            $rules['email'] = ['nullable', 'email', 'max:150', $emailBenzersiz];
 
             if ($yontem === KisiGirisYontemi::TcSifre) {
                 $rules['password'] = ['required', 'confirmed', Password::defaults()];
@@ -74,7 +91,7 @@ class AuthController extends ApiController
         }
 
         if ($kanallar === ['eposta']) {
-            $rules['email'] = ['required', 'email', 'max:150', 'unique:kisiler,email'];
+            $rules['email'] = ['required', 'email', 'max:150', $emailBenzersiz];
             $messages['email.required'] = 'Doğrulama kodu gönderilebilmesi için e-posta adresi zorunludur.';
             $messages['email.unique'] = 'Bu e-posta adresi ile kayıt zaten var.';
         }
@@ -82,8 +99,8 @@ class AuthController extends ApiController
         $validated = $request->validate($rules, $messages);
 
         $kayit = [
-            'ad' => trim($validated['ad']),
-            'soyad' => trim($validated['soyad']),
+            'ad' => $this->buyukHarf($validated['ad']),
+            'soyad' => $this->buyukHarf($validated['soyad']),
             'tc_kimlik_no' => $validated['tc_kimlik_no'],
             'dogum_tarihi' => $validated['dogum_tarihi'],
             'telefon' => trim($validated['telefon']),
@@ -94,6 +111,8 @@ class AuthController extends ApiController
             'ilce' => $validated['ilce'] ?? null,
             'adres' => $validated['adres'] ?? null,
         ];
+
+        $kayit = [...$kayit, ...$this->kayitKimlikDogrula($kayit), ...$this->kayitAdresSorgula($kayit)];
 
         if ($kanallar !== []) {
             try {
@@ -127,9 +146,12 @@ class AuthController extends ApiController
             return $this->error($e->getMessage(), 422, ['kod' => [$e->getMessage()]]);
         }
 
-        $mevcut = Kisi::query()
-            ->where('tc_kimlik_no', $kayit['tc_kimlik_no'])
-            ->when($kayit['email'], fn ($q, $email) => $q->orWhereRaw('LOWER(email) = ?', [$email]))
+        $sahipsizId = $this->sahipsizKisi($kayit['tc_kimlik_no'])?->id;
+        $mevcut = Kisi::withTrashed()
+            ->when($sahipsizId, fn ($q, $id) => $q->whereKeyNot($id))
+            ->where(fn ($q) => $q
+                ->where('tc_kimlik_no', $kayit['tc_kimlik_no'])
+                ->when($kayit['email'], fn ($q, $email) => $q->orWhereRaw('LOWER(email) = ?', [$email])))
             ->exists();
         if ($mevcut) {
             $otp->tamamla($validated['dogrulama_token']);
@@ -161,11 +183,175 @@ class AuthController extends ApiController
     }
 
     /**
+     * Kimlik sorgulama entegrasyonu aktifse kayıt bilgilerini aktif sağlayıcıyla doğrular.
+     * Demo sağlayıcıda ad/soyad eşleşmesi atlanır.
+     *
+     * @param  array<string, mixed>  $kayit
+     * @return array<string, string> Kimlik kaydından kişiye yazılacak alanlar
+     */
+    private function kayitKimlikDogrula(array $kayit): array
+    {
+        $entegrasyon = app(EntegrasyonAyarServisi::class);
+        if (! $entegrasyon->turAktifMi('kimlik_sorgulama')) {
+            return [];
+        }
+
+        try {
+            $sonuc = app(KimlikSorgulama::class)->sorgula($kayit['tc_kimlik_no'], $kayit['dogum_tarihi']);
+        } catch (RuntimeException $e) {
+            throw ValidationException::withMessages(['tc_kimlik_no' => $e->getMessage() ?: 'Kimlik sorgulama yapılamadı.']);
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages(['tc_kimlik_no' => 'Kimlik sorgulama sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.']);
+        }
+
+        if ($entegrasyon->aktifSaglayiciKod('kimlik_sorgulama') === 'demo_kimlik') {
+            return $this->kimlikAlanlari($sonuc);
+        }
+
+        if (! ($sonuc['ok'] ?? false)) {
+            throw ValidationException::withMessages([
+                'tc_kimlik_no' => 'T.C. kimlik numarası ve doğum tarihi ile eşleşen kimlik kaydı bulunamadı.',
+            ]);
+        }
+
+        $hatalar = [];
+        if ($this->kimlikMetni($kayit['ad']) !== $this->kimlikMetni((string) ($sonuc['ad'] ?? ''))) {
+            $hatalar['ad'] = 'Girilen ad kimlik kaydı ile eşleşmiyor.';
+        }
+        if ($this->kimlikMetni($kayit['soyad']) !== $this->kimlikMetni((string) ($sonuc['soyad'] ?? ''))) {
+            $hatalar['soyad'] = 'Girilen soyad kimlik kaydı ile eşleşmiyor.';
+        }
+        if ($hatalar !== []) {
+            throw ValidationException::withMessages($hatalar);
+        }
+
+        return $this->kimlikAlanlari($sonuc);
+    }
+
+    /**
+     * @param  array<string, mixed>  $sonuc
+     * @return array<string, string>
+     */
+    private function kimlikAlanlari(array $sonuc): array
+    {
+        $alanlar = [];
+
+        if (in_array($sonuc['cinsiyet'] ?? null, ['erkek', 'kadin'], true)) {
+            $alanlar['cinsiyet'] = $sonuc['cinsiyet'];
+        }
+
+        foreach (['dogum_yeri' => 100, 'medeni_durum' => 50, 'uyruk' => 100, 'anne_adi' => 100, 'baba_adi' => 100] as $alan => $uzunluk) {
+            $deger = is_scalar($sonuc[$alan] ?? null) ? trim((string) $sonuc[$alan]) : '';
+            if ($deger !== '') {
+                $alanlar[$alan] = mb_substr($deger, 0, $uzunluk);
+            }
+        }
+
+        return $alanlar;
+    }
+
+    /**
+     * Adres sorgulama entegrasyonu aktifse aktif sağlayıcıdan adres bilgilerini alır.
+     * Adres zorunlu olmadığından sorgu başarısız olursa kayıt engellenmez.
+     *
+     * @param  array<string, mixed>  $kayit
+     * @return array<string, string>
+     */
+    private function kayitAdresSorgula(array $kayit): array
+    {
+        if (! app(EntegrasyonAyarServisi::class)->turAktifMi('adres_sorgulama')) {
+            return [];
+        }
+
+        try {
+            $sonuc = app(AdresSorgulama::class)->sorgula($kayit['tc_kimlik_no'], $kayit['dogum_tarihi']);
+        } catch (Throwable $e) {
+            Log::warning('Portal kayıt adres sorgulaması başarısız', ['tc_kimlik_no' => $kayit['tc_kimlik_no'], 'hata' => $e->getMessage()]);
+
+            return [];
+        }
+
+        if (! ($sonuc['ok'] ?? false)) {
+            return [];
+        }
+
+        $alanlar = ['il', 'ilce', 'mahalle', 'sokak', 'kapi', 'daire', 'uavt_adres_no', 'adres'];
+
+        return array_filter(
+            array_map(fn ($deger) => is_scalar($deger) ? trim((string) $deger) : '', array_intersect_key($sonuc, array_flip($alanlar))),
+            fn (string $deger) => $deger !== '',
+        );
+    }
+
+    /**
+     * Başvuru sırasında yakın olarak oluşturulmuş, henüz portal hesabı açılmamış kişi kaydı.
+     * Kayıt olan kişi bu kaydı sahiplenir; yeni kişi oluşturulmaz.
+     */
+    private function sahipsizKisi(string $tcKimlikNo): ?Kisi
+    {
+        if (! preg_match('/^\d{11}$/', $tcKimlikNo)) {
+            return null;
+        }
+
+        return Kisi::query()
+            ->where('tc_kimlik_no', $tcKimlikNo)
+            ->whereNull('portal_hesap_at')
+            ->first();
+    }
+
+    /**
+     * Yakın sorgulama entegrasyonu aktifse yeni üyenin 1. derece yakınlarını kaydeder.
+     * Demo sağlayıcı sahte yakın döndürdüğü için atlanır; sorgu başarısız olursa kayıt engellenmez.
+     */
+    private function kayitYakinlariniAktar(Kisi $kisi): void
+    {
+        $entegrasyon = app(EntegrasyonAyarServisi::class);
+        if (! $entegrasyon->turAktifMi('yakin_sorgulama') || $entegrasyon->aktifSaglayiciKod('yakin_sorgulama') === 'demo_yakin') {
+            return;
+        }
+
+        try {
+            app(KisiYakinServisi::class)->entegrasyondanAktar($kisi, $kisi);
+        } catch (Throwable $e) {
+            Log::warning('Portal kayıt yakın sorgulaması başarısız', ['kisi_id' => $kisi->id, 'hata' => $e->getMessage()]);
+        }
+    }
+
+    private function buyukHarf(string $deger): string
+    {
+        $deger = mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], trim($deger)), 'UTF-8');
+
+        return preg_replace('/\s+/u', ' ', $deger) ?? $deger;
+    }
+
+    private function kimlikMetni(string $deger): string
+    {
+        return str_replace(['İ', 'Ş', 'Ğ', 'Ü', 'Ö', 'Ç'], ['I', 'S', 'G', 'U', 'O', 'C'], $this->buyukHarf($deger));
+    }
+
+    /**
      * @param  array<string, mixed>  $kayit
      */
     private function kayitOlustur(array $kayit, JwtTokenServisi $jwt, KisiGirisYontemi $yontem): JsonResponse
     {
-        $kisi = Kisi::query()->create([...$kayit, 'aktif' => true]);
+        $sahipsiz = $this->sahipsizKisi($kayit['tc_kimlik_no']);
+
+        if ($sahipsiz) {
+            $sahipsiz->fill([
+                ...array_filter($kayit, fn ($deger) => $deger !== null && $deger !== ''),
+                'aktif' => true,
+                'portal_hesap_at' => now(),
+            ])->save();
+            $kisi = $sahipsiz->fresh();
+        } else {
+            $kisi = Kisi::query()->create([...$kayit, 'aktif' => true, 'portal_hesap_at' => now()]);
+        }
+
+        $this->kayitYakinlariniAktar($kisi);
+
+        app()->terminating(fn () => app(HosgeldinEpostaServisi::class)->kayitSonrasiGonder($kisi));
 
         $tokens = $jwt->tokenCiftiOlustur($kisi);
 
@@ -328,18 +514,18 @@ class AuthController extends ApiController
         $items = KisiYakin::query()
             ->where('kisi_id', $kisi->id)
             ->whereHas('yakinlikDerecesi', fn ($q) => $q->whereIn('kod', ['ESI', 'OGLU', 'KIZI']))
+            ->whereNotNull('tc_kimlik_no')
             ->with(['yakin', 'yakinlikDerecesi'])
             ->orderByDesc('id')
             ->get()
-            ->filter(fn (KisiYakin $kayit) => $kayit->yakin !== null)
             ->map(fn (KisiYakin $kayit) => [
-                'id' => $kayit->yakin->id,
-                'ad' => $kayit->yakin->ad,
-                'soyad' => $kayit->yakin->soyad,
-                'tam_adi' => $kayit->yakin->tam_adi,
-                'tc_kimlik_no' => $kayit->yakin->tc_kimlik_no,
-                'dogum_tarihi' => $kayit->yakin->dogum_tarihi?->format('Y-m-d'),
-                'cinsiyet' => $kayit->yakin->cinsiyet?->value,
+                'id' => $kayit->id,
+                'ad' => $kayit->ad,
+                'soyad' => $kayit->soyad,
+                'tam_adi' => $kayit->tam_adi,
+                'tc_kimlik_no' => $kayit->tc_kimlik_no,
+                'dogum_tarihi' => ($kayit->dogum_tarihi ?? $kayit->yakin?->dogum_tarihi)?->format('Y-m-d'),
+                'cinsiyet' => ($kayit->cinsiyet ?? $kayit->yakin?->cinsiyet)?->value,
                 'yakinlik_derecesi' => $kayit->yakinlikDerecesi?->kod,
                 'yakinlik_label' => $kayit->yakinlikDerecesi?->ad,
             ])

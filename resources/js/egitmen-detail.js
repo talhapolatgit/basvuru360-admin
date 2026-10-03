@@ -106,8 +106,6 @@ function initKisiAileModal() {
     const panel = document.querySelector('[data-egitmen-panel="aile"]');
     if (!modal || !panel) return;
 
-    const araUrl = panel.dataset.kisiAraUrl || '';
-
     document.querySelectorAll('[data-kisi-aile-open]').forEach((btn) => {
         btn.addEventListener('click', () => openModal(modal));
     });
@@ -116,73 +114,57 @@ function initKisiAileModal() {
         el.addEventListener('click', () => closeModal(modal));
     });
 
-    modal.querySelectorAll('[data-kisi-search]').forEach((input) => {
-        wireKisiSearch(input, araUrl);
-    });
-
-    const form = document.getElementById('kisi-aile-form');
-    form?.addEventListener('submit', (e) => {
-        const hidden = document.getElementById('aile_yakin_kisi_id');
-        if (!hidden?.value) {
-            e.preventDefault();
-            showToast('Yakın kişi seçmelisiniz.', 'error');
-        }
+    const tc = document.getElementById('aile_yakin_tc');
+    tc?.addEventListener('input', () => {
+        tc.value = tc.value.replace(/\D/g, '').slice(0, 11);
     });
 
     if (modal.dataset.openOnLoad === '1') {
         openModal(modal);
     }
+
+    initKisiYakinSilModal();
 }
 
-function wireKisiSearch(input, araUrl) {
-    const targetId = input.dataset.kisiTarget;
-    const labelKey = input.dataset.kisiLabel;
-    const wrap = input.closest('.form-group');
-    const hidden = document.getElementById(targetId);
-    const picked = wrap?.querySelector(`[data-kisi-picked="${labelKey}"]`);
-    const results = wrap?.querySelector('[data-kisi-results]');
-    if (!hidden || !results) return;
+function initKisiYakinSilModal() {
+    const modal = document.getElementById('kisi-yakin-sil-modal');
+    const form = document.getElementById('kisi-yakin-sil-form');
+    if (!modal || !form) return;
 
-    let timer = null;
-    const clearPick = () => {
-        hidden.value = '';
-        if (picked) picked.textContent = 'Kişi seçilmedi';
-    };
+    const adEl = modal.querySelector('[data-kisi-yakin-sil-ad]');
+    const submit = modal.querySelector('[data-kisi-yakin-sil-submit]');
 
-    input.addEventListener('input', () => {
-        clearPick();
-        const q = input.value.trim();
-        clearTimeout(timer);
-        if (q.length < 2) {
-            results.hidden = true;
-            results.innerHTML = '';
-            return;
-        }
-        timer = setTimeout(async () => {
-            try {
-                const res = await fetch(`${araUrl}?q=${encodeURIComponent(q)}`, {
-                    headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                });
-                const data = await res.json();
-                results.innerHTML = '';
-                (data.items || []).forEach((item) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'kres-kisi-result';
-                    btn.textContent = item.label;
-                    btn.addEventListener('click', () => {
-                        hidden.value = item.id;
-                        if (picked) picked.textContent = item.label;
-                        input.value = item.tam_adi;
-                        results.hidden = true;
-                    });
-                    results.appendChild(btn);
-                });
-                results.hidden = !(data.items || []).length;
-            } catch {
-                results.hidden = true;
+    document.querySelectorAll('[data-kisi-yakin-sil]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const rowActions = btn.closest('[data-row-actions]');
+            if (rowActions) {
+                rowActions.classList.remove('is-open');
+                rowActions.querySelector('[data-action-dropdown]')?.setAttribute('hidden', '');
+                rowActions.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
             }
-        }, 250);
+            form.action = btn.dataset.kisiYakinSil;
+            if (adEl) {
+                adEl.textContent = [btn.dataset.ad, btn.dataset.yakinlik ? `(${btn.dataset.yakinlik})` : '']
+                    .filter(Boolean)
+                    .join(' ');
+            }
+            if (submit) {
+                submit.disabled = false;
+                submit.textContent = 'Sil';
+            }
+            openModal(modal);
+        });
+    });
+
+    modal.querySelectorAll('[data-kisi-yakin-sil-close]').forEach((el) => {
+        el.addEventListener('click', () => closeModal(modal));
+    });
+
+    form.addEventListener('submit', () => {
+        if (submit) {
+            submit.disabled = true;
+            submit.textContent = 'Siliniyor…';
+        }
     });
 }
 

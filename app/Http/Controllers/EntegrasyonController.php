@@ -207,7 +207,7 @@ class EntegrasyonController extends Controller
             ...$this->ayarKurallari($alanTanimlari),
         ];
         $rules += match ($tur) {
-            'kimlik_sorgulama', 'adres_sorgulama' => [
+            'kimlik_sorgulama', 'adres_sorgulama', 'yakin_sorgulama' => [
                 'test.tc_kimlik_no' => ['required', 'digits:11'],
                 'test.dogum_tarihi' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             ],
@@ -244,7 +244,7 @@ class EntegrasyonController extends Controller
         try {
             $ornek = $cozumleyici->ornek($tur, $saglayici, $ayarlar);
             $sonuc = match ($tur) {
-                'kimlik_sorgulama', 'adres_sorgulama' => $ornek->sorgula($test['tc_kimlik_no'], $test['dogum_tarihi']),
+                'kimlik_sorgulama', 'adres_sorgulama', 'yakin_sorgulama' => $ornek->sorgula($test['tc_kimlik_no'], $test['dogum_tarihi']),
                 'sms' => $ornek->send(
                     $test['telefon'],
                     'Başvuru360 entegrasyon testi: '.$saglayiciAd.' SMS gönderimi başarılı.',

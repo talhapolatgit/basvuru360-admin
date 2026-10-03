@@ -14,7 +14,9 @@ use App\Models\SmsLog;
 use App\Models\YakinlikDerecesi;
 use App\Services\Adres\AdresSorgulama;
 use App\Services\Email\EmailSender;
+use App\Services\Entegrasyon\EntegrasyonAyarServisi;
 use App\Services\Kimlik\KimlikSorgulama;
+use App\Services\KisiYakinServisi;
 use App\Services\LogKaydedici;
 use App\Services\PortalGirisKilitServisi;
 use App\Services\Sms\PhoneNormalizer;
@@ -293,7 +295,7 @@ class KisiController extends Controller
         $mesajlar = $this->mesajlar($kisi, $basvurular->pluck('id'));
 
         $yakinlar = $kisi->yakinlar()
-            ->with(['yakin', 'yakinlikDerecesi'])
+            ->with(['yakin', 'yakinlikDerecesi', 'kaydeden'])
             ->orderByDesc('id')
             ->get();
 
@@ -310,6 +312,7 @@ class KisiController extends Controller
             'mesajlar' => $mesajlar,
             'yakinlar' => $yakinlar,
             'yakinlikDereceleri' => $yakinlikDereceleri,
+            'yakinEntegrasyonAktif' => app(EntegrasyonAyarServisi::class)->turAktifMi('yakin_sorgulama'),
             'toplamBasvuru' => $basvurular->count() + $etkinlikBasvurulari->count(),
             'kesinKayitSayisi' => $kesinKayitBasvurular->count(),
             'aktifKursSayisi' => $aktifKursSayisi,
@@ -318,56 +321,28 @@ class KisiController extends Controller
         ]);
     }
 
-    public function kisiAra(Request $request, Kisi $kisi): JsonResponse
-    {
-        $q = trim((string) $request->input('q', ''));
-        if (mb_strlen($q) < 2) {
-            return response()->json(['items' => []]);
-        }
-
-        $items = Kisi::query()
-            ->where('id', '!=', $kisi->id)
-            ->when(
-                preg_match('/^\d+$/', $q),
-                fn ($query) => $query->where('tc_kimlik_no', 'like', $q.'%'),
-                fn ($query) => $query->where(function ($inner) use ($q) {
-                    $inner->where('ad', 'like', '%'.$q.'%')
-                        ->orWhere('soyad', 'like', '%'.$q.'%')
-                        ->orWhereRaw("CONCAT(ad, ' ', soyad) like ?", ['%'.$q.'%']);
-                }),
-            )
-            ->orderBy('ad')
-            ->orderBy('soyad')
-            ->limit(15)
-            ->get(['id', 'ad', 'soyad', 'tc_kimlik_no', 'dogum_tarihi']);
-
-        return response()->json([
-            'items' => $items->map(fn (Kisi $k) => [
-                'id' => $k->id,
-                'ad' => $k->ad,
-                'soyad' => $k->soyad,
-                'tam_adi' => $k->tam_adi,
-                'tc_kimlik_no' => $k->tc_kimlik_no,
-                'dogum_tarihi' => $k->dogum_tarihi?->format('Y-m-d'),
-                'label' => $k->tam_adi.($k->tc_kimlik_no ? ' · '.$k->tc_kimlik_no : ''),
-            ])->values(),
-        ]);
-    }
-
-    public function storeYakin(Request $request, Kisi $kisi): RedirectResponse
+    public function storeYakin(Request $request, Kisi $kisi, KisiYakinServisi $servis): RedirectResponse
     {
         $validator = validator($request->all(), [
-            'yakin_kisi_id' => [
+            'yakin_ad' => ['required', 'string', 'max:100'],
+            'yakin_soyad' => ['required', 'string', 'max:100'],
+            'yakin_tc_kimlik_no' => [
                 'required',
-                'integer',
-                Rule::exists('kisiler', 'id')->where(fn ($q) => $q->where('id', '!=', $kisi->id)),
-                Rule::unique('kisi_yakinlar', 'yakin_kisi_id')->where(fn ($q) => $q->where('kisi_id', $kisi->id)),
+                'digits:11',
+                Rule::notIn(array_filter([$kisi->tc_kimlik_no])),
+                Rule::unique('kisi_yakinlar', 'tc_kimlik_no')->where(fn ($q) => $q->where('kisi_id', $kisi->id)),
             ],
+            'yakin_dogum_tarihi' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'yakinlik_derecesi_id' => ['required', 'integer', Rule::exists('yakinlik_dereceleri', 'id')],
         ], [
-            'yakin_kisi_id.required' => 'Yakın kişi seçmelisiniz.',
-            'yakin_kisi_id.exists' => 'Seçilen kişi bulunamadı.',
-            'yakin_kisi_id.unique' => 'Bu kişi zaten yakın olarak kayıtlı.',
+            'yakin_ad.required' => 'Ad zorunludur.',
+            'yakin_soyad.required' => 'Soyad zorunludur.',
+            'yakin_tc_kimlik_no.required' => 'T.C. kimlik numarası zorunludur.',
+            'yakin_tc_kimlik_no.digits' => 'T.C. kimlik numarası 11 haneli olmalıdır.',
+            'yakin_tc_kimlik_no.not_in' => 'Kişi kendisini yakın olarak ekleyemez.',
+            'yakin_tc_kimlik_no.unique' => 'Bu T.C. kimlik numarası ile kayıtlı bir yakın zaten var.',
+            'yakin_dogum_tarihi.required' => 'Doğum tarihi zorunludur.',
+            'yakin_dogum_tarihi.*' => 'Geçerli bir doğum tarihi girin.',
             'yakinlik_derecesi_id.required' => 'Yakınlık derecesi seçmelisiniz.',
             'yakinlik_derecesi_id.exists' => 'Geçersiz yakınlık derecesi.',
         ]);
@@ -381,17 +356,42 @@ class KisiController extends Controller
 
         $validated = $validator->validated();
 
-        KisiYakin::query()->create([
-            'kisi_id' => $kisi->id,
-            'yakin_kisi_id' => (int) $validated['yakin_kisi_id'],
+        $yakin = $servis->kaydet($kisi, [
+            'ad' => $validated['yakin_ad'],
+            'soyad' => $validated['yakin_soyad'],
+            'tc_kimlik_no' => $validated['yakin_tc_kimlik_no'],
+            'dogum_tarihi' => $validated['yakin_dogum_tarihi'],
             'yakinlik_derecesi_id' => (int) $validated['yakinlik_derecesi_id'],
-        ]);
-
-        $yakin = Kisi::query()->find((int) $validated['yakin_kisi_id']);
+        ], $request->user());
 
         return redirect()
             ->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile'])
-            ->with('success', ($yakin?->tam_adi ?? 'Yakın').' aile listesine eklendi.');
+            ->with('success', $yakin->tam_adi.' aile listesine eklendi.');
+    }
+
+    public function yakinlariEntegrasyondanGetir(Request $request, Kisi $kisi, KisiYakinServisi $servis): RedirectResponse
+    {
+        $yonlendir = redirect()->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile']);
+
+        try {
+            $sayac = $servis->entegrasyondanAktar($kisi, $request->user());
+        } catch (RuntimeException $e) {
+            return $yonlendir->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            report($e);
+
+            return $yonlendir->with('error', 'Yakın sorgulama sırasında bir hata oluştu.');
+        }
+
+        $parcalar = array_filter([
+            $sayac['eklenen'] > 0 ? "{$sayac['eklenen']} yakın eklendi" : null,
+            $sayac['guncellenen'] > 0 ? "{$sayac['guncellenen']} yakın güncellendi" : null,
+            $sayac['atlanan'] > 0 ? "{$sayac['atlanan']} kayıt atlandı (vefat veya tanımsız yakınlık)" : null,
+        ]);
+
+        return $yonlendir->with('success', $parcalar === []
+            ? 'Entegrasyonda kayıtlı 1. derece yakın bulunamadı.'
+            : 'Yakın bilgileri entegrasyondan alındı: '.implode(', ', $parcalar).'.');
     }
 
     public function destroyYakin(Kisi $kisi, KisiYakin $yakin): RedirectResponse
@@ -400,12 +400,26 @@ class KisiController extends Controller
             abort(404);
         }
 
-        $ad = $yakin->yakin?->tam_adi ?? 'Yakın';
+        $ad = $yakin->tam_adi ?: 'Yakın';
+        $eski = [
+            'ad_soyad' => $yakin->tam_adi,
+            'tc_kimlik_no' => $yakin->tc_kimlik_no,
+            'dogum_tarihi' => $yakin->dogum_tarihi?->format('Y-m-d'),
+            'yakinlik' => $yakin->yakinlikDerecesi?->ad,
+        ];
         $yakin->delete();
+
+        LogKaydedici::kaydet(
+            islem: 'kisi.guncellendi',
+            aciklama: '"'.$kisi->tam_adi.'" kişisinin yakın kaydı silindi: '.$ad.'.',
+            konu: $kisi,
+            eski: $eski,
+            konuAdi: $kisi->tam_adi,
+        );
 
         return redirect()
             ->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile'])
-            ->with('success', "{$ad} aile listesinden kaldırıldı.");
+            ->with('success', "{$ad} yakın kaydı silindi.");
     }
 
     public function girisKilidiniKaldir(Kisi $kisi, PortalGirisKilitServisi $kilit): RedirectResponse

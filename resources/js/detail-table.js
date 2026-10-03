@@ -80,7 +80,7 @@ function csvCell(value) {
 
 function exportCsv(table, name) {
     const headerCells = Array.from(table.querySelectorAll('thead tr:first-child th[data-column]'))
-        .filter((th) => !th.classList.contains('col-hidden'));
+        .filter((th) => !th.classList.contains('col-hidden') && th.dataset.column !== 'islemler');
     const keys = headerCells.map((th) => th.dataset.column);
     const headers = headerCells.map((th) => th.textContent.trim());
 
@@ -214,7 +214,8 @@ function initTable(table) {
     const dropdownRoot = picker || card;
     const saveBtn = picker?.querySelector('[data-col-save]') || null;
 
-    applyTablePreferences(table, cookieKey, dropdownRoot);
+    const pinnedKeys = table.querySelector('thead th[data-column="islemler"]') ? ['islemler'] : [];
+    applyTablePreferences(table, cookieKey, dropdownRoot, { pinnedKeys });
 
     const flagDirty = () => markDirty(saveBtn, picker || document);
 
@@ -238,8 +239,8 @@ function initTable(table) {
             visible: JSON.parse(table.dataset.defaultVisible || '[]'),
         };
         clearColumnPrefs(cookieKey);
-        applyColumnOrder(table, defaults.order);
-        applyVisibility(table, defaults.visible, { dropdownRoot });
+        applyColumnOrder(table, [...defaults.order, ...pinnedKeys]);
+        applyVisibility(table, defaults.visible, { dropdownRoot, alwaysVisibleKeys: pinnedKeys });
         syncColumnDropdownOrder(dropdown, defaults.order);
         markClean(saveBtn, picker || document);
         showToast('Sütunlar varsayılana sıfırlandı');

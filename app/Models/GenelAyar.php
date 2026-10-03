@@ -33,6 +33,7 @@ class GenelAyar extends Model
         'basvuru_dogrulama_eposta',
         'yakin_icin_basvuru_aktif',
         'manuel_yakin_ekleme_aktif',
+        'hosgeldin_eposta_aktif',
         'sidebar_logo',
         'sidebar_baslik',
         'sidebar_alt_baslik',

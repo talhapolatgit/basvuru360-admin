@@ -44,12 +44,24 @@ class SmtpEmailSender implements EmailSender
             'timeout' => null,
         ]);
 
+        $html = trim((string) ($context['html'] ?? ''));
+        $gorseller = is_array($context['gomulu_gorseller'] ?? null) ? $context['gomulu_gorseller'] : [];
+
         try {
-            Mail::mailer('entegrasyon_smtp')->raw($mesaj, function ($message) use ($email, $konu, $fromAddress, $fromName) {
+            Mail::mailer('entegrasyon_smtp')->send([], [], function ($message) use ($email, $konu, $mesaj, $html, $gorseller, $fromAddress, $fromName) {
                 $message->to($email)->subject($konu)->from(
                     $fromAddress,
                     $fromName !== '' ? $fromName : null
                 );
+                $message->text($mesaj);
+                if ($html !== '') {
+                    $message->html($html);
+                    foreach ($gorseller as $cid => $yol) {
+                        if (is_string($yol) && is_file($yol)) {
+                            $message->getSymfonyMessage()->embedFromPath($yol, (string) $cid);
+                        }
+                    }
+                }
             });
 
             return ['ok' => true, 'message' => 'smtp'];

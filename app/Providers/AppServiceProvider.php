@@ -12,6 +12,7 @@ use App\Services\Kimlik\KimlikSorgulama;
 use App\Services\LogKaydedici;
 use App\Services\Sms\LoggingSmsSender;
 use App\Services\Sms\SmsSender;
+use App\Services\Yakin\YakinSorgulama;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -43,6 +44,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(AdresSorgulama::class, function ($app) {
             return $app->make(EntegrasyonCozumleyici::class)->adresSorgulama();
+        });
+
+        $this->app->bind(YakinSorgulama::class, function ($app) {
+            return $app->make(EntegrasyonCozumleyici::class)->yakinSorgulama();
         });
 
         $this->app->bind(EmailSender::class, function ($app) {

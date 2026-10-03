@@ -6828,6 +6828,25 @@
     overflow-wrap: anywhere;
 }
 
+.entegrasyon-test-tablo {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.entegrasyon-test-tablo th,
+.entegrasyon-test-tablo td {
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    text-align: left;
+    vertical-align: top;
+}
+
+.entegrasyon-test-tablo th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .entegrasyon-empty {
     margin: 0;
     font-size: 13px;

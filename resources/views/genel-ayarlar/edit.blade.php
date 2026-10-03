@@ -690,6 +690,35 @@
 
         <div class="sertifika-ayarlar-block">
             <div class="sertifika-ayarlar-block-head">
+                <h3 class="sertifika-ayarlar-title">Üyelik Bildirimleri</h3>
+                <p class="sertifika-ayarlar-desc">Portalda yeni üyelik oluşturulduğunda kişiye gönderilecek bildirimleri yönetin.</p>
+            </div>
+
+            @php
+                $hosgeldinAktif = old('hosgeldin_eposta_aktif') !== null
+                    ? (string) old('hosgeldin_eposta_aktif') === '1'
+                    : (bool) ($form['hosgeldin_eposta_aktif'] ?? false);
+            @endphp
+
+            <div class="form-group form-group-switch">
+                <label class="switch-label" for="genel-hosgeldin-eposta">
+                    <input type="hidden" name="hosgeldin_eposta_aktif" value="0">
+                    <input
+                        type="checkbox"
+                        id="genel-hosgeldin-eposta"
+                        name="hosgeldin_eposta_aktif"
+                        value="1"
+                        @checked($hosgeldinAktif)
+                        @disabled(! $guncelleyebilir)
+                    >
+                    <span>Kayıt sonrası hoş geldiniz e-postası gönderilsin</span>
+                </label>
+                <p class="form-hint">Açıkken, e-posta adresi olan yeni üyelere aktif e-posta entegrasyonu üzerinden hoş geldiniz e-postası gönderilir. Gönderimler e-posta loglarına kaydedilir.</p>
+            </div>
+        </div>
+
+        <div class="sertifika-ayarlar-block">
+            <div class="sertifika-ayarlar-block-head">
                 <h3 class="sertifika-ayarlar-title">Adres</h3>
                 <p class="sertifika-ayarlar-desc">Kurumun il, ilçe ve açık adresi.</p>
             </div>

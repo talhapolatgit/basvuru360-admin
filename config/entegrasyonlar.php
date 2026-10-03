@@ -30,6 +30,10 @@ return [
             'ad' => 'Adres Sorgulama Entegrasyonu',
             'aciklama' => 'Kişi adres bilgisi sorgusunda kullanılacak sağlayıcı.',
         ],
+        'yakin_sorgulama' => [
+            'ad' => 'Yakın Sorgulama Entegrasyonu',
+            'aciklama' => 'Kişinin 1. derece yakınlarını (eşi, çocukları, anne ve babası) listelemekte kullanılacak sağlayıcı.',
+        ],
     ],
 
     'saglayicilar' => [
@@ -102,34 +106,23 @@ return [
             ],
         ],
 
-        'gmail_api' => [
+        'gmail' => [
             'tur' => 'eposta',
-            'ad' => 'Gmail API',
-            'aciklama' => 'Google Gmail API (OAuth) ile e-posta gönderir.',
+            'ad' => 'Gmail',
+            'aciklama' => 'Gmail SMTP sunucusu (smtp.gmail.com:587, TLS) üzerinden e-posta gönderir. Google hesabında 2 adımlı doğrulama açık olmalı ve myaccount.google.com/apppasswords adresinden oluşturulan 16 haneli uygulama şifresi kullanılmalıdır; normal hesap şifresi çalışmaz.',
             'alanlar' => [
-                'client_id' => [
-                    'etiket' => 'Client ID',
-                    'tip' => 'text',
-                    'zorunlu' => true,
-                    'placeholder' => 'xxx.apps.googleusercontent.com',
-                ],
-                'client_secret' => [
-                    'etiket' => 'Client Secret',
-                    'tip' => 'password',
-                    'zorunlu' => true,
-                    'gizli' => true,
-                ],
-                'refresh_token' => [
-                    'etiket' => 'Refresh Token',
-                    'tip' => 'password',
-                    'zorunlu' => true,
-                    'gizli' => true,
-                ],
-                'from_address' => [
-                    'etiket' => 'Gönderen e-posta',
+                'email' => [
+                    'etiket' => 'Gmail adresi',
                     'tip' => 'email',
                     'zorunlu' => true,
                     'placeholder' => 'hesap@gmail.com',
+                ],
+                'app_password' => [
+                    'etiket' => 'Uygulama şifresi',
+                    'tip' => 'password',
+                    'zorunlu' => true,
+                    'gizli' => true,
+                    'placeholder' => 'abcd efgh ijkl mnop',
                 ],
                 'from_name' => [
                     'etiket' => 'Gönderen adı',
@@ -180,6 +173,68 @@ return [
             'aciklama' => 'Gerçek adres servisine bağlanmaz; sabit demo yanıt döner. Geliştirme ve test için uygundur.',
         ],
 
+        'flexcity_adres' => [
+            'tur' => 'adres_sorgulama',
+            'ad' => 'Flexcity',
+            'aciklama' => 'Flexcity NVİ servisi üzerinden adres sorgulaması yapar (FindAllBaseAdresDto).',
+            'alanlar' => [
+                'adres' => [
+                    'etiket' => 'Servis adresi',
+                    'tip' => 'text',
+                    'zorunlu' => true,
+                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/nvi/FindAllBaseAdresDto',
+                    'placeholder' => 'https://.../FlexCityUi/rest/json/nvi/FindAllBaseAdresDto',
+                ],
+                'authorization' => [
+                    'etiket' => 'Authorization',
+                    'tip' => 'password',
+                    'zorunlu' => true,
+                    'gizli' => true,
+                ],
+                'timeout' => [
+                    'etiket' => 'Zaman aşımı (saniye)',
+                    'tip' => 'number',
+                    'zorunlu' => false,
+                    'varsayilan' => '30',
+                    'placeholder' => '30',
+                ],
+            ],
+        ],
+
+        'demo_yakin' => [
+            'tur' => 'yakin_sorgulama',
+            'ad' => 'Demo Yakın Sorgulama',
+            'aciklama' => 'Gerçek servise bağlanmaz; sabit demo yakın listesi döner. Geliştirme ve test için uygundur.',
+        ],
+
+        'flexcity_yakin' => [
+            'tur' => 'yakin_sorgulama',
+            'ad' => 'Flexcity',
+            'aciklama' => 'Flexcity SBS servisi üzerinden NVİ aile bireyleri sorgulaması yapar (FindAllSbsKisiAileBireyleriByNvi).',
+            'alanlar' => [
+                'adres' => [
+                    'etiket' => 'Servis adresi',
+                    'tip' => 'text',
+                    'zorunlu' => true,
+                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/sbs/FindAllSbsKisiAileBireyleriByNvi',
+                    'placeholder' => 'https://.../FlexCityUi/rest/json/sbs/FindAllSbsKisiAileBireyleriByNvi',
+                ],
+                'authorization' => [
+                    'etiket' => 'Authorization',
+                    'tip' => 'password',
+                    'zorunlu' => true,
+                    'gizli' => true,
+                ],
+                'timeout' => [
+                    'etiket' => 'Zaman aşımı (saniye)',
+                    'tip' => 'number',
+                    'zorunlu' => false,
+                    'varsayilan' => '30',
+                    'placeholder' => '30',
+                ],
+            ],
+        ],
+
     ],
 
     'varsayilanlar' => [
@@ -187,6 +242,7 @@ return [
         'eposta' => 'demo_eposta',
         'kimlik_sorgulama' => 'demo_kimlik',
         'adres_sorgulama' => 'demo_adres',
+        'yakin_sorgulama' => 'demo_yakin',
     ],
 
 ];

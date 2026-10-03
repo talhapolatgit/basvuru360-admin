@@ -8,6 +8,7 @@ use App\Models\YakinlikDerecesi;
 use App\Services\Entegrasyon\EntegrasyonAyarServisi;
 use App\Services\GenelAyarServisi;
 use App\Services\Kimlik\KimlikSorgulama;
+use App\Services\KisiYakinServisi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -51,7 +52,7 @@ trait ResolvesPortalBasvuruKatilimci
 
         $kayitli = KisiYakin::query()
             ->where('kisi_id', $basvuran->id)
-            ->whereHas('yakin', fn ($q) => $q->where('tc_kimlik_no', $yakinTc))
+            ->where('tc_kimlik_no', $yakinTc)
             ->exists();
 
         if (! $kayitli) {
@@ -264,7 +265,7 @@ trait ResolvesPortalBasvuruKatilimci
     }
 
     /**
-     * Yakın başvurusunda başvuran–yakın ilişkisini (Eşi/Oğlu/Kızı) kaydeder.
+     * Yakın başvurusunda başvuran–yakın ilişkisini (Eşi/Oğlu/Kızı) yakının kimlik bilgileriyle kaydeder.
      */
     protected function cocukYakinligiKaydet(
         Kisi $kisi,
@@ -279,25 +280,30 @@ trait ResolvesPortalBasvuruKatilimci
             $derece = YakinlikDerecesi::query()->where('kod', $kod)->first();
         }
 
-        if (! $derece) {
-            $cinsiyetKod = $this->cozulmusCinsiyet($cinsiyet)
-                ?? $cocuk->cinsiyet?->value;
-            $derece = YakinlikDerecesi::cocuktan($cinsiyetKod);
+        $cinsiyetKod = $this->cozulmusCinsiyet($cinsiyet) ?? $cocuk->cinsiyet?->value;
+
+        if (! $derece && filled($cocuk->tc_kimlik_no)) {
+            $derece = KisiYakin::query()
+                ->where('kisi_id', $kisi->id)
+                ->where('tc_kimlik_no', $cocuk->tc_kimlik_no)
+                ->first()
+                ?->yakinlikDerecesi;
         }
 
-        if (! $derece) {
+        $derece ??= YakinlikDerecesi::cocuktan($cinsiyetKod);
+
+        if (! $derece || blank($cocuk->tc_kimlik_no)) {
             return;
         }
 
-        KisiYakin::query()->updateOrCreate(
-            [
-                'kisi_id' => $kisi->id,
-                'yakin_kisi_id' => $cocuk->id,
-            ],
-            [
-                'yakinlik_derecesi_id' => $derece->id,
-            ],
-        );
+        app(KisiYakinServisi::class)->kaydet($kisi, [
+            'ad' => (string) $cocuk->ad,
+            'soyad' => (string) $cocuk->soyad,
+            'tc_kimlik_no' => (string) $cocuk->tc_kimlik_no,
+            'dogum_tarihi' => $cocuk->dogum_tarihi?->format('Y-m-d'),
+            'cinsiyet' => $cinsiyetKod,
+            'yakinlik_derecesi_id' => $derece->id,
+        ], $kisi);
     }
 
     protected function yasHesapla(?string $dogumTarihi): ?int

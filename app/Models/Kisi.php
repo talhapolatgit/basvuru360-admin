@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Cinsiyet;
+use App\Services\KisiYakinServisi;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -21,6 +22,7 @@ class Kisi extends Authenticatable
         'telefon',
         'email',
         'password',
+        'portal_hesap_at',
         'cinsiyet',
         'dogum_yeri',
         'medeni_durum',
@@ -29,6 +31,11 @@ class Kisi extends Authenticatable
         'baba_adi',
         'il',
         'ilce',
+        'mahalle',
+        'sokak',
+        'kapi',
+        'daire',
+        'uavt_adres_no',
         'adres',
         'diger_adres',
         'profil_foto',
@@ -49,10 +56,16 @@ class Kisi extends Authenticatable
             'cinsiyet' => Cinsiyet::class,
             'aktif' => 'boolean',
             'password' => 'hashed',
+            'portal_hesap_at' => 'datetime',
             'hatali_giris_sayisi' => 'integer',
             'ilk_hatali_giris_at' => 'datetime',
             'giris_kilit_bitis' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::created(fn (Kisi $kisi) => app(KisiYakinServisi::class)->kisiyeBagla($kisi));
     }
 
     public function girisKilitliMi(): bool

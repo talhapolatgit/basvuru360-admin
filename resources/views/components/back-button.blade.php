@@ -8,12 +8,13 @@
     $mark = match ($icon) {
         'close' => '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
         'plus' => '<path d="M5 12h14"/><path d="M12 5v14"/>',
+        'refresh' => '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
         'none' => null,
         default => '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
     };
     $classes = 'btn-back'
         .($icon === 'none' ? ' btn-back-plain' : '')
-        .($icon === 'plus' ? ' btn-back-add' : '');
+        .(in_array($icon, ['plus', 'refresh'], true) ? ' btn-back-add' : '');
 @endphp
 
 @if ($href)

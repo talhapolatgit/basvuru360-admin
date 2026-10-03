@@ -553,6 +553,8 @@
         'tc' => 'T.C. Kimlik No',
         'dogum' => 'Doğum Tarihi',
         'yakinlik' => 'Yakınlık',
+        'son_sorgu' => 'Son Sorgu',
+        'kaydeden' => 'Kaydeden',
     ];
     $aileOrder = array_keys($aileColumns);
     $canEditKisi = auth()->user()?->hasYetki('kisi.guncelle');
@@ -560,17 +562,22 @@
 <div
     class="lesson-tab-panel"
     data-egitmen-panel="aile"
-    data-kisi-ara-url="{{ route('kisiler.ara', $kisi) }}"
     role="tabpanel"
 >
     <div class="card table-card">
         <div class="table-toolbar">
             <div>
                 <div class="table-title">Aile</div>
-                <p class="table-subtitle">Bu kişinin kayıtlı yakınları.</p>
+                <p class="table-subtitle">Bu kişinin kayıtlı yakınları. Yakınların portal üyeliği olması gerekmez.</p>
             </div>
             <div class="table-toolbar-actions" style="display:flex; align-items:center; gap:0.5rem;">
                 <x-detail-table-tools :columns="$aileColumns" :visible="$aileOrder" excel-name="kisi-aile" />
+                @if ($canEditKisi && $yakinEntegrasyonAktif)
+                    <form method="POST" action="{{ route('kisiler.yakinlar.entegrasyon', $kisi) }}" style="margin:0;">
+                        @csrf
+                        <x-back-button type="submit" icon="refresh">Entegrasyondan Getir</x-back-button>
+                    </form>
+                @endif
                 @if ($canEditKisi)
                     <x-back-button type="button" icon="plus" data-kisi-aile-open>Yakın Ekle</x-back-button>
                 @endif
@@ -600,35 +607,57 @@
                             $yakinKisi = $kayit->yakin;
                         @endphp
                         <tr>
-                            <td data-column="ad_soyad" data-sort-value="{{ $yakinKisi?->tam_adi }}">
+                            <td data-column="ad_soyad" data-sort-value="{{ $kayit->tam_adi }}">
                                 @if ($yakinKisi)
-                                    <a href="{{ route('kisiler.show', $yakinKisi) }}" class="kurs-no">{{ $yakinKisi->tam_adi }}</a>
+                                    <a href="{{ route('kisiler.show', $yakinKisi) }}" class="kurs-no" title="Kişi kaydına git">{{ $kayit->tam_adi ?: $yakinKisi->tam_adi }}</a>
                                 @else
-                                    —
+                                    {{ $kayit->tam_adi ?: '—' }}
                                 @endif
                             </td>
-                            <td data-column="tc">{{ $yakinKisi?->tc_kimlik_no ?: '—' }}</td>
-                            <td data-column="dogum" data-sort-value="{{ $yakinKisi?->dogum_tarihi?->toDateString() }}">
-                                {{ $yakinKisi?->dogum_tarihi?->format('d.m.Y') ?? '—' }}
+                            <td data-column="tc">{{ $kayit->tc_kimlik_no ?: '—' }}</td>
+                            <td data-column="dogum" data-sort-value="{{ $kayit->dogum_tarihi?->toDateString() }}">
+                                {{ $kayit->dogum_tarihi?->format('d.m.Y') ?? '—' }}
                             </td>
                             <td data-column="yakinlik">{{ $kayit->yakinlikDerecesi?->ad ?? '—' }}</td>
+                            <td data-column="son_sorgu" data-sort-value="{{ $kayit->son_sorgu_at?->toDateTimeString() }}">
+                                {{ $kayit->son_sorgu_at?->format('d.m.Y H:i') ?? '—' }}
+                            </td>
+                            <td data-column="kaydeden" data-sort-value="{{ $kayit->created_at?->toDateTimeString() }}">
+                                {{ $kayit->kaydedenAdi() ?? '—' }}
+                                @if ($kayit->created_at)
+                                    <div class="form-hint" style="margin:0;">{{ $kayit->created_at->format('d.m.Y H:i') }}</div>
+                                @endif
+                            </td>
                             @if ($canEditKisi)
                                 <td data-column="islemler">
-                                    <form
-                                        method="POST"
-                                        action="{{ route('kisiler.yakinlar.destroy', [$kisi, $kayit]) }}"
-                                        onsubmit="return confirm('Bu yakını listeden kaldırmak istediğinize emin misiniz?');"
-                                    >
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-secondary btn-sm" title="Kaldır">Kaldır</button>
-                                    </form>
+                                    <div class="row-actions" data-row-actions>
+                                        <button type="button" class="action-menu-btn" data-action-toggle aria-expanded="false" aria-haspopup="menu" title="İşlemler">•••</button>
+                                        <div class="action-dropdown" data-action-dropdown hidden role="menu">
+                                            @if ($yakinKisi)
+                                                <a href="{{ route('kisiler.show', $yakinKisi) }}" class="action-dropdown-item" role="menuitem">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                    Kişi Kaydını Aç
+                                                </a>
+                                            @endif
+                                            <button
+                                                type="button"
+                                                class="action-dropdown-item action-dropdown-item-danger"
+                                                role="menuitem"
+                                                data-kisi-yakin-sil="{{ route('kisiler.yakinlar.destroy', [$kisi, $kayit]) }}"
+                                                data-ad="{{ $kayit->tam_adi }}"
+                                                data-yakinlik="{{ $kayit->yakinlikDerecesi?->ad }}"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                                                Sil
+                                            </button>
+                                        </div>
+                                    </div>
                                 </td>
                             @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $canEditKisi ? 5 : 4 }}">
+                            <td colspan="{{ count($aileColumns) + ($canEditKisi ? 1 : 0) }}">
                                 <div class="empty-state">
                                     <div class="empty-state-title">Yakın bulunamadı</div>
                                     <p class="empty-state-text">Bu kişi için henüz aile kaydı eklenmemiş.</p>
@@ -647,7 +676,7 @@
 <div
     class="confirm-modal"
     id="kisi-aile-modal"
-    @if ($errors->has('yakin_kisi_id') || $errors->has('yakinlik_derecesi_id')) data-open-on-load="1" @endif
+    @if ($errors->hasAny(['yakin_ad', 'yakin_soyad', 'yakin_tc_kimlik_no', 'yakin_dogum_tarihi', 'yakinlik_derecesi_id'])) data-open-on-load="1" @endif
     hidden
 >
     <div class="confirm-modal-backdrop" data-kisi-aile-close></div>
@@ -659,24 +688,35 @@
         <form method="POST" action="{{ route('kisiler.yakinlar.store', $kisi) }}" id="kisi-aile-form">
             @csrf
             <div class="confirm-modal-body">
-                <div class="form-group">
-                    <label for="aile_kisi_ara">Kişi ara <span class="req">*</span></label>
-                    <input
-                        id="aile_kisi_ara"
-                        type="search"
-                        class="form-control"
-                        placeholder="Ad, soyad veya T.C. kimlik no"
-                        autocomplete="off"
-                        data-kisi-search
-                        data-kisi-target="aile_yakin_kisi_id"
-                        data-kisi-label="aile_yakin_label"
-                    >
-                    <input type="hidden" name="yakin_kisi_id" id="aile_yakin_kisi_id" required value="{{ old('yakin_kisi_id') }}">
-                    <p class="kres-kisi-picked" data-kisi-picked="aile_yakin_label">Kişi seçilmedi</p>
-                    <div class="kres-kisi-results" data-kisi-results hidden></div>
-                    @error('yakin_kisi_id')
-                        <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
-                    @enderror
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
+                    <div class="form-group">
+                        <label for="aile_yakin_ad">Ad <span class="req">*</span></label>
+                        <input id="aile_yakin_ad" name="yakin_ad" type="text" class="form-control" maxlength="100" required value="{{ old('yakin_ad') }}" autocomplete="off">
+                        @error('yakin_ad')
+                            <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="aile_yakin_soyad">Soyad <span class="req">*</span></label>
+                        <input id="aile_yakin_soyad" name="yakin_soyad" type="text" class="form-control" maxlength="100" required value="{{ old('yakin_soyad') }}" autocomplete="off">
+                        @error('yakin_soyad')
+                            <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="aile_yakin_tc">T.C. kimlik no <span class="req">*</span></label>
+                        <input id="aile_yakin_tc" name="yakin_tc_kimlik_no" type="text" class="form-control" inputmode="numeric" pattern="\d{11}" maxlength="11" required value="{{ old('yakin_tc_kimlik_no') }}" autocomplete="off">
+                        @error('yakin_tc_kimlik_no')
+                            <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="form-group">
+                        <label for="aile_yakin_dogum">Doğum tarihi <span class="req">*</span></label>
+                        <input id="aile_yakin_dogum" name="yakin_dogum_tarihi" type="date" class="form-control" max="{{ now()->toDateString() }}" required value="{{ old('yakin_dogum_tarihi') }}">
+                        @error('yakin_dogum_tarihi')
+                            <p class="form-hint" style="color:#f64e60;">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                     <label for="aile_yakinlik_derecesi_id">Yakınlık derecesi <span class="req">*</span></label>
@@ -701,6 +741,30 @@
             <div class="confirm-modal-footer">
                 <button type="button" class="btn btn-secondary btn-wide" data-kisi-aile-close>Vazgeç</button>
                 <button type="submit" class="btn btn-primary btn-wide">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+@if ($canEditKisi)
+<div class="confirm-modal" id="kisi-yakin-sil-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kisi-yakin-sil-close></div>
+    <div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="kisi-yakin-sil-modal-title">
+        <div class="confirm-modal-header">
+            <h3 id="kisi-yakin-sil-modal-title" class="confirm-modal-title">Yakın Kaydını Sil</h3>
+            <button type="button" class="confirm-modal-x" data-kisi-yakin-sil-close aria-label="Kapat">&times;</button>
+        </div>
+        <form method="POST" action="" id="kisi-yakin-sil-form">
+            @csrf
+            @method('DELETE')
+            <div class="confirm-modal-body">
+                <p style="margin:0 0 0.5rem;"><strong data-kisi-yakin-sil-ad></strong> yakın kaydı silinecek. Emin misiniz?</p>
+                <p class="form-hint" style="margin:0;">Yalnızca yakınlık kaydı silinir; yakının varsa kişi kaydı ve başvuruları etkilenmez.</p>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn btn-secondary btn-wide" data-kisi-yakin-sil-close>Vazgeç</button>
+                <button type="submit" class="btn btn-danger btn-wide" data-kisi-yakin-sil-submit>Sil</button>
             </div>
         </form>
     </div>

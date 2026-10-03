@@ -40,6 +40,7 @@ class GenelAyarServisi
      *     basvuru_dogrulama_eposta: bool,
      *     yakin_icin_basvuru_aktif: bool,
      *     manuel_yakin_ekleme_aktif: bool,
+     *     hosgeldin_eposta_aktif: bool,
      *     sidebar_logo: string|null,
      *     sidebar_logo_url: string|null,
      *     sidebar_logo_adi: string|null,
@@ -88,6 +89,7 @@ class GenelAyarServisi
             'basvuru_dogrulama_eposta' => $this->boolAyar('basvuru_dogrulama_eposta'),
             'yakin_icin_basvuru_aktif' => $this->yakinIcinBasvuruAktif(),
             'manuel_yakin_ekleme_aktif' => $this->manuelYakinEklemeAktif(),
+            'hosgeldin_eposta_aktif' => $this->hosgeldinEpostaAktif(),
             'sidebar_logo' => $sidebarLogo,
             'sidebar_logo_url' => $this->logoUrl($sidebarLogo),
             'sidebar_logo_adi' => $sidebarLogo ? basename($sidebarLogo) : null,
@@ -162,6 +164,11 @@ class GenelAyarServisi
     public function manuelYakinEklemeAktif(): bool
     {
         return $this->boolAyar('manuel_yakin_ekleme_aktif', true);
+    }
+
+    public function hosgeldinEpostaAktif(): bool
+    {
+        return $this->boolAyar('hosgeldin_eposta_aktif');
     }
 
     private function boolAyar(string $anahtar, bool $varsayilan = false): bool
@@ -266,6 +273,7 @@ class GenelAyarServisi
             'basvuru_dogrulama_eposta' => ! empty($payload['basvuru_dogrulama_eposta']) ? '1' : '0',
             'yakin_icin_basvuru_aktif' => ! empty($payload['yakin_icin_basvuru_aktif']) ? '1' : '0',
             'manuel_yakin_ekleme_aktif' => ! empty($payload['manuel_yakin_ekleme_aktif']) ? '1' : '0',
+            'hosgeldin_eposta_aktif' => ! empty($payload['hosgeldin_eposta_aktif']) ? '1' : '0',
             'logo' => $logoPath,
             'sidebar_logo' => $sidebarLogoPath,
             'header_logo' => $headerLogoPath,
