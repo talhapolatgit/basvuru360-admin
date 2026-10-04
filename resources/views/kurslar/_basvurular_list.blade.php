@@ -117,6 +117,7 @@
                     <td data-column="basvuru_tarihi" class="col-basvuru_tarihi {{ in_array('basvuru_tarihi', $defaultVisible, true) ? '' : 'col-hidden' }}">
                         {{ $basvuru->created_at?->format('d.m.Y H:i') }}
                     </td>
+                    @include('soru-formlari._liste-hucreler')
                     <td data-column="islemler" class="col-islemler">
                         @php
                             $katilimciAdi = $basvuru->kisi?->tam_adi ?? ($basvuru->basvuran?->tam_adi ?? 'Başvuru');

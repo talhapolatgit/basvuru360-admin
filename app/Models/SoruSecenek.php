@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class KresSoruSecenek extends Model
+class SoruSecenek extends Model
 {
-    protected $table = 'kres_soru_secenekler';
+    protected $table = 'soru_secenekleri';
 
     protected $fillable = [
         'soru_id',
@@ -23,10 +23,10 @@ class KresSoruSecenek extends Model
     }
 
     /**
-     * @return BelongsTo<KresSoru, $this>
+     * @return BelongsTo<Soru, $this>
      */
     public function soru(): BelongsTo
     {
-        return $this->belongsTo(KresSoru::class, 'soru_id');
+        return $this->belongsTo(Soru::class, 'soru_id');
     }
 }

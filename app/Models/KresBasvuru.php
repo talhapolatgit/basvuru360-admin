@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class KresBasvuru extends Model
@@ -71,10 +71,10 @@ class KresBasvuru extends Model
     }
 
     /**
-     * @return HasMany<KresBasvuruCevap, $this>
+     * @return MorphMany<BasvuruCevap, $this>
      */
-    public function cevaplar(): HasMany
+    public function cevaplar(): MorphMany
     {
-        return $this->hasMany(KresBasvuruCevap::class, 'basvuru_id');
+        return $this->morphMany(BasvuruCevap::class, 'basvuru');
     }
 }

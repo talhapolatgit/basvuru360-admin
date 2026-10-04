@@ -9,6 +9,8 @@ use App\Models\KresBasvuruDurum;
 use App\Models\KresDonem;
 use App\Models\KresGrup;
 use App\Models\KresOkul;
+use App\Models\SoruFormu;
+use App\Services\SoruFormuCevapServisi;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -132,7 +134,8 @@ class KresGrupController extends Controller
             ? KresBasvuru::query()->where('grup_id', $kresGrup->id)->where('durum_id', $kesinId)->count()
             : 0;
 
-        $columns = $this->basvuruTableColumns();
+        $soruFormu = $this->grupSoruFormu($kresGrup);
+        $columns = $this->basvuruTableColumns($soruFormu);
         $basvuruDurum = (string) $request->input('basvuru_durum', 'tumu');
         if ($basvuruDurum !== 'tumu' && ! $durumlar->firstWhere('kod', $basvuruDurum)) {
             $basvuruDurum = 'tumu';
@@ -145,6 +148,7 @@ class KresGrupController extends Controller
             'kesinSayisi' => $kesinSayisi,
             'basvuruColumns' => $columns['all'],
             'basvuruDefaultVisible' => $columns['defaultVisible'],
+            'soruFormu' => $soruFormu,
             'basvuruDurum' => $basvuruDurum,
             'step' => 3,
         ]);
@@ -155,7 +159,7 @@ class KresGrupController extends Controller
         abort_unless($kresGrup->okul_id === $kresOkul->id, 404);
 
         [$basvurular, $basvuruDurum, $sort, $direction] = $this->searchBasvurular($request, $kresGrup);
-        $columns = $this->basvuruTableColumns();
+        $columns = $this->basvuruTableColumns($this->grupSoruFormu($kresGrup));
 
         return response()->json([
             'html' => view('kres.gruplar._basvurular_list', [
@@ -165,6 +169,7 @@ class KresGrupController extends Controller
                 'basvuruColumns' => $columns['all'],
                 'basvuruDefaultVisible' => $columns['defaultVisible'],
                 'basvuruSortable' => $columns['sortable'],
+                'soruKolonlari' => $columns['soru'],
                 'sort' => $sort,
                 'direction' => $direction,
             ])->render(),
@@ -180,19 +185,22 @@ class KresGrupController extends Controller
         abort_unless($kresGrup->okul_id === $kresOkul->id, 404);
 
         [$basvurular] = $this->searchBasvurular($request, $kresGrup, paginate: false);
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($this->grupSoruFormu($kresGrup));
 
         $filename = 'kres-'.$kresOkul->id.'-grup-'.$kresGrup->id.'-basvurular-'.now()->format('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($basvurular) {
+        return response()->streamDownload(function () use ($basvurular, $cevapServisi, $soruKolonlari) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($handle, [
                 'Öğrenci', 'T.C. Kimlik No', 'Doğum T.', 'Telefon',
                 'Başvuran', 'Veli', 'Durum', 'Yedek Sıra', 'Not', 'Kaydeden', 'Başvuru Tarihi',
+                ...array_column($soruKolonlari, 'label'),
             ], ';');
 
-            $basvurular->chunk(200, function ($rows) use ($handle) {
+            $basvurular->chunk(200, function ($rows) use ($handle, $cevapServisi, $soruKolonlari) {
                 foreach ($rows as $basvuru) {
                     fputcsv($handle, [
                         $basvuru->kisi?->tam_adi ?? '',
@@ -206,6 +214,7 @@ class KresGrupController extends Controller
                         $basvuru->notlar ?? '',
                         $basvuru->olusturan?->tam_adi ?? '',
                         $basvuru->created_at?->format('d.m.Y H:i') ?? '',
+                        ...$cevapServisi->excelDegerleri($basvuru, $soruKolonlari),
                     ], ';');
                 }
             });
@@ -343,7 +352,9 @@ class KresGrupController extends Controller
 
         $query = KresBasvuru::query()
             ->where('grup_id', $grup->id)
-            ->with(['kisi', 'basvuran', 'durum', 'olusturan']);
+            ->with(['kisi', 'basvuran', 'durum', 'olusturan', 'cevaplar']);
+
+        app(SoruFormuCevapServisi::class)->filtreUygula($query, $this->grupSoruFormu($grup), $request);
 
         $secili = $durumlar->firstWhere('kod', $basvuruDurum);
         if ($secili) {
@@ -410,8 +421,16 @@ class KresGrupController extends Controller
     /**
      * @return array{all: array<string, string>, defaultVisible: list<string>, sortable: list<string>}
      */
-    private function basvuruTableColumns(): array
+    private function grupSoruFormu(KresGrup $grup): ?SoruFormu
     {
+        return $grup->loadMissing('donem.soruFormu.sorular.secenekler')->donem?->soruFormu;
+    }
+
+    private function basvuruTableColumns(?SoruFormu $soruFormu = null): array
+    {
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($soruFormu);
+
         return [
             'all' => [
                 'ogrenci' => 'Öğrenci',
@@ -425,8 +444,10 @@ class KresGrupController extends Controller
                 'notlar' => 'Not',
                 'kaydeden' => 'Kaydeden',
                 'basvuru_tarihi' => 'Başvuru Tarihi',
+                ...$cevapServisi->kolonEtiketleri($soruKolonlari),
                 'islemler' => 'İşlemler',
             ],
+            'soru' => $soruKolonlari,
             'defaultVisible' => [
                 'ogrenci', 'kimlik', 'basvuran', 'durum', 'yedek_sira', 'basvuru_tarihi', 'islemler',
             ],

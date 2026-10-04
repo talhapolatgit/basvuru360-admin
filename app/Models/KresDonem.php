@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class KresDonem extends Model
 {
@@ -16,6 +16,7 @@ class KresDonem extends Model
         'bitis',
         'aktif',
         'yayinla',
+        'soru_formu_id',
     ];
 
     protected function casts(): array
@@ -42,10 +43,10 @@ class KresDonem extends Model
     }
 
     /**
-     * @return HasOne<KresSoruFormu, $this>
+     * @return BelongsTo<SoruFormu, $this>
      */
-    public function soruFormu(): HasOne
+    public function soruFormu(): BelongsTo
     {
-        return $this->hasOne(KresSoruFormu::class, 'donem_id');
+        return $this->belongsTo(SoruFormu::class, 'soru_formu_id');
     }
 }

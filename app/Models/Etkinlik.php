@@ -49,6 +49,7 @@ class Etkinlik extends Model
         'durum',
         'olusturan_id',
         'guncelleyen_id',
+        'soru_formu_id',
     ];
 
     protected function casts(): array
@@ -85,6 +86,14 @@ class Etkinlik extends Model
     public function etkinlikTipi(): BelongsTo
     {
         return $this->belongsTo(EtkinlikTipi::class, 'etkinlik_tipi_id');
+    }
+
+    /**
+     * @return BelongsTo<SoruFormu, $this>
+     */
+    public function soruFormu(): BelongsTo
+    {
+        return $this->belongsTo(SoruFormu::class, 'soru_formu_id');
     }
 
     public function egitimDurumu(): BelongsTo

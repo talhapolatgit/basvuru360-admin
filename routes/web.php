@@ -18,7 +18,6 @@ use App\Http\Controllers\KresController;
 use App\Http\Controllers\KresDonemController;
 use App\Http\Controllers\KresGrupController;
 use App\Http\Controllers\KresOkulController;
-use App\Http\Controllers\KresSoruFormuController;
 use App\Http\Controllers\KullaniciController;
 use App\Http\Controllers\KursController;
 use App\Http\Controllers\LogController;
@@ -27,6 +26,7 @@ use App\Http\Controllers\MerkezYetkiController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SabitTanimController;
+use App\Http\Controllers\SoruFormuController;
 use App\Http\Controllers\TakvimController;
 use Illuminate\Support\Facades\Route;
 
@@ -186,17 +186,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular', [KresGrupController::class, 'basvurular'])->middleware('yetki:kres.goruntule,kres.basvuru_goruntule')->name('kres.gruplar.basvurular');
     Route::get('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular/excel', [KresGrupController::class, 'exportBasvurular'])->middleware('yetki:kres.basvuru_goruntule,kres.goruntule')->name('kres.gruplar.basvurular.export');
 
-    Route::get('/kres/soru-formlari', [KresSoruFormuController::class, 'index'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.index');
-    Route::get('/kres/soru-formlari/excel', [KresSoruFormuController::class, 'export'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.export');
-    Route::post('/kres/soru-formlari', [KresSoruFormuController::class, 'store'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.store');
-    Route::get('/kres/soru-formlari/{kresSoruFormu}', [KresSoruFormuController::class, 'show'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.show');
-    Route::get('/kres/soru-formlari/{kresSoruFormu}/onizleme', [KresSoruFormuController::class, 'onizleme'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.onizleme');
-    Route::put('/kres/soru-formlari/{kresSoruFormu}', [KresSoruFormuController::class, 'update'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.update');
-    Route::delete('/kres/soru-formlari/{kresSoruFormu}', [KresSoruFormuController::class, 'destroy'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.destroy');
-    Route::post('/kres/soru-formlari/{kresSoruFormu}/sorular', [KresSoruFormuController::class, 'storeSoru'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.sorular.store');
-    Route::put('/kres/soru-formlari/{kresSoruFormu}/sorular/{kresSoru}', [KresSoruFormuController::class, 'updateSoru'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.sorular.update');
-    Route::delete('/kres/soru-formlari/{kresSoruFormu}/sorular/{kresSoru}', [KresSoruFormuController::class, 'destroySoru'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.sorular.destroy');
-    Route::put('/kres/soru-formlari/{kresSoruFormu}/sorular-sira', [KresSoruFormuController::class, 'siralaSorular'])->middleware('yetki:kres.soru_formu_yonet')->name('kres.soru-formlari.sorular.sira');
+    Route::middleware('yetki:soru_formu.yonet')->group(function () {
+        Route::get('/soru-formlari', [SoruFormuController::class, 'index'])->name('soru-formlari.index');
+        Route::get('/soru-formlari/excel', [SoruFormuController::class, 'export'])->name('soru-formlari.export');
+        Route::post('/soru-formlari', [SoruFormuController::class, 'store'])->name('soru-formlari.store');
+        Route::get('/soru-formlari/{soruFormu}', [SoruFormuController::class, 'show'])->name('soru-formlari.show');
+        Route::get('/soru-formlari/{soruFormu}/onizleme', [SoruFormuController::class, 'onizleme'])->name('soru-formlari.onizleme');
+        Route::post('/soru-formlari/{soruFormu}/kopyala', [SoruFormuController::class, 'kopyala'])->name('soru-formlari.kopyala');
+        Route::put('/soru-formlari/{soruFormu}', [SoruFormuController::class, 'update'])->name('soru-formlari.update');
+        Route::delete('/soru-formlari/{soruFormu}', [SoruFormuController::class, 'destroy'])->name('soru-formlari.destroy');
+        Route::post('/soru-formlari/{soruFormu}/sorular', [SoruFormuController::class, 'storeSoru'])->name('soru-formlari.sorular.store');
+        Route::put('/soru-formlari/{soruFormu}/sorular/{soru}', [SoruFormuController::class, 'updateSoru'])->name('soru-formlari.sorular.update');
+        Route::delete('/soru-formlari/{soruFormu}/sorular/{soru}', [SoruFormuController::class, 'destroySoru'])->name('soru-formlari.sorular.destroy');
+        Route::put('/soru-formlari/{soruFormu}/sorular-sira', [SoruFormuController::class, 'siralaSorular'])->name('soru-formlari.sorular.sira');
+    });
 
     Route::get('/kres/kisiler/ara', [KresBasvuruController::class, 'kisiAra'])->middleware('yetki:kres.basvuru_olustur')->name('kres.kisiler.ara');
     Route::post('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular', [KresBasvuruController::class, 'store'])->middleware('yetki:kres.basvuru_olustur')->name('kres.basvurular.store');
@@ -295,6 +298,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/kisiler/{kisi}/foto', [KisiController::class, 'deleteFoto'])->middleware('yetki:kisi.guncelle')->name('kisiler.foto.delete');
     Route::get('/kisiler/{kisi}', [KisiController::class, 'show'])->middleware('yetki:kisi.goruntule')->name('kisiler.show');
     Route::get('/kisiler/{kisi}/basvurular', [KisiController::class, 'basvurular'])->middleware('yetki:kisi.goruntule')->name('kisiler.basvurular');
+    Route::post('/kisiler/{kisi}/kimlik-guncelle', [KisiController::class, 'kimlikGuncelle'])->middleware(['yetki:kisi.guncelle', 'throttle:20,1'])->name('kisiler.kimlik-guncelle');
+    Route::post('/kisiler/{kisi}/adres-guncelle', [KisiController::class, 'adresGuncelle'])->middleware(['yetki:kisi.guncelle', 'throttle:20,1'])->name('kisiler.adres-guncelle');
     Route::post('/kisiler/{kisi}/yakinlar', [KisiController::class, 'storeYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.store');
     Route::post('/kisiler/{kisi}/yakinlar/entegrasyon', [KisiController::class, 'yakinlariEntegrasyondanGetir'])->middleware(['yetki:kisi.guncelle', 'throttle:20,1'])->name('kisiler.yakinlar.entegrasyon');
     Route::delete('/kisiler/{kisi}/yakinlar/{yakin}', [KisiController::class, 'destroyYakin'])->middleware('yetki:kisi.guncelle')->name('kisiler.yakinlar.destroy');

@@ -26,6 +26,7 @@ use App\Models\KursEpostaGonderim;
 use App\Models\KursSmsGonderim;
 use App\Models\Kurum;
 use App\Models\SmsLog;
+use App\Models\SoruFormu;
 use App\Models\User;
 use App\Models\Merkez;
 use App\Services\Email\EmailSender;
@@ -37,6 +38,7 @@ use App\Services\SertifikaPdfOlusturucu;
 use App\Services\NumaratorServisi;
 use App\Services\Sms\PhoneNormalizer;
 use App\Services\Sms\SmsSender;
+use App\Services\SoruFormuCevapServisi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
@@ -225,7 +227,8 @@ class KursController extends Controller implements HasMiddleware
             $activeMesajKanal = 'sms';
         }
 
-        $basvuruColumns = $this->basvuruTableColumns();
+        $kurs->load('soruFormu.sorular.secenekler');
+        $basvuruColumns = $this->basvuruTableColumns($kurs->soruFormu);
 
         app(KursDersOlusturucu::class)->sync($kurs, $request->user()?->id);
 
@@ -241,6 +244,7 @@ class KursController extends Controller implements HasMiddleware
             'basvuruDurumlari' => $basvuruDurumlari,
             'basvuruColumns' => $basvuruColumns['all'],
             'basvuruDefaultVisible' => $basvuruColumns['defaultVisible'],
+            'soruFormu' => $kurs->soruFormu,
             'basariDurumlari' => BasariDurum::query()->where('aktif', true)->orderBy('sira')->get(),
             'iptalGerekceleri' => IptalGerekce::query()->where('aktif', true)->orderBy('sira')->get(),
             'smsBasvuruOnayAyar' => app(KursAyarServisi::class)->smsBasvuruOnay()->value,
@@ -426,6 +430,7 @@ class KursController extends Controller implements HasMiddleware
             'kurs.alan',
             'kurs.kursTipi',
             'kurs.ogretmenler',
+            'cevaplar' => fn ($q) => $q->orderBy('id'),
         ]);
 
         $yoklamalar = $basvuru->yoklamalar()
@@ -487,7 +492,7 @@ class KursController extends Controller implements HasMiddleware
     public function basvurular(Request $request, Kurs $kurs): JsonResponse
     {
         [$basvurular, $basvuruDurum, $sort, $direction] = $this->searchKursBasvurular($request, $kurs);
-        $columns = $this->basvuruTableColumns();
+        $columns = $this->basvuruTableColumns($kurs->soruFormu);
 
         return response()->json([
             'html' => view('kurslar._basvurular_list', [
@@ -496,6 +501,7 @@ class KursController extends Controller implements HasMiddleware
                 'basvuruColumns' => $columns['all'],
                 'basvuruDefaultVisible' => $columns['defaultVisible'],
                 'basvuruSortable' => $columns['sortable'],
+                'soruKolonlari' => $columns['soru'],
                 'sort' => $sort,
                 'direction' => $direction,
             ])->render(),
@@ -509,19 +515,22 @@ class KursController extends Controller implements HasMiddleware
     public function exportBasvurular(Request $request, Kurs $kurs): StreamedResponse
     {
         [$basvurular] = $this->searchKursBasvurular($request, $kurs, paginate: false);
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($kurs->soruFormu);
 
         $filename = 'kurs-'.$kurs->kurs_no.'-basvurular-'.now()->format('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($basvurular) {
+        return response()->streamDownload(function () use ($basvurular, $cevapServisi, $soruKolonlari) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($handle, [
                 'Başvuran', 'Katılımcı', 'Veli', 'Kimlik No', 'Doğum T.', 'Telefon', 'İkamet',
                 'Durum', 'Yedek Sıra', 'Başarı', 'Yoklama', 'Kursa Başlama', 'Onay Tarihi', 'İptal Tarihi', 'İptal Gerekçesi', 'Kaydeden', 'Başvuru Tarihi',
+                ...array_column($soruKolonlari, 'label'),
             ], ';');
 
-            $basvurular->chunk(200, function ($rows) use ($handle) {
+            $basvurular->chunk(200, function ($rows) use ($handle, $cevapServisi, $soruKolonlari) {
                 foreach ($rows as $basvuru) {
                     fputcsv($handle, [
                         $basvuru->basvuran?->tam_adi ?? ($basvuru->kisi?->tam_adi ?? ''),
@@ -541,6 +550,7 @@ class KursController extends Controller implements HasMiddleware
                         $basvuru->iptalGerekce?->ad ?? '',
                         $basvuru->olusturan?->tam_adi ?? '',
                         $basvuru->created_at?->format('d.m.Y H:i') ?? '',
+                        ...$cevapServisi->excelDegerleri($basvuru, $soruKolonlari),
                     ], ';');
                 }
             });
@@ -569,6 +579,11 @@ class KursController extends Controller implements HasMiddleware
                 'yoklamalar' => fn ($q) => $q->select('id', 'kurs_basvuru_id', 'kurs_ders_id', 'saatlik_durumlar', 'durum')
                     ->with('ders:id,iptal_edildi'),
             ]);
+
+        if ($kurs->soruFormu) {
+            $query->with('cevaplar');
+            app(SoruFormuCevapServisi::class)->filtreUygula($query->getQuery(), $kurs->soruFormu, $request);
+        }
 
         $seciliDurum = $basvuruDurumlari->firstWhere('kod', $basvuruDurum);
         if ($seciliDurum) {
@@ -655,8 +670,11 @@ class KursController extends Controller implements HasMiddleware
     /**
      * @return array{all: array<string, string>, defaultVisible: list<string>, sortable: list<string>}
      */
-    private function basvuruTableColumns(): array
+    private function basvuruTableColumns(?SoruFormu $soruFormu = null): array
     {
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($soruFormu);
+
         return [
             'all' => [
                 'basvuran' => 'Başvuran',
@@ -676,8 +694,10 @@ class KursController extends Controller implements HasMiddleware
                 'iptal_gerekce' => 'İptal Gerekçesi',
                 'kaydeden' => 'Kaydeden',
                 'basvuru_tarihi' => 'Başvuru Tarihi',
+                ...$cevapServisi->kolonEtiketleri($soruKolonlari),
                 'islemler' => 'İşlemler',
             ],
+            'soru' => $soruKolonlari,
             'defaultVisible' => [
                 'katilimci', 'kimlik', 'telefon', 'durum', 'yedek_sira', 'basari', 'yoklama', 'kursa_baslama', 'basvuru_tarihi', 'islemler',
             ],
@@ -2920,6 +2940,7 @@ class KursController extends Controller implements HasMiddleware
             'evrak_tipi_ids.*' => ['integer', 'exists:evrak_tipleri,id'],
             'kurumlar' => ['nullable', 'array'],
             'kurumlar.*' => ['integer', 'exists:kurumlar,id'],
+            'soru_formu_id' => ['nullable', 'integer', 'exists:soru_formlari,id'],
             'gunler' => ['required', 'array', 'min:1'],
             'gunler.*.gun' => ['required', Rule::enum(HaftaGunu::class)],
             'gunler.*.baslangic_saati' => ['required', 'date_format:H:i'],
@@ -3064,6 +3085,7 @@ class KursController extends Controller implements HasMiddleware
             'cinsiyet_sarti' => $validated['cinsiyet_sarti'] ?? null,
             'ikamet_sarti' => $ikametSarti,
             'evrak_zorunlu' => $evrakTipiIds !== [],
+            'soru_formu_id' => $validated['soru_formu_id'] ?? null,
             'aciklama' => $validated['aciklama'] ?? null,
             'guncelleyen_id' => $request->user()?->id,
         ];
@@ -3128,6 +3150,7 @@ class KursController extends Controller implements HasMiddleware
             'basvuru_baslama_tarihi' => $kurs->basvuru_baslama_tarihi?->toDateString(),
             'basvuru_bitis_tarihi' => $kurs->basvuru_bitis_tarihi?->toDateString(),
             'onlinede_yayinlansin' => (bool) $kurs->onlinede_yayinlansin,
+            'soru_formu_id' => $kurs->soru_formu_id,
             'haftalik_program' => $this->kursProgramOzeti($kurs),
         ];
     }
@@ -3209,6 +3232,7 @@ class KursController extends Controller implements HasMiddleware
             'ikametSartlari' => IkametSarti::cases(),
             'evrakTipleri' => EvrakTipi::where('aktif', true)->orderBy('ad')->get(),
             'kurumlar' => Kurum::query()->where('aktif', true)->orderBy('sira')->orderBy('ad')->get(),
+            'soruFormlari' => SoruFormu::query()->withCount('sorular')->orderByDesc('aktif')->orderBy('ad')->get(),
         ];
     }
 

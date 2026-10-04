@@ -17,11 +17,13 @@ use App\Services\BasvuruKosulDogrulayici;
 use App\Services\EtkinlikAyarServisi;
 use App\Services\EtkinlikYedekListeServisi;
 use App\Services\LogKaydedici;
+use App\Services\SoruFormuCevapServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class EtkinlikBasvuruController extends ApiController
 {
@@ -39,6 +41,7 @@ class EtkinlikBasvuruController extends ApiController
             ->with([
                 'merkez',
                 'evrakTipleri' => fn ($q) => $q->where('aktif', true),
+                'soruFormu.sorular.secenekler',
             ])
             ->find($request->integer('etkinlik_id'));
 
@@ -132,6 +135,9 @@ class EtkinlikBasvuruController extends ApiController
             'kvkk_onay.accepted' => 'Başvuru için KVKK metnini onaylamanız gerekir.',
             'aydinlatma_onay.accepted' => 'Başvuru için aydınlatma metnini onaylamanız gerekir.',
         ], $this->cocukBasvuruMesajlari()));
+
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $cevaplar = $cevapServisi->dogrula($request, $etkinlik->soruFormu);
 
         $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $basvuran);
 
@@ -240,123 +246,133 @@ class EtkinlikBasvuruController extends ApiController
             $kucuk = $kucukBasvuran;
         }
 
-        $basvuru = DB::transaction(function () use (
-            $request,
-            $validated,
-            $etkinlik,
-            $basvuran,
-            $katilimci,
-            $cocukAdina,
-            $kucuk,
-            $veliDolu,
-            $evrakTipiIds,
-        ) {
-            /** @var Etkinlik $etkinlik */
-            $etkinlik = Etkinlik::query()->whereKey($etkinlik->id)->lockForUpdate()->firstOrFail();
+        try {
+            $basvuru = DB::transaction(function () use (
+                $request,
+                $validated,
+                $etkinlik,
+                $basvuran,
+                $katilimci,
+                $cocukAdina,
+                $kucuk,
+                $veliDolu,
+                $evrakTipiIds,
+                $cevaplar,
+                $cevapServisi,
+            ) {
+                /** @var Etkinlik $etkinlik */
+                $etkinlik = Etkinlik::query()->whereKey($etkinlik->id)->lockForUpdate()->firstOrFail();
 
-            $yerlesim = app(EtkinlikYedekListeServisi::class)->yeniBasvuruDurumuBelirle($etkinlik);
-            $durumId = $yerlesim['durum_id'];
-            $durumKod = $yerlesim['durum_kod'];
-            $yedekSira = $yerlesim['yedek_sira'];
+                $yerlesim = app(EtkinlikYedekListeServisi::class)->yeniBasvuruDurumuBelirle($etkinlik);
+                $durumId = $yerlesim['durum_id'];
+                $durumKod = $yerlesim['durum_kod'];
+                $yedekSira = $yerlesim['yedek_sira'];
 
-            $basvuran->basvuruIleProfilGuncelle($validated);
+                $basvuran->basvuruIleProfilGuncelle($validated);
 
-            if ($cocukAdina) {
-                $finalBasvuranId = $basvuran->id;
-                $finalVeliId = $basvuran->id;
-                $finalKisiId = $katilimci->id;
-            } else {
-                $veli = null;
-                if ($kucuk || $veliDolu) {
-                    $veli = $this->kisiUpsert([
-                        'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
-                        'dogum_tarihi' => $validated['veli_dogum_tarihi'],
-                        'ad' => $validated['veli_ad'],
-                        'soyad' => $validated['veli_soyad'],
-                        'telefon' => $validated['veli_telefon'] ?? null,
-                        'email' => $validated['veli_email'] ?? null,
+                if ($cocukAdina) {
+                    $finalBasvuranId = $basvuran->id;
+                    $finalVeliId = $basvuran->id;
+                    $finalKisiId = $katilimci->id;
+                } else {
+                    $veli = null;
+                    if ($kucuk || $veliDolu) {
+                        $veli = $this->kisiUpsert([
+                            'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
+                            'dogum_tarihi' => $validated['veli_dogum_tarihi'],
+                            'ad' => $validated['veli_ad'],
+                            'soyad' => $validated['veli_soyad'],
+                            'telefon' => $validated['veli_telefon'] ?? null,
+                            'email' => $validated['veli_email'] ?? null,
+                        ]);
+                    }
+
+                    $finalBasvuranId = $kucuk && $veli ? $veli->id : $basvuran->id;
+                    $finalVeliId = $veli?->id;
+                    $finalKisiId = $basvuran->id;
+                }
+
+                $iptalDurumId = EtkinlikBasvuruDurum::idByKod('iptal');
+                $mevcutAktif = EtkinlikBasvuru::query()
+                    ->where('kisi_id', $finalKisiId)
+                    ->where('etkinlik_id', $etkinlik->id)
+                    ->whereNull('deleted_at')
+                    ->when($iptalDurumId, fn ($q) => $q->where('durum_id', '!=', $iptalDurumId))
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($mevcutAktif) {
+                    throw ValidationException::withMessages([
+                        'etkinlik_id' => $cocukAdina
+                            ? 'Bu etkinliğe ait çocuk için aktif bir başvuru zaten var.'
+                            : 'Bu etkinliğe ait aktif bir başvurunuz zaten var.',
                     ]);
                 }
 
-                $finalBasvuranId = $kucuk && $veli ? $veli->id : $basvuran->id;
-                $finalVeliId = $veli?->id;
-                $finalKisiId = $basvuran->id;
-            }
-
-            $iptalDurumId = EtkinlikBasvuruDurum::idByKod('iptal');
-            $mevcutAktif = EtkinlikBasvuru::query()
-                ->where('kisi_id', $finalKisiId)
-                ->where('etkinlik_id', $etkinlik->id)
-                ->whereNull('deleted_at')
-                ->when($iptalDurumId, fn ($q) => $q->where('durum_id', '!=', $iptalDurumId))
-                ->lockForUpdate()
-                ->exists();
-
-            if ($mevcutAktif) {
-                throw ValidationException::withMessages([
-                    'etkinlik_id' => $cocukAdina
-                        ? 'Bu etkinliğe ait çocuk için aktif bir başvuru zaten var.'
-                        : 'Bu etkinliğe ait aktif bir başvurunuz zaten var.',
-                ]);
-            }
-
-            $basvuru = EtkinlikBasvuru::query()->create([
-                'kisi_id' => $finalKisiId,
-                'basvuran_id' => $finalBasvuranId,
-                'veli_id' => $finalVeliId,
-                'etkinlik_id' => $etkinlik->id,
-                'durum_id' => $durumId,
-                'yedek_sira' => $yedekSira,
-                'olusturan_id' => null,
-            ]);
-
-            foreach ($evrakTipiIds as $tipId) {
-                $file = $request->file("evrak.{$tipId}");
-                if (! $file) {
-                    continue;
-                }
-
-                $path = $file->store('etkinlik-basvuru-evraklari/'.$basvuru->id, 'public');
-                EtkinlikBasvuruEvrak::query()->create([
-                    'etkinlik_basvuru_id' => $basvuru->id,
-                    'evrak_tipi_id' => $tipId,
-                    'dosya_yolu' => $path,
-                    'orijinal_ad' => $file->getClientOriginalName(),
-                    'mime' => $file->getClientMimeType(),
-                    'boyut' => $file->getSize() ?: 0,
-                    'olusturan_id' => null,
-                ]);
-            }
-
-            $etkinlik->update([
-                'basvuru_sayisi' => $etkinlik->basvurular()->count(),
-            ]);
-
-            LogKaydedici::kaydet(
-                islem: 'etkinlik_basvuru.olusturuldu',
-                kurs: null,
-                aciklama: $basvuran->tam_adi.' portal üzerinden etkinlik başvurusu oluşturdu'
-                    .($cocukAdina ? ' (yakın: '.$katilimci->tam_adi.')' : '')
-                    .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
-                konu: $basvuru,
-                yeni: [
+                $basvuru = EtkinlikBasvuru::query()->create([
                     'kisi_id' => $finalKisiId,
                     'basvuran_id' => $finalBasvuranId,
                     'veli_id' => $finalVeliId,
                     'etkinlik_id' => $etkinlik->id,
-                    'durum' => $durumKod,
+                    'durum_id' => $durumId,
                     'yedek_sira' => $yedekSira,
-                    'kanal' => 'portal',
-                    'basvuru_icin' => $cocukAdina ? 'cocuk' : 'kendisi',
-                ],
-                ekstra: ['etkinlik_id' => $etkinlik->id],
-            );
+                    'olusturan_id' => null,
+                ]);
 
-            $basvuru->setAttribute('_olusturma_durum_kod', $durumKod);
-            $basvuru->setAttribute('_olusturma_yedek_sira', $yedekSira);
+                foreach ($evrakTipiIds as $tipId) {
+                    $file = $request->file("evrak.{$tipId}");
+                    if (! $file) {
+                        continue;
+                    }
 
-            return $basvuru;
-        });
+                    $path = $file->store('etkinlik-basvuru-evraklari/'.$basvuru->id, 'public');
+                    EtkinlikBasvuruEvrak::query()->create([
+                        'etkinlik_basvuru_id' => $basvuru->id,
+                        'evrak_tipi_id' => $tipId,
+                        'dosya_yolu' => $path,
+                        'orijinal_ad' => $file->getClientOriginalName(),
+                        'mime' => $file->getClientMimeType(),
+                        'boyut' => $file->getSize() ?: 0,
+                        'olusturan_id' => null,
+                    ]);
+                }
+
+                $cevapServisi->kaydet($basvuru, $cevaplar, 'etkinlik');
+
+                $etkinlik->update([
+                    'basvuru_sayisi' => $etkinlik->basvurular()->count(),
+                ]);
+
+                LogKaydedici::kaydet(
+                    islem: 'etkinlik_basvuru.olusturuldu',
+                    kurs: null,
+                    aciklama: $basvuran->tam_adi.' portal üzerinden etkinlik başvurusu oluşturdu'
+                        .($cocukAdina ? ' (yakın: '.$katilimci->tam_adi.')' : '')
+                        .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
+                    konu: $basvuru,
+                    yeni: [
+                        'kisi_id' => $finalKisiId,
+                        'basvuran_id' => $finalBasvuranId,
+                        'veli_id' => $finalVeliId,
+                        'etkinlik_id' => $etkinlik->id,
+                        'durum' => $durumKod,
+                        'yedek_sira' => $yedekSira,
+                        'kanal' => 'portal',
+                        'basvuru_icin' => $cocukAdina ? 'cocuk' : 'kendisi',
+                    ],
+                    ekstra: ['etkinlik_id' => $etkinlik->id],
+                );
+
+                $basvuru->setAttribute('_olusturma_durum_kod', $durumKod);
+                $basvuru->setAttribute('_olusturma_yedek_sira', $yedekSira);
+
+                return $basvuru;
+            });
+        } catch (Throwable $e) {
+            $cevapServisi->yuklenenDosyalariSil();
+
+            throw $e;
+        }
 
         $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
 

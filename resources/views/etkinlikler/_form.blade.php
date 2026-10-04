@@ -238,6 +238,17 @@
 <div class="card form-section-card">
     <div class="card-section-header">
         <div>
+            <h2 class="card-section-title">Ek Sorular</h2>
+            <p class="card-section-desc">Bu etkinliğe başvuranlara sorulacak hazır soru formunu seçin.</p>
+        </div>
+    </div>
+
+    @include('soru-formlari._secim', ['seciliSoruFormuId' => $val('soru_formu_id', '')])
+</div>
+
+<div class="card form-section-card">
+    <div class="card-section-header">
+        <div>
             <h2 class="card-section-title">Açıklama</h2>
             <p class="card-section-desc">İsteğe bağlı. Portalda etkinlik detayında gösterilir.</p>
         </div>

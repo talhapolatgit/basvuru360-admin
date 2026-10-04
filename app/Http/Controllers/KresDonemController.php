@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KresDonem;
+use App\Models\SoruFormu;
 use App\Services\KresDonemBaglami;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,6 +38,7 @@ class KresDonemController extends Controller
 
         return view('kres.donemler.index', $viewData + [
             'aktifDonemler' => $this->aktifDonemOzeti(),
+            'soruFormlari' => SoruFormu::query()->withCount('sorular')->orderByDesc('aktif')->orderBy('ad')->get(),
         ]);
     }
 
@@ -174,6 +176,7 @@ class KresDonemController extends Controller
             'bitis' => ['nullable', 'date', 'after_or_equal:baslangic'],
             'aktif' => ['nullable', 'boolean'],
             'yayinla' => ['nullable', 'boolean'],
+            'soru_formu_id' => ['nullable', 'integer', 'exists:soru_formlari,id'],
         ], [
             'ad.required' => 'Dönem adı zorunludur.',
             'ad.unique' => 'Bu dönem adı zaten kayıtlı.',
@@ -182,6 +185,7 @@ class KresDonemController extends Controller
 
         $validated['aktif'] = $request->boolean('aktif');
         $validated['yayinla'] = $validated['aktif'] && $request->boolean('yayinla');
+        $validated['soru_formu_id'] = $validated['soru_formu_id'] ?? null;
 
         return $validated;
     }

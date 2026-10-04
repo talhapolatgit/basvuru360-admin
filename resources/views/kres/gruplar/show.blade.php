@@ -53,6 +53,7 @@
         data-basvuru-panel
         data-basvuru-url="{{ route('kres.gruplar.basvurular', [$okul, $grup]) }}"
         data-basvuru-durum="{{ $basvuruDurum }}"
+        data-soru-formu-id="{{ $soruFormu?->id }}"
     >
         <div class="basvuru-toolbar">
             <div class="basvuru-filters">
@@ -68,6 +69,7 @@
                         data-basvuru-filter="{{ $filtreDurum->kod }}"
                     >{{ $filtreDurum->ad }}</button>
                 @endforeach
+                @include('soru-formlari._cevap-filtre', ['soruFormu' => $soruFormu])
             </div>
             <div class="basvuru-toolbar-actions">
                 <div class="basvuru-toolbar-meta" data-basvuru-total>Toplam Kayıt: —</div>

@@ -14,8 +14,9 @@ import {
     saveColumnPrefs,
     syncColumnDropdownOrder,
 } from './table-columns';
+import { basvuruCookieKey, initCevapFiltre } from './cevap-filtre';
 
-const BASVURU_COOKIE_KEY = 'kurs_basvuru_table_prefs';
+let BASVURU_COOKIE_KEY = 'kurs_basvuru_table_prefs';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -416,6 +417,9 @@ function initBasvuruPanel() {
     const columnSaveBtn = panel.querySelector('[data-basvuru-column-save]');
     if (!url || !content) return;
 
+    BASVURU_COOKIE_KEY = basvuruCookieKey('kurs_basvuru_table_prefs', panel);
+    const cevapFiltre = initCevapFiltre(panel, () => loadBasvurular({ durum: currentDurum, page: 1, force: true }));
+
     let currentDurum = panel.dataset.basvuruDurum || 'tumu';
     let currentSort = '';
     let currentDirection = 'desc';
@@ -472,6 +476,7 @@ function initBasvuruPanel() {
             exportUrl.searchParams.set('sort', currentSort);
             exportUrl.searchParams.set('direction', currentDirection);
         }
+        Object.entries(cevapFiltre.params()).forEach(([key, value]) => exportUrl.searchParams.set(key, value));
         excelLink.href = exportUrl.pathname + exportUrl.search;
     }
 
@@ -1298,6 +1303,7 @@ function initBasvuruPanel() {
             const params = {
                 basvuru_durum: durum,
                 page,
+                ...cevapFiltre.params(),
             };
             if (currentSort) {
                 params.sort = currentSort;

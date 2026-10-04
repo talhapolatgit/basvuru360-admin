@@ -1,21 +1,21 @@
 @php
     $allColumns = [
         'ad' => 'Ad',
-        'donem' => 'Dönem',
         'soru_sayisi' => 'Soru Sayısı',
+        'kullanim' => 'Kullanıldığı Yerler',
         'durum' => 'Durum',
         'olusturma' => 'Oluşturma Tarihi',
         'islemler' => 'İşlemler',
     ];
-    $defaultVisible = ['ad', 'donem', 'soru_sayisi', 'durum', 'olusturma', 'islemler'];
+    $defaultVisible = array_keys($allColumns);
     $defaultOrder = array_keys($allColumns);
-    $sortableColumns = ['ad', 'donem', 'soru_sayisi', 'olusturma'];
+    $sortableColumns = ['ad', 'soru_sayisi', 'olusturma'];
 @endphp
 
 <div class="table-wrapper">
     <table
         class="data-table"
-        id="kres-soru-formlari-table"
+        id="soru-formlari-table"
         data-default-order='@json($defaultOrder)'
         data-default-visible='@json($defaultVisible)'
         data-sort="{{ $sort ?? '' }}"
@@ -27,17 +27,26 @@
                     <th
                         data-column="{{ $key }}"
                         @if (in_array($key, $sortableColumns, true)) data-sortable="1" @endif
-                        class="col-{{ $key }} {{ in_array($key, $defaultVisible, true) || $key === 'islemler' ? '' : 'col-hidden' }}"
+                        class="col-{{ $key }}"
                     >{{ $label }}</th>
                 @endforeach
             </tr>
         </thead>
         <tbody>
             @forelse ($formlar as $form)
+                @php
+                    $kullanim = collect([
+                        $form->kurslar_count ? $form->kurslar_count.' kurs' : null,
+                        $form->etkinlikler_count ? $form->etkinlikler_count.' etkinlik' : null,
+                        $form->kres_donemleri_count ? $form->kres_donemleri_count.' kreş dönemi' : null,
+                    ])->filter()->implode(', ');
+                @endphp
                 <tr>
-                    <td data-column="ad">{{ $form->ad }}</td>
-                    <td data-column="donem">{{ $form->donem?->ad ?? '—' }}</td>
+                    <td data-column="ad">
+                        <a href="{{ route('soru-formlari.show', $form) }}" class="table-link">{{ $form->ad }}</a>
+                    </td>
                     <td data-column="soru_sayisi">{{ number_format($form->sorular_count) }}</td>
+                    <td data-column="kullanim">{{ $kullanim !== '' ? $kullanim : '—' }}</td>
                     <td data-column="durum">
                         @if ($form->aktif)
                             <span class="status status-aktif">Aktif</span>
@@ -50,7 +59,7 @@
                         <div class="row-actions" data-row-actions>
                             <button type="button" class="action-menu-btn" data-action-toggle aria-expanded="false" aria-haspopup="menu" title="İşlemler">•••</button>
                             <div class="action-dropdown" data-action-dropdown hidden role="menu">
-                                <a href="{{ route('kres.soru-formlari.show', $form) }}" class="action-dropdown-item" role="menuitem">
+                                <a href="{{ route('soru-formlari.show', $form) }}" class="action-dropdown-item" role="menuitem">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
                                     Soruları düzenle
                                 </a>
@@ -59,7 +68,7 @@
                                     class="action-dropdown-item"
                                     role="menuitem"
                                     data-soru-onizle
-                                    data-onizleme-url="{{ route('kres.soru-formlari.onizleme', $form) }}"
+                                    data-onizleme-url="{{ route('soru-formlari.onizleme', $form) }}"
                                     data-ad="{{ $form->ad }}"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -70,9 +79,8 @@
                                     class="action-dropdown-item"
                                     role="menuitem"
                                     data-entity-edit
-                                    data-update-url="{{ route('kres.soru-formlari.update', $form) }}"
+                                    data-update-url="{{ route('soru-formlari.update', $form) }}"
                                     data-ad="{{ $form->ad }}"
-                                    data-donem-id="{{ $form->donem_id }}"
                                     data-aciklama="{{ $form->aciklama }}"
                                     data-aktif="{{ $form->aktif ? '1' : '0' }}"
                                 >
@@ -81,11 +89,23 @@
                                 </button>
                                 <button
                                     type="button"
+                                    class="action-dropdown-item"
+                                    role="menuitem"
+                                    data-form-kopyala
+                                    data-kopyala-url="{{ route('soru-formlari.kopyala', $form) }}"
+                                    data-ad="{{ $form->ad }}"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                    Kopyala
+                                </button>
+                                <button
+                                    type="button"
                                     class="action-dropdown-item action-dropdown-item-danger"
                                     role="menuitem"
                                     data-form-delete
-                                    data-delete-url="{{ route('kres.soru-formlari.destroy', $form) }}"
+                                    data-delete-url="{{ route('soru-formlari.destroy', $form) }}"
                                     data-ad="{{ $form->ad }}"
+                                    data-kullanim="{{ $kullanim }}"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                     Sil

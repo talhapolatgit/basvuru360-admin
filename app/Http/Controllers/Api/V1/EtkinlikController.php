@@ -101,6 +101,7 @@ class EtkinlikController extends ApiController
                 'merkez',
                 'etkinlikTipi',
                 'evrakTipleri' => fn ($q) => $q->where('aktif', true)->orderBy('ad'),
+                'soruFormu.sorular.secenekler',
             ])
             ->find($id);
 

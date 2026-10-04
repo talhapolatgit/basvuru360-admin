@@ -6,6 +6,7 @@ use App\Enums\KatilimDurumu;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EtkinlikBasvuru extends Model
@@ -110,5 +111,13 @@ class EtkinlikBasvuru extends Model
     public function evraklar(): HasMany
     {
         return $this->hasMany(EtkinlikBasvuruEvrak::class, 'etkinlik_basvuru_id');
+    }
+
+    /**
+     * @return MorphMany<BasvuruCevap, $this>
+     */
+    public function cevaplar(): MorphMany
+    {
+        return $this->morphMany(BasvuruCevap::class, 'basvuru');
     }
 }

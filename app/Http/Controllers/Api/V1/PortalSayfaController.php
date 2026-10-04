@@ -332,7 +332,7 @@ class PortalSayfaController extends ApiController
     }
 
     /**
-     * @return array{id: int, kod: string|null, baslik: string, aciklama: string|null, anasayfa_logo_url: string|null, sidebar_ikon_url: string|null, slug: string, path: string, sistem: bool, sadece_giris: bool, has_kurs: bool, has_etkinlik: bool}
+     * @return array{id: int, kod: string|null, baslik: string, aciklama: string|null, anasayfa_logo_url: string|null, sidebar_ikon_url: string|null, slug: string, path: string, sistem: bool, sadece_giris: bool, has_kurs: bool, has_etkinlik: bool, tek_icerik: array{tip: string, id: int}|null}
      */
     private function serializeSayfa(PortalSayfa $sayfa, PortalSayfaServisi $servis): array
     {
@@ -356,6 +356,7 @@ class PortalSayfaController extends ApiController
             'sadece_giris' => (bool) $sayfa->sadece_giris,
             'has_kurs' => $sayfa->hasKurs(),
             'has_etkinlik' => $sayfa->hasEtkinlik(),
+            'tek_icerik' => $servis->tekIcerik($sayfa),
         ];
     }
 

@@ -1,11 +1,9 @@
-<div class="kres-soru-onizleme">
+@php use App\Enums\SoruTipi; @endphp
+<div class="kres-soru-onizleme" data-soru-onizleme>
     <div class="kres-soru-onizleme-banner">Bu bir önizlemedir. Cevaplar kaydedilmez.</div>
 
     <div class="kres-soru-onizleme-head">
         <h2 class="kres-soru-onizleme-ad">{{ $form->ad }}</h2>
-        @if ($form->donem)
-            <p class="kres-soru-onizleme-donem">{{ $form->donem->ad }}{{ $form->donem->aktif ? ' (aktif)' : '' }}</p>
-        @endif
         @if ($form->aciklama)
             <p class="kres-soru-onizleme-aciklama">{{ $form->aciklama }}</p>
         @endif
@@ -14,7 +12,15 @@
     <form class="kres-soru-onizleme-form" onsubmit="return false;" novalidate>
         @forelse ($form->sorular as $soru)
             @php $tip = $soru->tip; @endphp
-            <div class="form-group">
+            <div
+                class="form-group"
+                data-onizleme-soru="{{ $soru->id }}"
+                @if ($soru->kosulluMu())
+                    data-kosul-soru="{{ $soru->kosul_soru_id }}"
+                    data-kosul-secenekler='@json($soru->kosulSecenekIdleri())'
+                    hidden
+                @endif
+            >
                 <label>
                     {{ $soru->baslik }}
                     @if ($soru->zorunlu)
@@ -26,11 +32,11 @@
                 @endif
 
                 @switch ($tip)
-                    @case(\App\Enums\KresSoruTipi::UzunMetin)
+                    @case(SoruTipi::UzunMetin)
                         <textarea class="form-control" rows="4" placeholder="{{ $tip->placeholder() }}"></textarea>
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Sayi)
+                    @case(SoruTipi::Sayi)
                         <input
                             type="number"
                             class="form-control"
@@ -41,8 +47,8 @@
                         >
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Liste)
-                        <select class="form-control">
+                    @case(SoruTipi::Liste)
+                        <select class="form-control" data-onizleme-secim>
                             <option value="">Seçiniz</option>
                             @foreach ($soru->secenekler as $secenek)
                                 <option value="{{ $secenek->id }}">{{ $secenek->etiket }}</option>
@@ -50,7 +56,7 @@
                         </select>
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Checkbox)
+                    @case(SoruTipi::Checkbox)
                         @if ($soru->min_deger !== null || $soru->max_deger !== null)
                             <p class="form-hint">
                                 @if ($soru->min_deger !== null && $soru->max_deger !== null)
@@ -70,41 +76,41 @@
                         >
                             @foreach ($soru->secenekler as $secenek)
                                 <label class="checkbox-label">
-                                    <input type="checkbox" value="{{ $secenek->id }}">
+                                    <input type="checkbox" value="{{ $secenek->id }}" data-onizleme-secim>
                                     <span>{{ $secenek->etiket }}</span>
                                 </label>
                             @endforeach
                         </div>
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Radio)
+                    @case(SoruTipi::Radio)
                         <div class="kres-soru-onizleme-secenekler">
                             @foreach ($soru->secenekler as $secenek)
                                 <label class="checkbox-label">
-                                    <input type="radio" name="onizleme_{{ $soru->id }}" value="{{ $secenek->id }}">
+                                    <input type="radio" name="onizleme_{{ $soru->id }}" value="{{ $secenek->id }}" data-onizleme-secim>
                                     <span>{{ $secenek->etiket }}</span>
                                 </label>
                             @endforeach
                         </div>
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Tarih)
+                    @case(SoruTipi::Tarih)
                         <input type="date" class="form-control">
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Dosya)
+                    @case(SoruTipi::Dosya)
                         <input type="file" class="form-control">
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Resim)
+                    @case(SoruTipi::Resim)
                         <input type="file" class="form-control" accept="image/*">
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::TcKimlik)
+                    @case(SoruTipi::TcKimlik)
                         <input type="text" class="form-control" inputmode="numeric" maxlength="11" placeholder="{{ $tip->placeholder() }}">
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::CepTelefonu)
+                    @case(SoruTipi::CepTelefonu)
                         <input
                             type="tel"
                             class="form-control"
@@ -116,7 +122,7 @@
                         >
                         @break
 
-                    @case(\App\Enums\KresSoruTipi::Eposta)
+                    @case(SoruTipi::Eposta)
                         <input type="email" class="form-control" placeholder="{{ $tip->placeholder() }}">
                         @break
 

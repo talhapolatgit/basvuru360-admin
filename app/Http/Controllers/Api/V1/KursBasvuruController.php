@@ -20,6 +20,7 @@ use App\Services\KursYedekListeServisi;
 use App\Services\LogKaydedici;
 use App\Services\SertifikaAyarServisi;
 use App\Services\SertifikaPdfOlusturucu;
+use App\Services\SoruFormuCevapServisi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class KursBasvuruController extends ApiController
 {
@@ -44,6 +46,7 @@ class KursBasvuruController extends ApiController
             ->with([
                 'merkez',
                 'evrakTipleri' => fn ($q) => $q->where('aktif', true),
+                'soruFormu.sorular.secenekler',
             ])
             ->find($request->integer('kurs_id'));
 
@@ -137,6 +140,9 @@ class KursBasvuruController extends ApiController
             'kvkk_onay.accepted' => 'Başvuru için KVKK metnini onaylamanız gerekir.',
             'aydinlatma_onay.accepted' => 'Başvuru için aydınlatma metnini onaylamanız gerekir.',
         ], $this->cocukBasvuruMesajlari()));
+
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $cevaplar = $cevapServisi->dogrula($request, $kurs->soruFormu);
 
         $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $basvuran);
 
@@ -245,121 +251,131 @@ class KursBasvuruController extends ApiController
             $kucuk = $kucukBasvuran;
         }
 
-        $basvuru = DB::transaction(function () use (
-            $request,
-            $validated,
-            $kurs,
-            $basvuran,
-            $katilimci,
-            $cocukAdina,
-            $kucuk,
-            $veliDolu,
-            $evrakTipiIds,
-        ) {
-            /** @var Kurs $kurs */
-            $kurs = Kurs::query()->whereKey($kurs->id)->lockForUpdate()->firstOrFail();
+        try {
+            $basvuru = DB::transaction(function () use (
+                $request,
+                $validated,
+                $kurs,
+                $basvuran,
+                $katilimci,
+                $cocukAdina,
+                $kucuk,
+                $veliDolu,
+                $evrakTipiIds,
+                $cevaplar,
+                $cevapServisi,
+            ) {
+                /** @var Kurs $kurs */
+                $kurs = Kurs::query()->whereKey($kurs->id)->lockForUpdate()->firstOrFail();
 
-            $yerlesim = app(KursYedekListeServisi::class)->yeniBasvuruDurumuBelirle($kurs);
-            $durumId = $yerlesim['durum_id'];
-            $durumKod = $yerlesim['durum_kod'];
-            $yedekSira = $yerlesim['yedek_sira'];
+                $yerlesim = app(KursYedekListeServisi::class)->yeniBasvuruDurumuBelirle($kurs);
+                $durumId = $yerlesim['durum_id'];
+                $durumKod = $yerlesim['durum_kod'];
+                $yedekSira = $yerlesim['yedek_sira'];
 
-            $basvuran->basvuruIleProfilGuncelle($validated);
+                $basvuran->basvuruIleProfilGuncelle($validated);
 
-            if ($cocukAdina) {
-                $finalBasvuranId = $basvuran->id;
-                $finalVeliId = $basvuran->id;
-                $finalKisiId = $katilimci->id;
-            } else {
-                $veli = null;
-                if ($kucuk || $veliDolu) {
-                    $veli = $this->kisiUpsert([
-                        'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
-                        'dogum_tarihi' => $validated['veli_dogum_tarihi'],
-                        'ad' => $validated['veli_ad'],
-                        'soyad' => $validated['veli_soyad'],
-                        'telefon' => $validated['veli_telefon'] ?? null,
-                        'email' => $validated['veli_email'] ?? null,
+                if ($cocukAdina) {
+                    $finalBasvuranId = $basvuran->id;
+                    $finalVeliId = $basvuran->id;
+                    $finalKisiId = $katilimci->id;
+                } else {
+                    $veli = null;
+                    if ($kucuk || $veliDolu) {
+                        $veli = $this->kisiUpsert([
+                            'tc_kimlik_no' => $validated['veli_tc_kimlik_no'],
+                            'dogum_tarihi' => $validated['veli_dogum_tarihi'],
+                            'ad' => $validated['veli_ad'],
+                            'soyad' => $validated['veli_soyad'],
+                            'telefon' => $validated['veli_telefon'] ?? null,
+                            'email' => $validated['veli_email'] ?? null,
+                        ]);
+                    }
+
+                    $finalBasvuranId = $kucuk && $veli ? $veli->id : $basvuran->id;
+                    $finalVeliId = $veli?->id;
+                    $finalKisiId = $basvuran->id;
+                }
+
+                $iptalDurumId = BasvuruDurum::idByKod('iptal');
+                $mevcutAktif = KursBasvuru::query()
+                    ->where('kisi_id', $finalKisiId)
+                    ->where('kurs_id', $kurs->id)
+                    ->whereNull('deleted_at')
+                    ->when($iptalDurumId, fn ($q) => $q->where('durum_id', '!=', $iptalDurumId))
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($mevcutAktif) {
+                    throw ValidationException::withMessages([
+                        'kurs_id' => $cocukAdina
+                            ? 'Bu kursa ait çocuk için aktif bir başvuru zaten var.'
+                            : 'Bu kursa ait aktif bir başvurunuz zaten var.',
                     ]);
                 }
 
-                $finalBasvuranId = $kucuk && $veli ? $veli->id : $basvuran->id;
-                $finalVeliId = $veli?->id;
-                $finalKisiId = $basvuran->id;
-            }
-
-            $iptalDurumId = BasvuruDurum::idByKod('iptal');
-            $mevcutAktif = KursBasvuru::query()
-                ->where('kisi_id', $finalKisiId)
-                ->where('kurs_id', $kurs->id)
-                ->whereNull('deleted_at')
-                ->when($iptalDurumId, fn ($q) => $q->where('durum_id', '!=', $iptalDurumId))
-                ->lockForUpdate()
-                ->exists();
-
-            if ($mevcutAktif) {
-                throw ValidationException::withMessages([
-                    'kurs_id' => $cocukAdina
-                        ? 'Bu kursa ait çocuk için aktif bir başvuru zaten var.'
-                        : 'Bu kursa ait aktif bir başvurunuz zaten var.',
-                ]);
-            }
-
-            $basvuru = KursBasvuru::query()->create([
-                'kisi_id' => $finalKisiId,
-                'basvuran_id' => $finalBasvuranId,
-                'veli_id' => $finalVeliId,
-                'kurs_id' => $kurs->id,
-                'durum_id' => $durumId,
-                'yedek_sira' => $yedekSira,
-                'olusturan_id' => null,
-            ]);
-
-            foreach ($evrakTipiIds as $tipId) {
-                $file = $request->file("evrak.{$tipId}");
-                if (! $file) {
-                    continue;
-                }
-
-                $path = $file->store('basvuru-evraklari/'.$basvuru->id, 'public');
-                KursBasvuruEvrak::query()->create([
-                    'kurs_basvuru_id' => $basvuru->id,
-                    'evrak_tipi_id' => $tipId,
-                    'dosya_yolu' => $path,
-                    'orijinal_ad' => $file->getClientOriginalName(),
-                    'mime' => $file->getClientMimeType(),
-                    'boyut' => $file->getSize() ?: 0,
-                    'olusturan_id' => null,
-                ]);
-            }
-
-            $kurs->update([
-                'basvuru_sayisi' => $kurs->basvurular()->count(),
-            ]);
-
-            LogKaydedici::kaydet(
-                islem: 'basvuru.olusturuldu',
-                kurs: $kurs,
-                aciklama: $basvuran->tam_adi.' portal üzerinden kurs başvurusu oluşturdu'
-                    .($cocukAdina ? ' (yakın: '.$katilimci->tam_adi.')' : '')
-                    .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
-                konu: $basvuru,
-                yeni: [
+                $basvuru = KursBasvuru::query()->create([
                     'kisi_id' => $finalKisiId,
                     'basvuran_id' => $finalBasvuranId,
                     'veli_id' => $finalVeliId,
-                    'durum' => $durumKod,
+                    'kurs_id' => $kurs->id,
+                    'durum_id' => $durumId,
                     'yedek_sira' => $yedekSira,
-                    'kanal' => 'portal',
-                    'basvuru_icin' => $cocukAdina ? 'cocuk' : 'kendisi',
-                ],
-            );
+                    'olusturan_id' => null,
+                ]);
 
-            $basvuru->setAttribute('_olusturma_durum_kod', $durumKod);
-            $basvuru->setAttribute('_olusturma_yedek_sira', $yedekSira);
+                foreach ($evrakTipiIds as $tipId) {
+                    $file = $request->file("evrak.{$tipId}");
+                    if (! $file) {
+                        continue;
+                    }
 
-            return $basvuru;
-        });
+                    $path = $file->store('basvuru-evraklari/'.$basvuru->id, 'public');
+                    KursBasvuruEvrak::query()->create([
+                        'kurs_basvuru_id' => $basvuru->id,
+                        'evrak_tipi_id' => $tipId,
+                        'dosya_yolu' => $path,
+                        'orijinal_ad' => $file->getClientOriginalName(),
+                        'mime' => $file->getClientMimeType(),
+                        'boyut' => $file->getSize() ?: 0,
+                        'olusturan_id' => null,
+                    ]);
+                }
+
+                $cevapServisi->kaydet($basvuru, $cevaplar, 'kurs');
+
+                $kurs->update([
+                    'basvuru_sayisi' => $kurs->basvurular()->count(),
+                ]);
+
+                LogKaydedici::kaydet(
+                    islem: 'basvuru.olusturuldu',
+                    kurs: $kurs,
+                    aciklama: $basvuran->tam_adi.' portal üzerinden kurs başvurusu oluşturdu'
+                        .($cocukAdina ? ' (yakın: '.$katilimci->tam_adi.')' : '')
+                        .($durumKod === 'yedek' ? ' (yedek sıra: '.$yedekSira.')' : '').'.',
+                    konu: $basvuru,
+                    yeni: [
+                        'kisi_id' => $finalKisiId,
+                        'basvuran_id' => $finalBasvuranId,
+                        'veli_id' => $finalVeliId,
+                        'durum' => $durumKod,
+                        'yedek_sira' => $yedekSira,
+                        'kanal' => 'portal',
+                        'basvuru_icin' => $cocukAdina ? 'cocuk' : 'kendisi',
+                    ],
+                );
+
+                $basvuru->setAttribute('_olusturma_durum_kod', $durumKod);
+                $basvuru->setAttribute('_olusturma_yedek_sira', $yedekSira);
+
+                return $basvuru;
+            });
+        } catch (Throwable $e) {
+            $cevapServisi->yuklenenDosyalariSil();
+
+            throw $e;
+        }
 
         $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
 

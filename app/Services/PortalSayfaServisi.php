@@ -614,6 +614,41 @@ class PortalSayfaServisi
         });
     }
 
+    /**
+     * İçerik kuralları portalda yayındaki tek bir kursu veya etkinliği gösteriyorsa onu döndürür;
+     * portal bu durumda listeleme yerine doğrudan detay sayfasını açar.
+     *
+     * @return array{tip: 'kurs'|'etkinlik', id: int}|null
+     */
+    public function tekIcerik(PortalSayfa $sayfa): ?array
+    {
+        if ($sayfa->sistem || $sayfa->isAuthSayfa()) {
+            return null;
+        }
+
+        $kurallar = $sayfa->kurallar
+            ->unique(fn (PortalSayfaKurali $k) => $k->kaynak.'|'.$k->secim_tipi.'|'.$k->hedef_id)
+            ->values();
+
+        if ($kurallar->count() !== 1) {
+            return null;
+        }
+
+        /** @var PortalSayfaKurali $kural */
+        $kural = $kurallar->first();
+        if ($kural->secim_tipi !== $kural->kaynak || ! $kural->hedef_id) {
+            return null;
+        }
+
+        $yayinda = match ($kural->kaynak) {
+            PortalSayfaKurali::KAYNAK_KURS => Kurs::query()->portaldeAktif()->whereKey($kural->hedef_id)->exists(),
+            PortalSayfaKurali::KAYNAK_ETKINLIK => Etkinlik::query()->portaldeAktif()->whereKey($kural->hedef_id)->exists(),
+            default => false,
+        };
+
+        return $yayinda ? ['tip' => $kural->kaynak, 'id' => (int) $kural->hedef_id] : null;
+    }
+
     public function findBySlug(string $slug): ?PortalSayfa
     {
         return PortalSayfa::query()

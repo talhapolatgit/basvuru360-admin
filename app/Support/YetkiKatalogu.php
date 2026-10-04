@@ -115,7 +115,6 @@ class YetkiKatalogu
             ['kod' => 'kres.donem_yonet', 'ad' => 'Kreş Dönemi Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.okul_yonet', 'ad' => 'Kreş Okulu Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.grup_yonet', 'ad' => 'Kreş Grubu Yönet', 'modul' => 'kres'],
-            ['kod' => 'kres.soru_formu_yonet', 'ad' => 'Kreş Soru Formu Yönet', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_goruntule', 'ad' => 'Kreş Başvurularını Görüntüle', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_olustur', 'ad' => 'Kreş Başvurusu Oluştur', 'modul' => 'kres'],
             ['kod' => 'kres.basvuru_guncelle', 'ad' => 'Kreş Başvurusu Güncelle', 'modul' => 'kres'],
@@ -141,6 +140,7 @@ class YetkiKatalogu
             ['kod' => 'sabit.goruntule', 'ad' => 'Sabit Tanımları Görüntüle', 'modul' => 'sabit'],
             ['kod' => 'sabit.olustur', 'ad' => 'Sabit Tanım Oluştur', 'modul' => 'sabit'],
             ['kod' => 'sabit.guncelle', 'ad' => 'Sabit Tanım Güncelle', 'modul' => 'sabit'],
+            ['kod' => 'soru_formu.yonet', 'ad' => 'Başvuru Soru Formlarını Yönet', 'modul' => 'sabit', 'aciklama' => 'Kurs, etkinlik ve kreş başvurularında kullanılan soru formlarını oluşturma ve düzenleme.'],
 
             ['kod' => 'entegrasyon.goruntule', 'ad' => 'Entegrasyonları Görüntüle', 'modul' => 'entegrasyon'],
             ['kod' => 'entegrasyon.guncelle', 'ad' => 'Entegrasyon Ayarlarını Güncelle', 'modul' => 'entegrasyon'],

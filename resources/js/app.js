@@ -5,7 +5,7 @@ import { initSidebar } from './sidebar';
 import { consumeFlashToasts, showToast } from './toast';
 import { initKursDetailActions, initBasvuruActionModals, initBasvuruMesajModallari, initKursYedekSiraModal } from './kurs-detail';
 import { initBasvuruEvraklarModal, initBasvuruEvraklarPanel } from './basvuru-evraklar-modal';
-import { initMerkezlerPage, initAlanlarPage, initBranslarPage, initEgitmenlerPage, initKullanicilarPage, initKisilerPage, initMerkezYetkileriPage, initEtkinliklerPage, initEtkinlikBasvurulariPage, initKresDonemlerPage, initKresOkullarTanimPage, initKresGruplarTanimPage, initKresSoruFormlariPage } from './lookup-pages';
+import { initMerkezlerPage, initAlanlarPage, initBranslarPage, initEgitmenlerPage, initKullanicilarPage, initKisilerPage, initMerkezYetkileriPage, initEtkinliklerPage, initEtkinlikBasvurulariPage, initKresDonemlerPage, initKresOkullarTanimPage, initKresGruplarTanimPage, initSoruFormlariPage } from './lookup-pages';
 import { initEtkinlikDetailPage, initBasvuruMesajModallari as initEtkinlikBasvuruMesajModallari, initEtkinlikBasvuruDurumModal, initEtkinlikYedekSiraModal } from './etkinlik-detail';
 import { initSabitTanimlarPage } from './sabit-tanimlar';
 import { initRichTextEditors } from './rich-text-editor';
@@ -23,7 +23,7 @@ import { initKisiForm } from './kisi-form';
 import { initBasvuruCreatePage } from './basvuru-create';
 import { initEtkinlikBasvuruCreatePage } from './etkinlik-basvuru-create';
 import { initKresGrupDetailPage } from './kres-grup-detail';
-import { initKresSoruFormuShowPage, initKresSoruFormlariDelete, initKresSoruOnizleme } from './kres-soru-formu';
+import { initSoruFormuShowPage, initSoruFormlariListeAksiyonlari, initSoruOnizleme } from './soru-formu';
 
 window.showToast = showToast;
 
@@ -324,9 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initKresDonemlerPage();
     initKresOkullarTanimPage();
     initKresGruplarTanimPage();
-    initKresSoruFormlariPage();
-    initKresSoruFormlariDelete();
-    initKresSoruOnizleme();
+    initSoruFormlariPage();
+    initSoruFormlariListeAksiyonlari();
+    initSoruOnizleme();
     initEtkinlikDetailPage();
     initEtkinlikBasvuruDurumModal();
     initEtkinlikYedekSiraModal();
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initBasvuruCreatePage();
     initEtkinlikBasvuruCreatePage();
     initKresGrupDetailPage();
-    initKresSoruFormuShowPage();
+    initSoruFormuShowPage();
     consumeFlashToasts();
 
     document.addEventListener('click', () => {

@@ -117,6 +117,7 @@ class KursController extends ApiController
                 'kursTipi',
                 'gunler',
                 'evrakTipleri' => fn ($q) => $q->where('aktif', true)->orderBy('ad'),
+                'soruFormu.sorular.secenekler',
             ])
             ->find($id);
 

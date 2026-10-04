@@ -14,8 +14,9 @@ import {
     saveColumnPrefs,
     syncColumnDropdownOrder,
 } from './table-columns';
+import { basvuruCookieKey, initCevapFiltre } from './cevap-filtre';
 
-const BASVURU_COOKIE_KEY = 'kres_basvuru_table_prefs';
+let BASVURU_COOKIE_KEY = 'kres_basvuru_table_prefs';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -223,6 +224,9 @@ export function initKresGrupDetailPage() {
 
     if (!url || !content) return;
 
+    BASVURU_COOKIE_KEY = basvuruCookieKey('kres_basvuru_table_prefs', panel);
+    const cevapFiltre = initCevapFiltre(panel, () => loadBasvurular({ durum: currentDurum, page: 1, force: true }));
+
     let currentDurum = panel.dataset.basvuruDurum || 'tumu';
     let currentSort = '';
     let currentDirection = 'desc';
@@ -277,6 +281,7 @@ export function initKresGrupDetailPage() {
             exportUrl.searchParams.set('sort', currentSort);
             exportUrl.searchParams.set('direction', currentDirection);
         }
+        Object.entries(cevapFiltre.params()).forEach(([key, value]) => exportUrl.searchParams.set(key, value));
         excelLink.href = exportUrl.pathname + exportUrl.search;
     }
 
@@ -595,6 +600,7 @@ export function initKresGrupDetailPage() {
         const params = {
             basvuru_durum: durum || 'tumu',
             page: currentPage,
+            ...cevapFiltre.params(),
         };
         if (currentSort) {
             params.sort = currentSort;

@@ -329,6 +329,7 @@
         data-kurs-durum="{{ $kurs->durum?->value }}"
         data-kurs-baslama="{{ $kurs->kurs_baslama_tarihi?->format('Y-m-d') }}"
         data-kurs-bitis="{{ $kurs->kurs_bitis_tarihi?->format('Y-m-d') }}"
+        data-soru-formu-id="{{ $soruFormu?->id }}"
         role="tabpanel"
     >
         <div class="basvuru-toolbar">
@@ -345,6 +346,7 @@
                         data-basvuru-filter="{{ $filtreDurum->kod }}"
                     >{{ $filtreDurum->ad }}</button>
                 @endforeach
+                @include('soru-formlari._cevap-filtre', ['soruFormu' => $soruFormu])
             </div>
             <div class="basvuru-toolbar-actions">
                 <div class="basvuru-toolbar-meta" data-basvuru-total>Toplam Kayıt: —</div>

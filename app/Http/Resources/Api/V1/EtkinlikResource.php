@@ -75,6 +75,10 @@ class EtkinlikResource extends JsonResource
                 $request->routeIs('api.v1.etkinlikler.show'),
                 fn () => app(EtkinlikAyarServisi::class)->basvuruOnaylari(),
             ),
+            'soru_formu' => $this->when(
+                $etkinlik->relationLoaded('soruFormu'),
+                fn () => $etkinlik->soruFormu?->apiVerisi(),
+            ),
         ];
     }
 }

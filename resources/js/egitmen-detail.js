@@ -1,5 +1,5 @@
 import { showToast } from './toast';
-import { initDetailTable } from './detail-table';
+import { initDetailTable, replaceDetailTableRows } from './detail-table';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -63,6 +63,7 @@ function validationMessage(error) {
 export function initEgitmenDetailPage() {
     initEgitmenTabs();
     initKisiBasvuruTuruTabs();
+    initKisiSorguFormlari();
     initKisiAileModal();
     initGirisKilidiModal();
 
@@ -77,6 +78,67 @@ export function initEgitmenDetailPage() {
     initSmsModal(smsModal);
     initEpostaModal(epostaModal);
     initSifreModal(sifreModal);
+}
+
+function showPageLoading(text) {
+    let overlay = document.querySelector('[data-page-loading]');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'page-loading-overlay';
+        overlay.setAttribute('data-page-loading', '');
+        overlay.setAttribute('role', 'status');
+        overlay.setAttribute('aria-live', 'polite');
+        overlay.innerHTML = `
+            <div class="page-loading-box">
+                <svg class="page-loading-spinner" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"/></svg>
+                <span class="page-loading-text" data-page-loading-text></span>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+    overlay.querySelector('[data-page-loading-text]').textContent = text || 'Yükleniyor…';
+    overlay.hidden = false;
+    document.body.classList.add('page-is-loading');
+}
+
+function hidePageLoading() {
+    const overlay = document.querySelector('[data-page-loading]');
+    if (overlay) overlay.hidden = true;
+    document.body.classList.remove('page-is-loading');
+}
+
+function initKisiSorguFormlari() {
+    const forms = document.querySelectorAll('form[data-kisi-sorgu-form]');
+    let busy = false;
+
+    forms.forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (busy) return;
+
+            const button = document.querySelector(`button[form="${form.id}"]`);
+            if (button?.disabled) return;
+
+            busy = true;
+            showPageLoading(form.dataset.loadingText);
+
+            try {
+                const { data } = await window.axios.post(form.action, new FormData(form), {
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                });
+                Object.entries(data.alanlar || {}).forEach(([alan, deger]) => {
+                    document.querySelectorAll(`[data-kisi-alan="${alan}"]`).forEach((el) => {
+                        el.textContent = deger;
+                    });
+                });
+                showToast(data.message || 'Bilgiler güncellendi.', 'success');
+            } catch (error) {
+                showToast(error.response?.data?.message || 'İşlem sırasında bir hata oluştu.', 'error');
+            } finally {
+                busy = false;
+                hidePageLoading();
+            }
+        });
+    });
 }
 
 function initGirisKilidiModal() {
@@ -124,6 +186,38 @@ function initKisiAileModal() {
     }
 
     initKisiYakinSilModal();
+    initKisiAileEntegrasyon(panel);
+}
+
+function initKisiAileEntegrasyon(panel) {
+    const form = panel.querySelector('[data-kisi-aile-entegrasyon]');
+    const table = panel.querySelector('table[data-detail-table]');
+    if (!form || !table) return;
+
+    const button = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (button?.disabled) return;
+
+        if (button) button.disabled = true;
+        showPageLoading('Yakın bilgileri sorgulanıyor…');
+
+        try {
+            const { data } = await window.axios.post(form.action, {}, {
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+            });
+            if (typeof data.satirlar === 'string') {
+                replaceDetailTableRows(table, data.satirlar);
+            }
+            showToast(data.message || 'Yakın bilgileri güncellendi.', 'success');
+        } catch (error) {
+            showToast(error?.response?.data?.message || validationMessage(error), 'error');
+        } finally {
+            if (button) button.disabled = false;
+            hidePageLoading();
+        }
+    });
 }
 
 function initKisiYakinSilModal() {
@@ -134,26 +228,27 @@ function initKisiYakinSilModal() {
     const adEl = modal.querySelector('[data-kisi-yakin-sil-ad]');
     const submit = modal.querySelector('[data-kisi-yakin-sil-submit]');
 
-    document.querySelectorAll('[data-kisi-yakin-sil]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const rowActions = btn.closest('[data-row-actions]');
-            if (rowActions) {
-                rowActions.classList.remove('is-open');
-                rowActions.querySelector('[data-action-dropdown]')?.setAttribute('hidden', '');
-                rowActions.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
-            }
-            form.action = btn.dataset.kisiYakinSil;
-            if (adEl) {
-                adEl.textContent = [btn.dataset.ad, btn.dataset.yakinlik ? `(${btn.dataset.yakinlik})` : '']
-                    .filter(Boolean)
-                    .join(' ');
-            }
-            if (submit) {
-                submit.disabled = false;
-                submit.textContent = 'Sil';
-            }
-            openModal(modal);
-        });
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-kisi-yakin-sil]');
+        if (!btn) return;
+
+        const rowActions = btn.closest('[data-row-actions]');
+        if (rowActions) {
+            rowActions.classList.remove('is-open');
+            rowActions.querySelector('[data-action-dropdown]')?.setAttribute('hidden', '');
+            rowActions.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
+        }
+        form.action = btn.dataset.kisiYakinSil;
+        if (adEl) {
+            adEl.textContent = [btn.dataset.ad, btn.dataset.yakinlik ? `(${btn.dataset.yakinlik})` : '']
+                .filter(Boolean)
+                .join(' ');
+        }
+        if (submit) {
+            submit.disabled = false;
+            submit.textContent = 'Sil';
+        }
+        openModal(modal);
     });
 
     modal.querySelectorAll('[data-kisi-yakin-sil-close]').forEach((el) => {

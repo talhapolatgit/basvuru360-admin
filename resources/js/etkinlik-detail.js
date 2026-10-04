@@ -20,8 +20,9 @@ import {
     initSmsAlicilarDetayModal,
     initSmsModal,
 } from './mesaj-gonder-modals';
+import { basvuruCookieKey, initCevapFiltre } from './cevap-filtre';
 
-const BASVURU_COOKIE_KEY = 'etkinlik_basvuru_table_prefs';
+let BASVURU_COOKIE_KEY = 'etkinlik_basvuru_table_prefs';
 
 function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -196,6 +197,9 @@ function initBasvuruPanel(root) {
     const columnSaveBtn = panel.querySelector('[data-basvuru-column-save]');
     if (!url || !content) return null;
 
+    BASVURU_COOKIE_KEY = basvuruCookieKey('etkinlik_basvuru_table_prefs', panel);
+    const cevapFiltre = initCevapFiltre(panel, () => loadBasvurular({ durum: currentDurum, page: 1, force: true }));
+
     let currentDurum = panel.dataset.basvuruDurum || 'tumu';
     let currentSort = '';
     let currentDirection = 'desc';
@@ -273,6 +277,7 @@ function initBasvuruPanel(root) {
             exportUrl.searchParams.set('sort', currentSort);
             exportUrl.searchParams.set('direction', currentDirection);
         }
+        Object.entries(cevapFiltre.params()).forEach(([key, value]) => exportUrl.searchParams.set(key, value));
         excelLink.href = exportUrl.pathname + exportUrl.search;
     }
 
@@ -352,6 +357,7 @@ function initBasvuruPanel(root) {
             params.set('sort', currentSort);
             params.set('direction', currentDirection);
         }
+        Object.entries(cevapFiltre.params()).forEach(([key, value]) => params.set(key, value));
 
         try {
             const { data } = await window.axios.get(url + '?' + params.toString(), {

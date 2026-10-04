@@ -442,56 +442,28 @@ export function initKresGruplarTanimPage() {
     });
 }
 
-function parseFormluDonemler(form) {
-    try {
-        const parsed = JSON.parse(form.dataset.formluDonemler || '[]');
-        return Array.isArray(parsed) ? parsed.map(Number) : [];
-    } catch {
-        return [];
-    }
-}
-
-function syncSoruFormuDonemSecenekleri(form, currentId = null) {
-    const used = parseFormluDonemler(form);
-    const current = currentId == null ? null : Number(currentId);
-    form.querySelectorAll('[data-field="donemId"] option').forEach((option) => {
-        if (!option.value) {
-            option.disabled = false;
-            return;
-        }
-        const id = Number(option.value);
-        option.disabled = used.includes(id) && id !== current;
-    });
-}
-
-export function initKresSoruFormlariPage() {
-    if (document.getElementById('kres-soru-formlari-table')) {
+export function initSoruFormlariPage() {
+    if (document.getElementById('soru-formlari-table')) {
         initSearchModes();
     }
 
     initLookupPage({
-        tableId: 'kres-soru-formlari-table',
+        tableId: 'soru-formlari-table',
         tableConfig: {
-            tableId: 'kres-soru-formlari-table',
-            resultsId: 'kres-soru-formlari-results',
-            cardId: 'kres-soru-formlari-table-card',
-            filterFormId: 'kres-soru-formlari-filter-form',
-            clearBtnId: 'kres-soru-formlari-filter-clear',
-            cookieKey: 'kres_soru_formlari_table_prefs',
-            excelLinkId: 'kres-soru-formlari-excel-link',
+            tableId: 'soru-formlari-table',
+            resultsId: 'soru-formlari-results',
+            cardId: 'soru-formlari-table-card',
+            filterFormId: 'soru-formlari-filter-form',
+            clearBtnId: 'soru-formlari-filter-clear',
+            cookieKey: 'soru_formlari_table_prefs',
+            excelLinkId: 'soru-formlari-excel-link',
         },
-        modalId: 'kres-soru-formu-form-modal',
+        modalId: 'soru-formu-form-modal',
         modalConfig: {
-            modalId: 'kres-soru-formu-form-modal',
-            formSelector: '.kres-soru-formu-meta-form',
+            modalId: 'soru-formu-form-modal',
+            formSelector: '.soru-formu-meta-form',
             createTitle: 'Yeni Form',
             editTitle: 'Formu Düzenle',
-            onCreate(form) {
-                syncSoruFormuDonemSecenekleri(form);
-            },
-            onEdit(form, btn) {
-                syncSoruFormuDonemSecenekleri(form, btn.dataset.donemId);
-            },
         },
     });
 }

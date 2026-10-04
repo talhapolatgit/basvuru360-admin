@@ -1,9 +1,14 @@
+@php
+    $kosulOzeti = $soru->kosulOzeti($form->sorular);
+    $ozet = $soru->sayiOzeti()
+        ?? ($soru->secenekler->isNotEmpty() ? $soru->secenekler->pluck('etiket')->implode(' · ') : $soru->aciklama);
+@endphp
 <article
-    class="kres-soru-card"
+    class="kres-soru-card {{ $kosulOzeti ? 'is-kosullu' : '' }}"
     data-soru-card
     data-soru-id="{{ $soru->id }}"
-    data-update-url="{{ route('kres.soru-formlari.sorular.update', [$form, $soru]) }}"
-    data-delete-url="{{ route('kres.soru-formlari.sorular.destroy', [$form, $soru]) }}"
+    data-update-url="{{ route('soru-formlari.sorular.update', [$form, $soru]) }}"
+    data-delete-url="{{ route('soru-formlari.sorular.destroy', [$form, $soru]) }}"
     data-tip="{{ $soru->tip->value }}"
     data-baslik="{{ $soru->baslik }}"
     data-aciklama="{{ $soru->aciklama }}"
@@ -11,7 +16,9 @@
     data-tam-sayi="{{ $soru->tam_sayi ? '1' : '0' }}"
     data-min-deger="{{ $soru->min_deger }}"
     data-max-deger="{{ $soru->max_deger }}"
-    data-secenekler='@json($soru->secenekler->pluck('etiket')->values())'
+    data-secenekler='@json($soru->secenekler->map(fn ($s) => ['id' => $s->id, 'etiket' => $s->etiket])->values())'
+    data-kosul-soru-id="{{ $kosulOzeti ? $soru->kosul_soru_id : '' }}"
+    data-kosul-secenek-ids='@json($kosulOzeti ? $soru->kosulSecenekIdleri() : [])'
 >
     <span class="kres-soru-drag" data-soru-drag title="Sıralamak için sürükleyin" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -29,12 +36,14 @@
                 <span class="kres-soru-zorunlu">Zorunlu</span>
             @endif
         </div>
-        @php
-            $ozet = $soru->sayiOzeti()
-                ?? ($soru->secenekler->isNotEmpty() ? $soru->secenekler->pluck('etiket')->implode(' · ') : $soru->aciklama);
-        @endphp
         @if ($ozet)
             <p class="kres-soru-card__opts">{{ $ozet }}</p>
+        @endif
+        @if ($kosulOzeti)
+            <p class="soru-kosul-ozet">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+                Gösterim koşulu: {{ $kosulOzeti }}
+            </p>
         @endif
     </div>
     <div class="kres-soru-card__actions">

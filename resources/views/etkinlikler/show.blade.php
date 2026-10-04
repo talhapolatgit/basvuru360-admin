@@ -290,6 +290,7 @@
         data-basvuru-panel
         data-basvuru-url="{{ route('etkinlikler.basvurular', $etkinlik) }}"
         data-basvuru-durum="{{ $basvuruDurum }}"
+        data-soru-formu-id="{{ $soruFormu?->id }}"
         role="tabpanel"
     >
         <div class="basvuru-toolbar">
@@ -307,6 +308,7 @@
                     >{{ $filtreDurum->ad }}</button>
                 @endforeach
             </div>
+            @include('soru-formlari._cevap-filtre', ['soruFormu' => $soruFormu])
             <div class="basvuru-toolbar-actions">
                 <div class="basvuru-toolbar-meta" data-basvuru-total>Toplam Kayıt: —</div>
                 <div class="column-picker" data-basvuru-column-picker>

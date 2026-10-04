@@ -20,6 +20,7 @@ use App\Models\Kisi;
 use App\Models\Kurum;
 use App\Models\Merkez;
 use App\Models\SmsLog;
+use App\Models\SoruFormu;
 use App\Models\User;
 use App\Services\Email\EmailSender;
 use App\Services\EtkinlikAyarServisi;
@@ -28,6 +29,7 @@ use App\Services\LogKaydedici;
 use App\Services\NumaratorServisi;
 use App\Services\Sms\PhoneNormalizer;
 use App\Services\Sms\SmsSender;
+use App\Services\SoruFormuCevapServisi;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -171,7 +173,8 @@ class EtkinlikController extends Controller implements HasMiddleware
             $activeMesajKanal = 'sms';
         }
 
-        $basvuruColumns = $this->basvuruTableColumns();
+        $etkinlik->load('soruFormu.sorular.secenekler');
+        $basvuruColumns = $this->basvuruTableColumns($etkinlik->soruFormu);
 
         $yoklamaListesi = $this->yoklamaListesiForEtkinlik($etkinlik);
 
@@ -182,6 +185,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'basvuruDurumlari' => $basvuruDurumlari,
             'basvuruColumns' => $basvuruColumns['all'],
             'basvuruDefaultVisible' => $basvuruColumns['defaultVisible'],
+            'soruFormu' => $etkinlik->soruFormu,
             'iptalGerekceleri' => IptalGerekce::query()->where('aktif', true)->orderBy('sira')->get(),
             'activeTab' => $activeTab,
             'activeMesajKanal' => $activeMesajKanal,
@@ -328,7 +332,7 @@ class EtkinlikController extends Controller implements HasMiddleware
     public function basvurular(Request $request, Etkinlik $etkinlik): JsonResponse
     {
         [$basvurular, $basvuruDurum, $sort, $direction] = $this->searchEtkinlikBasvurular($request, $etkinlik);
-        $columns = $this->basvuruTableColumns();
+        $columns = $this->basvuruTableColumns($etkinlik->soruFormu);
 
         return response()->json([
             'html' => view('etkinlikler._basvurular_list', [
@@ -337,6 +341,7 @@ class EtkinlikController extends Controller implements HasMiddleware
                 'basvuruColumns' => $columns['all'],
                 'basvuruDefaultVisible' => $columns['defaultVisible'],
                 'basvuruSortable' => $columns['sortable'],
+                'soruKolonlari' => $columns['soru'],
                 'sort' => $sort,
                 'direction' => $direction,
             ])->render(),
@@ -360,19 +365,22 @@ class EtkinlikController extends Controller implements HasMiddleware
     public function exportBasvurular(Request $request, Etkinlik $etkinlik): StreamedResponse
     {
         [$basvurular] = $this->searchEtkinlikBasvurular($request, $etkinlik, paginate: false);
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($etkinlik->soruFormu);
 
         $filename = 'etkinlik-'.$etkinlik->etkinlik_no.'-basvurular-'.now()->format('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($basvurular) {
+        return response()->streamDownload(function () use ($basvurular, $cevapServisi, $soruKolonlari) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($handle, [
                 'Başvuran', 'Katılımcı', 'Veli', 'Kimlik No', 'Doğum T.', 'Telefon', 'İkamet',
                 'Durum', 'Katılım', 'Onay Tarihi', 'İptal Tarihi', 'İptal Gerekçesi', 'Kaydeden', 'Başvuru Tarihi',
+                ...array_column($soruKolonlari, 'label'),
             ], ';');
 
-            $basvurular->chunk(200, function ($rows) use ($handle) {
+            $basvurular->chunk(200, function ($rows) use ($handle, $cevapServisi, $soruKolonlari) {
                 foreach ($rows as $basvuru) {
                     fputcsv($handle, [
                         $basvuru->basvuran?->tam_adi ?? ($basvuru->kisi?->tam_adi ?? ''),
@@ -389,6 +397,7 @@ class EtkinlikController extends Controller implements HasMiddleware
                         $basvuru->iptalGerekce?->ad ?? '',
                         $basvuru->olusturan?->tam_adi ?? '',
                         $basvuru->created_at?->format('d.m.Y H:i') ?? '',
+                        ...$cevapServisi->excelDegerleri($basvuru, $soruKolonlari),
                     ], ';');
                 }
             });
@@ -416,6 +425,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'etkinlik.etkinlikTipi',
             'etkinlik.sorumlular',
             'etkinlik.kurumlar',
+            'cevaplar' => fn ($q) => $q->orderBy('id'),
         ]);
 
         $smsLoglari = SmsLog::query()
@@ -1849,8 +1859,11 @@ class EtkinlikController extends Controller implements HasMiddleware
     /**
      * @return array{all: array<string, string>, defaultVisible: list<string>, sortable: list<string>}
      */
-    private function basvuruTableColumns(): array
+    private function basvuruTableColumns(?SoruFormu $soruFormu = null): array
     {
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $soruKolonlari = $cevapServisi->kolonlar($soruFormu);
+
         return [
             'all' => [
                 'basvuran' => 'Başvuran',
@@ -1868,8 +1881,10 @@ class EtkinlikController extends Controller implements HasMiddleware
                 'iptal_gerekce' => 'İptal Gerekçesi',
                 'kaydeden' => 'Kaydeden',
                 'basvuru_tarihi' => 'Başvuru Tarihi',
+                ...$cevapServisi->kolonEtiketleri($soruKolonlari),
                 'islemler' => 'İşlemler',
             ],
+            'soru' => $soruKolonlari,
             'defaultVisible' => [
                 'katilimci', 'kimlik', 'telefon', 'durum', 'yedek_sira', 'katilim', 'basvuru_tarihi', 'islemler',
             ],
@@ -1893,6 +1908,11 @@ class EtkinlikController extends Controller implements HasMiddleware
         $basvuruDurum = (string) $request->input('basvuru_durum', 'tumu');
         $query = $etkinlik->basvurular()
             ->with(['kisi', 'basvuran', 'veli', 'durum', 'iptalGerekce', 'olusturan']);
+
+        if ($etkinlik->soruFormu) {
+            $query->with('cevaplar');
+            app(SoruFormuCevapServisi::class)->filtreUygula($query->getQuery(), $etkinlik->soruFormu, $request);
+        }
 
         $seciliDurum = $basvuruDurumlari->firstWhere('kod', $basvuruDurum);
         if ($seciliDurum) {
@@ -2153,6 +2173,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'evrak_tipi_ids.*' => ['integer', 'exists:evrak_tipleri,id'],
             'kurumlar' => ['nullable', 'array'],
             'kurumlar.*' => ['integer', 'exists:kurumlar,id'],
+            'soru_formu_id' => ['nullable', 'integer', 'exists:soru_formlari,id'],
         ], [
             'bitis_tarihi.after_or_equal' => 'Bitiş tarihi başlangıçtan önce olamaz.',
             'basvuru_bitis_tarihi.after_or_equal' => 'Başvuru bitiş tarihi başlangıçtan önce olamaz.',
@@ -2243,6 +2264,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'cinsiyet_sarti' => $validated['cinsiyet_sarti'] ?? null,
             'ikamet_sarti' => $ikametSarti,
             'evrak_zorunlu' => $evrakTipiIds !== [],
+            'soru_formu_id' => $validated['soru_formu_id'] ?? null,
             'guncelleyen_id' => $request->user()?->id,
         ];
 
@@ -2286,6 +2308,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'basvuru_baslama_tarihi' => $etkinlik->basvuru_baslama_tarihi?->toDateTimeString(),
             'basvuru_bitis_tarihi' => $etkinlik->basvuru_bitis_tarihi?->toDateTimeString(),
             'onlinede_yayinlansin' => (bool) $etkinlik->onlinede_yayinlansin,
+            'soru_formu_id' => $etkinlik->soru_formu_id,
         ];
     }
 
@@ -2341,6 +2364,7 @@ class EtkinlikController extends Controller implements HasMiddleware
             'ikametSartlari' => IkametSarti::cases(),
             'evrakTipleri' => EvrakTipi::where('aktif', true)->orderBy('ad')->get(),
             'kurumlar' => Kurum::query()->where('aktif', true)->orderBy('sira')->orderBy('ad')->get(),
+            'soruFormlari' => SoruFormu::query()->withCount('sorular')->orderByDesc('aktif')->orderBy('ad')->get(),
         ];
     }
 

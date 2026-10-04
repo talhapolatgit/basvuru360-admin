@@ -348,6 +348,17 @@
 <div class="card form-section-card">
     <div class="card-section-header">
         <div>
+            <h2 class="card-section-title">Ek Sorular</h2>
+            <p class="card-section-desc">Bu kursa başvuranlara sorulacak hazır soru formunu seçin.</p>
+        </div>
+    </div>
+
+    @include('soru-formlari._secim', ['seciliSoruFormuId' => $val('soru_formu_id', '')])
+</div>
+
+<div class="card form-section-card">
+    <div class="card-section-header">
+        <div>
             <h2 class="card-section-title">Haftalık Program</h2>
             <p class="card-section-desc">Ders günü, saat aralığı ve sınıf bilgisi ekleyin.</p>
         </div>

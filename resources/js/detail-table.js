@@ -275,6 +275,27 @@ export function initDetailTable(table) {
     initTable(table);
 }
 
+/**
+ * tbody içeriğini değiştirir; yeni satırlara mevcut sütun sırası, görünürlük ve sıralamayı uygular.
+ */
+export function replaceDetailTableRows(table, rowsHtml) {
+    const tbody = table?.querySelector('tbody');
+    if (!tbody) return;
+
+    const order = currentOrder(table);
+    const visible = currentVisible(table);
+    tbody.innerHTML = rowsHtml;
+
+    const card = table.closest('.card') || table.closest('[data-detail-table-scope]') || document;
+    const pinnedKeys = table.querySelector('thead th[data-column="islemler"]') ? ['islemler'] : [];
+    applyColumnOrder(table, order);
+    applyVisibility(table, visible, { dropdownRoot: card.querySelector('[data-col-picker]') || card, alwaysVisibleKeys: pinnedKeys });
+
+    if (table.dataset.sort) {
+        sortRows(table, table.dataset.sort, table.dataset.direction === 'desc' ? 'desc' : 'asc');
+    }
+}
+
 export function initDetailTables() {
     const tables = document.querySelectorAll('[data-detail-table]');
     if (!tables.length) return;

@@ -37,6 +37,11 @@
                     <input type="date" id="kres-donem-form-bitis" name="bitis" class="form-control" data-field="bitis">
                 </div>
 
+                @include('soru-formlari._secim', [
+                    'soruFormuSecimId' => 'kres-donem-form-soru-formu',
+                    'soruFormuDataField' => 'soruFormuId',
+                ])
+
                 <div class="form-group form-group-switch kres-donem-switchler">
                     <label class="switch-label" for="kres-donem-form-aktif">
                         <input type="checkbox" id="kres-donem-form-aktif" name="aktif" value="1" data-field="aktif" checked>

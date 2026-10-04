@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum KresSoruTipi: string
+enum SoruTipi: string
 {
     case Metin = 'metin';
     case UzunMetin = 'uzun_metin';
@@ -51,6 +51,11 @@ enum KresSoruTipi: string
     public function secenekGerekli(): bool
     {
         return in_array($this, [self::Liste, self::Checkbox, self::Radio], true);
+    }
+
+    public function dosyaMi(): bool
+    {
+        return $this === self::Dosya || $this === self::Resim;
     }
 
     public function minSecenek(): int

@@ -86,6 +86,10 @@ class KursResource extends JsonResource
                 $request->routeIs('api.v1.kurslar.show'),
                 fn () => app(KursAyarServisi::class)->basvuruOnaylari(),
             ),
+            'soru_formu' => $this->when(
+                $kurs->relationLoaded('soruFormu'),
+                fn () => $kurs->soruFormu?->apiVerisi(),
+            ),
             'haftalik_program' => $kurs->relationLoaded('gunler')
                 ? $kurs->gunler
                     ->sortBy(fn ($gun) => $gun->gun?->sira() ?? 99)

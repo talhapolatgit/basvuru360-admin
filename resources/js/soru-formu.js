@@ -31,12 +31,30 @@ function setModalOpen(modal, open) {
     }
 }
 
-function optionRow(value = '') {
+function escapeAttr(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+function parseJson(value, fallback) {
+    try {
+        const parsed = JSON.parse(value || '');
+        return parsed ?? fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function optionRow(value = '', id = '') {
     const row = document.createElement('div');
     row.className = 'kres-soru-secenek-row';
     row.dataset.secenekRow = '1';
     row.innerHTML = `
-        <input type="text" name="secenekler[]" class="form-control" value="${String(value).replaceAll('"', '&quot;')}" placeholder="Seçenek" autocomplete="off">
+        <input type="hidden" name="secenek_idler[]" value="${escapeAttr(id)}">
+        <input type="text" name="secenekler[]" class="form-control" value="${escapeAttr(value)}" placeholder="Seçenek" autocomplete="off" maxlength="255">
         <button type="button" class="kres-soru-icon-btn" data-secenek-up title="Yukarı" aria-label="Yukarı">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
         </button>
@@ -50,92 +68,110 @@ function optionRow(value = '') {
     return row;
 }
 
-export function initKresSoruFormuShowPage() {
-    const root = document.querySelector('[data-kres-soru-builder]');
+export function initSoruFormuShowPage() {
+    const root = document.querySelector('[data-soru-builder]');
     if (!root) return;
 
-    const modal = document.getElementById('kres-soru-modal');
+    const modal = document.getElementById('soru-modal');
     const form = modal?.querySelector('[data-soru-form]');
     const tipSelect = form?.querySelector('[data-soru-tip]');
-    const alanlar = form?.querySelector('[data-soru-alanlari]');
-    const secenekAlani = form?.querySelector('[data-secenek-alani]');
-    const secenekList = form?.querySelector('[data-secenek-list]');
-    const kaydetBtn = form?.querySelector('[data-soru-kaydet]');
-    const title = modal?.querySelector('[data-soru-modal-title]');
+    if (!modal || !form || !tipSelect) return;
+
+    const alanlar = form.querySelector('[data-soru-alanlari]');
+    const secenekAlani = form.querySelector('[data-secenek-alani]');
+    const secenekList = form.querySelector('[data-secenek-list]');
+    const kaydetBtn = form.querySelector('[data-soru-kaydet]');
+    const title = modal.querySelector('[data-soru-modal-title]');
+    const kosulToggle = form.querySelector('[data-kosul-toggle]');
+    const kosulDetay = form.querySelector('[data-kosul-detay]');
+    const kosulSoruSelect = form.querySelector('[data-kosul-soru]');
+    const kosulSecenekler = form.querySelector('[data-kosul-secenekler]');
+    const kosulBosHint = form.querySelector('[data-kosul-bos-hint]');
     const storeUrl = root.dataset.storeUrl;
     const siraUrl = root.dataset.siraUrl;
-    const secenekTipleri = (() => {
-        try {
-            return JSON.parse(root.dataset.secenekTipleri || '[]');
-        } catch {
-            return [];
-        }
-    })();
-
+    const secenekTipleri = parseJson(root.dataset.secenekTipleri, []);
     const list = root.querySelector('[data-soru-list]');
+    let duzenlenenKart = null;
 
-    function htmlToCard(html) {
-        const wrap = document.createElement('div');
-        wrap.innerHTML = html.trim();
-        return wrap.querySelector('[data-soru-card]');
-    }
+    const kartlar = () => [...list.querySelectorAll('[data-soru-card]')];
 
     function reindexCards() {
-        list?.querySelectorAll('[data-soru-index]').forEach((el, index) => {
+        list.querySelectorAll('[data-soru-index]').forEach((el, index) => {
             el.textContent = String(index + 1);
         });
     }
 
-    function syncEmptyState() {
-        const empty = list?.querySelector('[data-soru-empty]');
-        if (!empty) return;
-        empty.hidden = list.querySelectorAll('[data-soru-card]').length > 0;
-    }
-
-    function upsertCard(html, id) {
-        if (!list || !html) return;
-        const card = htmlToCard(html);
-        if (!card) return;
-
-        const existing = list.querySelector(`[data-soru-card][data-soru-id="${id}"]`);
-        if (existing) {
-            existing.replaceWith(card);
-        } else {
-            const empty = list.querySelector('[data-soru-empty]');
-            if (empty) {
-                list.insertBefore(card, empty);
-            } else {
-                list.append(card);
-            }
-        }
-
-        syncEmptyState();
+    function replaceList(html) {
+        if (typeof html !== 'string') return;
+        list.innerHTML = html;
         reindexCards();
     }
-
-    function removeCard(card) {
-        card.remove();
-        syncEmptyState();
-        reindexCards();
-    }
-
-    if (!modal || !form || !tipSelect) return;
 
     const tipSecenekGerekli = () => secenekTipleri.includes(tipSelect.value);
+
+    function kosulAdaylari() {
+        const tumu = kartlar();
+        const sinir = duzenlenenKart ? tumu.indexOf(duzenlenenKart) : tumu.length;
+        return tumu
+            .slice(0, sinir < 0 ? tumu.length : sinir)
+            .filter((kart) => secenekTipleri.includes(kart.dataset.tip));
+    }
+
+    function kosulSecenekleriniCiz(seciliIdler = []) {
+        kosulSecenekler.innerHTML = '';
+        const kart = kartlar().find((k) => k.dataset.soruId === kosulSoruSelect.value);
+        if (!kart) return;
+        parseJson(kart.dataset.secenekler, []).forEach((secenek) => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            label.innerHTML = `<input type="checkbox" name="kosul_secenek_ids[]" value="${escapeAttr(secenek.id)}"><span></span>`;
+            label.querySelector('span').textContent = secenek.etiket;
+            label.querySelector('input').checked = seciliIdler.map(Number).includes(Number(secenek.id));
+            kosulSecenekler.append(label);
+        });
+    }
+
+    function kosulAlaniniHazirla(kosulSoruId = '', kosulSecenekIds = []) {
+        const adaylar = kosulAdaylari();
+        kosulSoruSelect.innerHTML = '<option value="">Soru seçin</option>';
+        adaylar.forEach((kart) => {
+            const option = document.createElement('option');
+            option.value = kart.dataset.soruId;
+            option.textContent = kart.dataset.baslik;
+            kosulSoruSelect.append(option);
+        });
+
+        const aktif = Boolean(kosulSoruId) && adaylar.some((kart) => kart.dataset.soruId === String(kosulSoruId));
+        kosulToggle.checked = aktif;
+        kosulToggle.disabled = adaylar.length === 0;
+        kosulBosHint.hidden = adaylar.length > 0;
+        kosulSoruSelect.value = aktif ? String(kosulSoruId) : '';
+        kosulSecenekleriniCiz(aktif ? kosulSecenekIds : []);
+        syncKosul();
+    }
+
+    function syncKosul() {
+        const acik = kosulToggle.checked;
+        kosulDetay.hidden = !acik;
+        kosulSoruSelect.disabled = !acik;
+        kosulSecenekler.querySelectorAll('input').forEach((input) => {
+            input.disabled = !acik;
+        });
+    }
 
     const syncTip = () => {
         const selected = Boolean(tipSelect.value);
         alanlar.hidden = !selected;
         kaydetBtn.disabled = !selected;
         const baslik = form.querySelector('[data-soru-baslik]');
-        if (baslik) {
-            baslik.required = selected;
-        }
+        if (baslik) baslik.required = selected;
+
         const needOptions = tipSecenekGerekli();
         secenekAlani.hidden = !needOptions;
         if (needOptions && secenekList.children.length === 0) {
             secenekList.append(optionRow(), optionRow());
         }
+
         const isSayi = tipSelect.value === 'sayi';
         const isCheckbox = tipSelect.value === 'checkbox';
         const sayiAlani = form.querySelector('[data-sayi-alani]');
@@ -173,14 +209,21 @@ export function initKresSoruFormuShowPage() {
         form.action = storeUrl;
         form.querySelector('[data-method-field]')?.remove();
         secenekList.innerHTML = '';
+        duzenlenenKart = null;
         if (title) title.textContent = 'Yeni Soru';
         syncTip();
+        kosulAlaniniHazirla();
     };
 
     const openModal = () => setModalOpen(modal, true);
     const closeModal = () => setModalOpen(modal, false);
 
     tipSelect.addEventListener('change', syncTip);
+    kosulToggle.addEventListener('change', syncKosul);
+    kosulSoruSelect.addEventListener('change', () => {
+        kosulSecenekleriniCiz();
+        syncKosul();
+    });
 
     form.querySelector('[data-secenek-ekle]')?.addEventListener('click', () => {
         secenekList.append(optionRow());
@@ -192,7 +235,8 @@ export function initKresSoruFormuShowPage() {
 
         if (event.target.closest('[data-secenek-sil]')) {
             if (secenekList.children.length <= 1) {
-                row.querySelector('input').value = '';
+                row.querySelector('input[type="text"]').value = '';
+                row.querySelector('input[type="hidden"]').value = '';
                 return;
             }
             row.remove();
@@ -224,16 +268,15 @@ export function initKresSoruFormuShowPage() {
 
         if (event.target.closest('[data-soru-duzenle]')) {
             resetForm();
+            duzenlenenKart = card;
             form.action = card.dataset.updateUrl;
-            let methodField = form.querySelector('[data-method-field]');
-            if (!methodField) {
-                methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                methodField.setAttribute('data-method-field', '');
-                form.prepend(methodField);
-            }
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
             methodField.value = 'PUT';
+            methodField.setAttribute('data-method-field', '');
+            form.prepend(methodField);
+
             tipSelect.value = card.dataset.tip || '';
             form.querySelector('[data-soru-baslik]').value = card.dataset.baslik || '';
             form.querySelector('[data-soru-aciklama]').value = card.dataset.aciklama || '';
@@ -242,55 +285,51 @@ export function initKresSoruFormuShowPage() {
             form.querySelector('[data-soru-min-deger]').value = card.dataset.minDeger || '';
             form.querySelector('[data-soru-max-deger]').value = card.dataset.maxDeger || '';
             secenekList.innerHTML = '';
-            let options = [];
-            try {
-                options = JSON.parse(card.dataset.secenekler || '[]');
-            } catch {
-                options = [];
-            }
-            if (Array.isArray(options) && options.length) {
-                options.forEach((etiket) => secenekList.append(optionRow(etiket)));
-            }
+            parseJson(card.dataset.secenekler, []).forEach((secenek) => {
+                secenekList.append(optionRow(secenek.etiket, secenek.id));
+            });
             if (title) title.textContent = 'Soruyu Düzenle';
             syncTip();
+            kosulAlaniniHazirla(card.dataset.kosulSoruId, parseJson(card.dataset.kosulSecenekIds, []));
             openModal();
             return;
         }
 
         if (event.target.closest('[data-soru-sil]')) {
             const ad = card.dataset.baslik || 'bu soru';
-            if (!window.confirm(`"${ad}" sorusunu silmek istiyor musunuz?`)) {
+            if (!window.confirm(`"${ad}" sorusunu silmek istiyor musunuz? Bu soruya verilmiş cevaplar başvurularda okunabilir olarak kalır.`)) {
                 return;
             }
             window.axios.delete(card.dataset.deleteUrl, {
                 headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
             }).then((response) => {
                 showToast(response.data.message || 'Soru silindi.', 'success');
-                removeCard(card);
+                replaceList(response.data.html);
             }).catch((error) => {
                 showToast(validationMessage(error), 'error');
             });
         }
     });
 
-    async function saveOrder() {
-        const ids = [...root.querySelectorAll('[data-soru-card]')].map((card) => Number(card.dataset.soruId));
+    async function saveOrder(startOrder) {
+        const ids = kartlar().map((card) => Number(card.dataset.soruId));
         if (ids.length < 2) return;
         try {
             const { data } = await window.axios.put(siraUrl, { sira: ids }, {
                 headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
             });
-            root.querySelectorAll('[data-soru-index]').forEach((el, index) => {
-                el.textContent = String(index + 1);
-            });
+            reindexCards();
             showToast(data.message || 'Soru sırası güncellendi.', 'success');
         } catch (error) {
+            const empty = list.querySelector('[data-soru-empty]');
+            startOrder.forEach((card) => list.insertBefore(card, empty));
+            reindexCards();
             showToast(validationMessage(error), 'error');
         }
     }
 
-    function dragAfterCard(list, y, dragging) {
-        return [...list.querySelectorAll('[data-soru-card]')]
+    function dragAfterCard(y, dragging) {
+        return kartlar()
             .filter((child) => child !== dragging)
             .reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
@@ -302,93 +341,91 @@ export function initKresSoruFormuShowPage() {
             }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
     }
 
-    function initSoruDrag(list) {
-        if (!list) return;
+    list.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        if (event.target.closest('.kres-soru-card__actions, [data-soru-duzenle], [data-soru-sil]')) {
+            return;
+        }
 
-        list.addEventListener('pointerdown', (event) => {
-            if (event.button !== 0) return;
-            if (event.target.closest('.kres-soru-card__actions, [data-soru-duzenle], [data-soru-sil]')) {
-                return;
-            }
+        const card = event.target.closest('[data-soru-card]');
+        if (!card || !list.contains(card)) return;
+        if (kartlar().length < 2) return;
 
-            const card = event.target.closest('[data-soru-card]');
-            if (!card || !list.contains(card)) return;
-            if (list.querySelectorAll('[data-soru-card]').length < 2) return;
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const origin = card.getBoundingClientRect();
+        const startOrder = kartlar();
+        let dragging = false;
+        let placeholder = null;
 
-            const startX = event.clientX;
-            const startY = event.clientY;
-            const origin = card.getBoundingClientRect();
-            const startOrder = [...list.querySelectorAll('[data-soru-card]')];
-            let dragging = false;
-            let placeholder = null;
+        const onMove = (moveEvent) => {
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
 
-            const onMove = (moveEvent) => {
-                const dx = moveEvent.clientX - startX;
-                const dy = moveEvent.clientY - startY;
-
-                if (!dragging) {
-                    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
-                        return;
-                    }
-
-                    dragging = true;
-                    placeholder = document.createElement('div');
-                    placeholder.className = 'kres-soru-placeholder';
-                    placeholder.style.height = `${origin.height}px`;
-                    card.after(placeholder);
-                    card.classList.add('is-dragging');
-                    card.style.width = `${origin.width}px`;
-                    card.style.left = `${origin.left}px`;
-                    card.style.top = `${origin.top}px`;
-                    document.body.classList.add('is-kres-soru-dragging');
-                }
-
-                moveEvent.preventDefault();
-                card.style.top = `${origin.top + (moveEvent.clientY - startY)}px`;
-                card.style.left = `${origin.left + (moveEvent.clientX - startX)}px`;
-
-                const after = dragAfterCard(list, moveEvent.clientY, card);
-                if (after) {
-                    list.insertBefore(placeholder, after);
-                } else {
-                    list.appendChild(placeholder);
-                }
-            };
-
-            const onUp = async () => {
-                window.removeEventListener('pointermove', onMove);
-                window.removeEventListener('pointerup', onUp);
-                window.removeEventListener('pointercancel', onUp);
-
-                if (!dragging) {
+            if (!dragging) {
+                if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
                     return;
                 }
 
-                placeholder.replaceWith(card);
-                card.classList.remove('is-dragging');
-                card.style.width = '';
-                card.style.left = '';
-                card.style.top = '';
-                document.body.classList.remove('is-kres-soru-dragging');
+                dragging = true;
+                placeholder = document.createElement('div');
+                placeholder.className = 'kres-soru-placeholder';
+                placeholder.style.height = `${origin.height}px`;
+                card.after(placeholder);
+                card.classList.add('is-dragging');
+                card.style.width = `${origin.width}px`;
+                card.style.left = `${origin.left}px`;
+                card.style.top = `${origin.top}px`;
+                document.body.classList.add('is-kres-soru-dragging');
+            }
 
-                const next = [...list.querySelectorAll('[data-soru-card]')];
-                if (startOrder.some((el, index) => el !== next[index])) {
-                    await saveOrder();
-                }
-            };
+            moveEvent.preventDefault();
+            card.style.top = `${origin.top + (moveEvent.clientY - startY)}px`;
+            card.style.left = `${origin.left + (moveEvent.clientX - startX)}px`;
 
-            window.addEventListener('pointermove', onMove, { passive: false });
-            window.addEventListener('pointerup', onUp);
-            window.addEventListener('pointercancel', onUp);
-        });
-    }
+            const after = dragAfterCard(moveEvent.clientY, card);
+            if (after) {
+                list.insertBefore(placeholder, after);
+            } else {
+                list.insertBefore(placeholder, list.querySelector('[data-soru-empty]'));
+            }
+        };
 
-    initSoruDrag(root.querySelector('[data-soru-list]'));
+        const onUp = async () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onUp);
+
+            if (!dragging) {
+                return;
+            }
+
+            placeholder.replaceWith(card);
+            card.classList.remove('is-dragging');
+            card.style.width = '';
+            card.style.left = '';
+            card.style.top = '';
+            document.body.classList.remove('is-kres-soru-dragging');
+
+            const next = kartlar();
+            if (startOrder.some((el, index) => el !== next[index])) {
+                await saveOrder(startOrder);
+            }
+        };
+
+        window.addEventListener('pointermove', onMove, { passive: false });
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+    });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!tipSelect.value) {
             showToast('Önce soru tipi seçin.', 'error');
+            return;
+        }
+        if (kosulToggle.checked && (!kosulSoruSelect.value || !kosulSecenekler.querySelector('input:checked'))) {
+            showToast('Koşul için bir soru ve en az bir cevap seçin.', 'error');
             return;
         }
 
@@ -401,6 +438,10 @@ export function initKresSoruFormuShowPage() {
 
         try {
             const formData = new FormData(form);
+            if (!kosulToggle.checked) {
+                formData.delete('kosul_soru_id');
+                formData.delete('kosul_secenek_ids[]');
+            }
             const { data } = await window.axios.post(form.action, formData, {
                 headers: {
                     Accept: 'application/json',
@@ -409,7 +450,7 @@ export function initKresSoruFormuShowPage() {
             });
             closeModal();
             showToast(data.message || 'Soru kaydedildi.', 'success');
-            upsertCard(data.html, data.id);
+            replaceList(data.html);
         } catch (error) {
             showToast(validationMessage(error), 'error');
         } finally {
@@ -450,6 +491,51 @@ function syncPreviewCheckboxLimits(root) {
     });
 }
 
+function onizlemeSecimleri(root) {
+    const secimler = {};
+    root.querySelectorAll('[data-onizleme-soru]').forEach((grup) => {
+        const idler = [];
+        grup.querySelectorAll('[data-onizleme-secim]').forEach((el) => {
+            if (el.tagName === 'SELECT') {
+                if (el.value) idler.push(Number(el.value));
+            } else if (el.checked) {
+                idler.push(Number(el.value));
+            }
+        });
+        secimler[grup.dataset.onizlemeSoru] = idler;
+    });
+    return secimler;
+}
+
+function syncPreviewKosullar(root) {
+    if (!root) return;
+    const secimler = onizlemeSecimleri(root);
+    const gruplar = [...root.querySelectorAll('[data-onizleme-soru]')];
+    const gorunur = {};
+
+    const hesapla = (grup, ziyaret = new Set()) => {
+        const id = grup.dataset.onizlemeSoru;
+        if (id in gorunur) return gorunur[id];
+        const ustId = grup.dataset.kosulSoru;
+        if (!ustId || ziyaret.has(id)) {
+            gorunur[id] = true;
+            return true;
+        }
+        ziyaret.add(id);
+        const ust = gruplar.find((g) => g.dataset.onizlemeSoru === ustId);
+        const istenen = parseJson(grup.dataset.kosulSecenekler, []).map(Number);
+        const sonuc = ust
+            ? hesapla(ust, ziyaret) && (secimler[ustId] || []).some((secim) => istenen.includes(secim))
+            : true;
+        gorunur[id] = sonuc;
+        return sonuc;
+    };
+
+    gruplar.forEach((grup) => {
+        grup.hidden = !hesapla(grup);
+    });
+}
+
 function formatCepTelefonu(raw) {
     let digits = String(raw || '').replace(/\D/g, '');
 
@@ -476,20 +562,18 @@ function formatCepTelefonu(raw) {
     return parts.join(' ');
 }
 
-function bindPreviewCepTelefonu(root) {
-    if (!root || root.dataset.cepTelefonuBound === '1') {
+function bindPreviewEvents(root) {
+    if (!root || root.dataset.onizlemeBound === '1') {
         return;
     }
 
-    root.dataset.cepTelefonuBound = '1';
+    root.dataset.onizlemeBound = '1';
 
     root.addEventListener('input', (event) => {
         const input = event.target;
-        if (!(input instanceof HTMLInputElement) || !input.matches('[data-cep-telefonu]')) {
-            return;
+        if (input instanceof HTMLInputElement && input.matches('[data-cep-telefonu]')) {
+            input.value = formatCepTelefonu(input.value);
         }
-
-        input.value = formatCepTelefonu(input.value);
     });
 
     root.addEventListener('blur', (event) => {
@@ -505,14 +589,6 @@ function bindPreviewCepTelefonu(root) {
             showToast('Cep telefonunu 05xx xxx xx xx formatında girin.', 'error');
         }
     }, true);
-}
-
-function bindPreviewCheckboxLimits(root) {
-    if (!root || root.dataset.checkboxSecimBound === '1') {
-        return;
-    }
-
-    root.dataset.checkboxSecimBound = '1';
 
     root.addEventListener('click', (event) => {
         const input =
@@ -538,6 +614,8 @@ function bindPreviewCheckboxLimits(root) {
 
     root.addEventListener('change', (event) => {
         const input = event.target;
+        syncPreviewKosullar(root);
+
         if (input.type !== 'checkbox') {
             return;
         }
@@ -562,17 +640,17 @@ function bindPreviewCheckboxLimits(root) {
     });
 }
 
-export function initKresSoruOnizleme() {
-    const modal = document.getElementById('kres-soru-onizleme-modal');
+export function initSoruOnizleme() {
+    const modal = document.getElementById('soru-onizleme-modal');
     if (!modal) return;
 
     const body = modal.querySelector('[data-soru-onizleme-govde]');
     const title = modal.querySelector('[data-soru-onizleme-title]');
     const staticHtml = body?.innerHTML || '';
 
-    bindPreviewCheckboxLimits(body);
-    bindPreviewCepTelefonu(body);
+    bindPreviewEvents(body);
     syncPreviewCheckboxLimits(body);
+    syncPreviewKosullar(body);
 
     modal.querySelectorAll('[data-soru-onizleme-close]').forEach((el) => {
         el.addEventListener('click', () => setModalOpen(modal, false));
@@ -603,6 +681,7 @@ export function initKresSoruOnizleme() {
                 }
                 body.innerHTML = await response.text();
                 syncPreviewCheckboxLimits(body);
+                syncPreviewKosullar(body);
             } catch (error) {
                 body.innerHTML = staticHtml;
                 setModalOpen(modal, false);
@@ -615,27 +694,47 @@ export function initKresSoruOnizleme() {
     });
 }
 
-export function initKresSoruFormlariDelete() {
-    if (!document.getElementById('kres-soru-formlari-table')) return;
+export function initSoruFormlariListeAksiyonlari() {
+    if (!document.getElementById('soru-formlari-table')) return;
 
     document.addEventListener('click', async (event) => {
-        const btn = event.target.closest('[data-form-delete]');
-        if (!btn) return;
+        const silBtn = event.target.closest('[data-form-delete]');
+        if (silBtn) {
+            event.preventDefault();
+            const ad = silBtn.dataset.ad || 'bu formu';
+            const kullanim = silBtn.dataset.kullanim
+                ? `\n\nBu form şu an ${silBtn.dataset.kullanim} tarafından kullanılıyor; bağlantıları kaldırılacak.`
+                : '';
+            if (!window.confirm(`"${ad}" soru formunu silmek istiyor musunuz?${kullanim}\n\nDaha önce verilmiş cevaplar başvurularda okunabilir olarak kalır.`)) {
+                return;
+            }
 
-        event.preventDefault();
-        const ad = btn.dataset.ad || 'bu formu';
-        if (!window.confirm(`"${ad}" soru formunu silmek istiyor musunuz?`)) {
+            try {
+                const { data } = await window.axios.delete(silBtn.dataset.deleteUrl, {
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                });
+                showToast(data.message || 'Form silindi.', 'success');
+                window.location.reload();
+            } catch (error) {
+                showToast(validationMessage(error), 'error');
+            }
             return;
         }
 
-        try {
-            const { data } = await window.axios.delete(btn.dataset.deleteUrl, {
-                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
-            });
-            showToast(data.message || 'Form silindi.', 'success');
-            window.location.reload();
-        } catch (error) {
-            showToast(validationMessage(error), 'error');
+        const kopyalaBtn = event.target.closest('[data-form-kopyala]');
+        if (kopyalaBtn) {
+            event.preventDefault();
+            try {
+                const { data } = await window.axios.post(kopyalaBtn.dataset.kopyalaUrl, {}, {
+                    headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+                });
+                showToast(data.message || 'Form kopyalandı.', 'success');
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            } catch (error) {
+                showToast(validationMessage(error), 'error');
+            }
         }
     });
 }

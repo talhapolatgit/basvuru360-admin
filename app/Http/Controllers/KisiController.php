@@ -16,6 +16,7 @@ use App\Services\Adres\AdresSorgulama;
 use App\Services\Email\EmailSender;
 use App\Services\Entegrasyon\EntegrasyonAyarServisi;
 use App\Services\Kimlik\KimlikSorgulama;
+use App\Services\KisiBilgiGuncellemeServisi;
 use App\Services\KisiYakinServisi;
 use App\Services\LogKaydedici;
 use App\Services\PortalGirisKilitServisi;
@@ -172,6 +173,83 @@ class KisiController extends Controller
         ]);
     }
 
+    public function kimlikGuncelle(Request $request, Kisi $kisi, KisiBilgiGuncellemeServisi $servis): RedirectResponse|JsonResponse
+    {
+        return $this->entegrasyonlaGuncelle($request, $kisi, 'Kimlik', fn () => $servis->kimlikGuncelle($kisi));
+    }
+
+    public function adresGuncelle(Request $request, Kisi $kisi, KisiBilgiGuncellemeServisi $servis): RedirectResponse|JsonResponse
+    {
+        return $this->entegrasyonlaGuncelle($request, $kisi, 'Adres', fn () => $servis->adresGuncelle($kisi));
+    }
+
+    /**
+     * @param  callable(): array<string, array{eski: mixed, yeni: mixed}>  $guncelle
+     */
+    private function entegrasyonlaGuncelle(Request $request, Kisi $kisi, string $baslik, callable $guncelle): RedirectResponse|JsonResponse
+    {
+        $yanit = function (string $tur, string $mesaj, int $durum = 200) use ($request, $kisi) {
+            if ($request->expectsJson()) {
+                return response()->json(
+                    $tur === 'success' ? ['message' => $mesaj, 'alanlar' => $this->kisiGorunumAlanlari($kisi)] : ['message' => $mesaj],
+                    $durum,
+                );
+            }
+
+            return redirect()->route('kisiler.show', $kisi)->with($tur, $mesaj);
+        };
+
+        try {
+            $degisen = $guncelle();
+        } catch (RuntimeException $e) {
+            return $yanit('error', $e->getMessage(), 422);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $yanit('error', "{$baslik} sorgulama sırasında bir hata oluştu.", 500);
+        }
+
+        if ($degisen === []) {
+            return $yanit('success', "{$baslik} bilgileri sorgulandı; kayıtlı bilgiler zaten güncel.");
+        }
+
+        LogKaydedici::kaydet(
+            islem: 'kisi.guncellendi',
+            aciklama: '"'.$kisi->tam_adi.'" kişisinin '.mb_strtolower($baslik).' bilgileri entegrasyondan güncellendi.',
+            konu: $kisi,
+            eski: array_map(fn ($d) => $d['eski'], $degisen),
+            yeni: array_map(fn ($d) => $d['yeni'], $degisen),
+            konuAdi: $kisi->tam_adi,
+        );
+
+        $etiketler = array_map(fn ($alan) => KisiBilgiGuncellemeServisi::ETIKETLER[$alan] ?? $alan, array_keys($degisen));
+
+        return $yanit('success', "{$baslik} bilgileri güncellendi: ".implode(', ', $etiketler).'.');
+    }
+
+    /**
+     * Detay sayfasındaki data-kisi-alan elemanlarına yazılacak görüntü değerleri.
+     *
+     * @return array<string, string>
+     */
+    private function kisiGorunumAlanlari(Kisi $kisi): array
+    {
+        $kisi->refresh();
+
+        return [
+            'tam_adi' => $kisi->tam_adi,
+            'bas_harfler' => $kisi->bas_harfler ?: '?',
+            'cinsiyet' => $kisi->cinsiyet?->label() ?? '—',
+            'dogum_yeri' => $kisi->dogum_yeri ?: '—',
+            'medeni_durum' => $kisi->medeni_durum ?: '—',
+            'uyruk' => $kisi->uyruk ?: '—',
+            'anne_adi' => $kisi->anne_adi ?: '—',
+            'baba_adi' => $kisi->baba_adi ?: '—',
+            'il_ilce' => ($kisi->il || $kisi->ilce) ? trim(($kisi->il ?? '').' / '.($kisi->ilce ?? ''), ' /') : '—',
+            'adres' => $kisi->adres ?: '—',
+        ];
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validated($request);
@@ -313,6 +391,8 @@ class KisiController extends Controller
             'yakinlar' => $yakinlar,
             'yakinlikDereceleri' => $yakinlikDereceleri,
             'yakinEntegrasyonAktif' => app(EntegrasyonAyarServisi::class)->turAktifMi('yakin_sorgulama'),
+            'kimlikEntegrasyonAktif' => app(EntegrasyonAyarServisi::class)->turAktifMi('kimlik_sorgulama'),
+            'adresEntegrasyonAktif' => app(EntegrasyonAyarServisi::class)->turAktifMi('adres_sorgulama'),
             'toplamBasvuru' => $basvurular->count() + $etkinlikBasvurulari->count(),
             'kesinKayitSayisi' => $kesinKayitBasvurular->count(),
             'aktifKursSayisi' => $aktifKursSayisi,
@@ -369,18 +449,27 @@ class KisiController extends Controller
             ->with('success', $yakin->tam_adi.' aile listesine eklendi.');
     }
 
-    public function yakinlariEntegrasyondanGetir(Request $request, Kisi $kisi, KisiYakinServisi $servis): RedirectResponse
+    public function yakinlariEntegrasyondanGetir(Request $request, Kisi $kisi, KisiYakinServisi $servis): RedirectResponse|JsonResponse
     {
-        $yonlendir = redirect()->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile']);
+        $yanit = function (string $tur, string $mesaj) use ($request, $kisi) {
+            if ($request->expectsJson()) {
+                return response()->json(
+                    ['message' => $mesaj, 'satirlar' => $tur === 'success' ? $this->aileSatirlariHtml($kisi) : null],
+                    $tur === 'success' ? 200 : 422,
+                );
+            }
+
+            return redirect()->route('kisiler.show', ['kisi' => $kisi, 'tab' => 'aile'])->with($tur, $mesaj);
+        };
 
         try {
             $sayac = $servis->entegrasyondanAktar($kisi, $request->user());
         } catch (RuntimeException $e) {
-            return $yonlendir->with('error', $e->getMessage());
+            return $yanit('error', $e->getMessage());
         } catch (Throwable $e) {
             report($e);
 
-            return $yonlendir->with('error', 'Yakın sorgulama sırasında bir hata oluştu.');
+            return $yanit('error', 'Yakın sorgulama sırasında bir hata oluştu.');
         }
 
         $parcalar = array_filter([
@@ -389,9 +478,21 @@ class KisiController extends Controller
             $sayac['atlanan'] > 0 ? "{$sayac['atlanan']} kayıt atlandı (vefat veya tanımsız yakınlık)" : null,
         ]);
 
-        return $yonlendir->with('success', $parcalar === []
+        return $yanit('success', $parcalar === []
             ? 'Entegrasyonda kayıtlı 1. derece yakın bulunamadı.'
             : 'Yakın bilgileri entegrasyondan alındı: '.implode(', ', $parcalar).'.');
+    }
+
+    private function aileSatirlariHtml(Kisi $kisi): string
+    {
+        $canEditKisi = (bool) auth()->user()?->hasYetki('kisi.guncelle');
+
+        return view('kisiler._aile_satirlar', [
+            'kisi' => $kisi,
+            'yakinlar' => $kisi->yakinlar()->with(['yakin', 'yakinlikDerecesi', 'kaydeden'])->orderByDesc('id')->get(),
+            'canEditKisi' => $canEditKisi,
+            'kolonSayisi' => 6 + ($canEditKisi ? 1 : 0),
+        ])->render();
     }
 
     public function destroyYakin(Kisi $kisi, KisiYakin $yakin): RedirectResponse

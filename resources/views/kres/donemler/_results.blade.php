@@ -68,6 +68,7 @@
                                     data-bitis="{{ $donem->bitis?->format('Y-m-d') }}"
                                     data-aktif="{{ $donem->aktif ? '1' : '0' }}"
                                     data-yayinla="{{ $donem->yayinla ? '1' : '0' }}"
+                                    data-soru-formu-id="{{ $donem->soru_formu_id }}"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                                     Düzenle

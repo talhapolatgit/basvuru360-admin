@@ -157,7 +157,6 @@
       'kres.donem_yonet',
       'kres.okul_yonet',
       'kres.grup_yonet',
-      'kres.soru_formu_yonet',
       'kres.basvuru_goruntule',
     ]);
   @endphp
@@ -196,14 +195,16 @@
         Gruplar
       </a>
       @endyetki
-      @yetki('kres.soru_formu_yonet')
-      <a href="{{ route('kres.soru-formlari.index') }}" class="submenu-item {{ request()->routeIs('kres.soru-formlari.*') ? 'is-active' : '' }}">
-        Soru Formları
-      </a>
-      @endyetki
     </div>
   </div>
   @endif
+
+  @yetki('soru_formu.yonet')
+  <a href="{{ route('soru-formlari.index') }}" class="menu-item {{ request()->routeIs('soru-formlari.*') ? 'menu-item-active' : '' }}">
+    <svg class="menu-item-icon {{ request()->routeIs('soru-formlari.*') ? 'menu-item-icon-accent' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    Soru Formları
+  </a>
+  @endyetki
 
   @yetki('takvim.goruntule')
   <a href="{{ route('takvim.index') }}" class="menu-item {{ request()->routeIs('takvim.*') ? 'menu-item-active' : '' }}">

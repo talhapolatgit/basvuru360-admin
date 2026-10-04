@@ -355,6 +355,8 @@
         @endforeach
     </section>
 
+    @include('soru-formlari._cevaplar', ['cevaplar' => $basvuru->cevaplar])
+
     {{-- Evraklar --}}
     @yetki('basvuru.evrak_goruntule')
     <section

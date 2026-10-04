@@ -3,25 +3,24 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Cinsiyet;
-use App\Enums\KresSoruTipi;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\V1\Concerns\ResolvesPortalBasvuruKatilimci;
 use App\Http\Controllers\Api\V1\Concerns\VerifiesBasvuruDogrulamaKodu;
 use App\Http\Resources\Api\V1\KresBasvuruResource;
 use App\Models\Kisi;
 use App\Models\KresBasvuru;
-use App\Models\KresBasvuruCevap;
 use App\Models\KresBasvuruDurum;
 use App\Models\KresDonem;
 use App\Models\KresGrup;
 use App\Models\KresOkul;
-use App\Models\KresSoru;
-use App\Models\KresSoruFormu;
+use App\Models\Soru;
+use App\Models\SoruFormu;
 use App\Services\Sms\PhoneNormalizer;
+use App\Services\SoruFormuCevapServisi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -41,10 +40,7 @@ class KresBasvuruController extends ApiController
             ]);
         }
 
-        $form = KresSoruFormu::query()
-            ->where('donem_id', $donem->id)
-            ->where('aktif', true)
-            ->first();
+        $form = $this->aktifSoruFormu($donem);
 
         return $this->success([
             'acik' => true,
@@ -138,11 +134,7 @@ class KresBasvuruController extends ApiController
     public function soruFormu(): JsonResponse
     {
         $donem = $this->yayindakiDonemVeyaFail();
-        $form = KresSoruFormu::query()
-            ->where('donem_id', $donem->id)
-            ->where('aktif', true)
-            ->with(['sorular.secenekler'])
-            ->first();
+        $form = $this->aktifSoruFormu($donem);
 
         if (! $form) {
             return $this->success([
@@ -157,21 +149,7 @@ class KresBasvuruController extends ApiController
                 'ad' => $form->ad,
                 'aciklama' => $form->aciklama,
             ],
-            'sorular' => $form->sorular->map(fn (KresSoru $soru) => [
-                'id' => $soru->id,
-                'tip' => $soru->tip->value,
-                'baslik' => $soru->baslik,
-                'aciklama' => $soru->aciklama,
-                'zorunlu' => $soru->zorunlu,
-                'placeholder' => $soru->tip->placeholder(),
-                'min_deger' => $soru->min_deger,
-                'max_deger' => $soru->max_deger,
-                'tam_sayi' => $soru->tam_sayi,
-                'secenekler' => $soru->secenekler->map(fn ($s) => [
-                    'id' => $s->id,
-                    'etiket' => $s->etiket,
-                ])->values(),
-            ])->values(),
+            'sorular' => $form->sorular->map(fn (Soru $soru) => $soru->apiVerisi())->values(),
         ]);
     }
 
@@ -218,6 +196,9 @@ class KresBasvuruController extends ApiController
             'grup_id.required' => 'Grup seçimi zorunludur.',
         ]);
 
+        $cevapServisi = app(SoruFormuCevapServisi::class);
+        $cevaplar = $cevapServisi->dogrula($request, $this->aktifSoruFormu($donem));
+
         $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $oturum);
 
         $telefon = $this->cepTelefonuDogrula((string) $validated['veli_telefon']);
@@ -248,14 +229,6 @@ class KresBasvuruController extends ApiController
             ]);
         }
 
-        $form = KresSoruFormu::query()
-            ->where('donem_id', $donem->id)
-            ->where('aktif', true)
-            ->with(['sorular.secenekler'])
-            ->first();
-
-        $cevaplar = $form ? $this->cevaplarDogrula($request, $form) : [];
-
         $durumId = KresBasvuruDurum::idByKod('onay_bekliyor');
         if (! $durumId) {
             throw ValidationException::withMessages([
@@ -263,7 +236,37 @@ class KresBasvuruController extends ApiController
             ]);
         }
 
-        $basvuru = DB::transaction(function () use ($validated, $telefon, $oturum, $grup, $durumId, $cevaplar, $ogrenciCinsiyet) {
+        try {
+            $basvuru = $this->basvuruyuOlustur($validated, $telefon, $oturum, $grup, $durumId, $cevaplar, $ogrenciCinsiyet, $cevapServisi);
+        } catch (Throwable $e) {
+            $cevapServisi->yuklenenDosyalariSil();
+
+            throw $e;
+        }
+
+        $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
+
+        return $this->success([
+            'basvuru' => (new KresBasvuruResource($basvuru))->resolve(),
+            'durum' => $basvuru->durum?->ad,
+        ], 'Kreş başvurunuz alındı.', 201);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @param  list<array<string, mixed>>  $cevaplar
+     */
+    private function basvuruyuOlustur(
+        array $validated,
+        string $telefon,
+        Kisi $oturum,
+        KresGrup $grup,
+        int $durumId,
+        array $cevaplar,
+        mixed $ogrenciCinsiyet,
+        SoruFormuCevapServisi $cevapServisi,
+    ): KresBasvuru {
+        return DB::transaction(function () use ($validated, $telefon, $oturum, $grup, $durumId, $cevaplar, $ogrenciCinsiyet, $cevapServisi) {
             $veli = $this->kisiUpsert([
                 'ad' => $validated['veli_ad'],
                 'soyad' => $validated['veli_soyad'],
@@ -314,22 +317,23 @@ class KresBasvuruController extends ApiController
                 'olusturan_id' => null,
             ]);
 
-            foreach ($cevaplar as $cevap) {
-                KresBasvuruCevap::query()->create([
-                    'basvuru_id' => $kayit->id,
-                    ...$cevap,
-                ]);
-            }
+            $cevapServisi->kaydet($kayit, $cevaplar, 'kres');
 
             return $kayit->load(['grup.okul', 'grup.donem', 'kisi', 'durum', 'basvuran']);
         });
+    }
 
-        $this->basvuruDogrulamaKoduTamamla($dogrulamaToken);
+    private function aktifSoruFormu(KresDonem $donem): ?SoruFormu
+    {
+        if (! $donem->soru_formu_id) {
+            return null;
+        }
 
-        return $this->success([
-            'basvuru' => (new KresBasvuruResource($basvuru))->resolve(),
-            'durum' => $basvuru->durum?->ad,
-        ], 'Kreş başvurunuz alındı.', 201);
+        return SoruFormu::query()
+            ->whereKey($donem->soru_formu_id)
+            ->where('aktif', true)
+            ->with('sorular.secenekler')
+            ->first();
     }
 
     private function yayindakiDonem(): ?KresDonem
@@ -392,136 +396,5 @@ class KresBasvuruController extends ApiController
         }
 
         return substr($local, 0, 4).' '.substr($local, 4, 3).' '.substr($local, 7, 2).' '.substr($local, 9, 2);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function cevaplarDogrula(Request $request, KresSoruFormu $form): array
-    {
-        $kayitlar = [];
-
-        foreach ($form->sorular as $soru) {
-            $key = 'cevaplar.'.$soru->id;
-            $file = $request->file($key);
-            $ham = $request->input($key);
-
-            if ($soru->tip === KresSoruTipi::Dosya || $soru->tip === KresSoruTipi::Resim) {
-                if ($soru->zorunlu && ! $file instanceof UploadedFile) {
-                    throw ValidationException::withMessages([
-                        $key => $soru->baslik.' için dosya yükleyin.',
-                    ]);
-                }
-                if ($file instanceof UploadedFile) {
-                    $mimes = $soru->tip === KresSoruTipi::Resim
-                        ? ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-                        : null;
-                    if ($mimes && ! in_array($file->getMimeType(), $mimes, true)) {
-                        throw ValidationException::withMessages([
-                            $key => $soru->baslik.' için geçerli bir görsel yükleyin.',
-                        ]);
-                    }
-                    $path = $file->store('kres-basvuru-cevaplar', 'public');
-                    $kayitlar[] = [
-                        'soru_id' => $soru->id,
-                        'deger' => null,
-                        'dosya_yolu' => $path,
-                        'orijinal_ad' => $file->getClientOriginalName(),
-                        'mime' => $file->getMimeType(),
-                        'boyut' => $file->getSize() ?: 0,
-                    ];
-                }
-
-                continue;
-            }
-
-            if ($soru->tip === KresSoruTipi::Checkbox) {
-                $secimler = array_values(array_filter(array_map('intval', (array) $ham)));
-                $gecerli = $soru->secenekler->pluck('id')->map(fn ($id) => (int) $id)->all();
-                $secimler = array_values(array_intersect($secimler, $gecerli));
-                if ($soru->zorunlu && $secimler === []) {
-                    throw ValidationException::withMessages([
-                        $key => $soru->baslik.' için seçim yapın.',
-                    ]);
-                }
-                if ($soru->min_deger !== null && count($secimler) < (int) $soru->min_deger) {
-                    throw ValidationException::withMessages([
-                        $key => $soru->baslik.' için en az '.(int) $soru->min_deger.' seçim yapın.',
-                    ]);
-                }
-                if ($soru->max_deger !== null && count($secimler) > (int) $soru->max_deger) {
-                    throw ValidationException::withMessages([
-                        $key => $soru->baslik.' için en fazla '.(int) $soru->max_deger.' seçim yapın.',
-                    ]);
-                }
-                if ($secimler !== []) {
-                    $kayitlar[] = [
-                        'soru_id' => $soru->id,
-                        'deger' => json_encode($secimler),
-                    ];
-                }
-
-                continue;
-            }
-
-            $deger = is_array($ham) ? (string) ($ham[0] ?? '') : trim((string) ($ham ?? ''));
-            if ($soru->zorunlu && $deger === '') {
-                throw ValidationException::withMessages([
-                    $key => $soru->baslik.' zorunludur.',
-                ]);
-            }
-            if ($deger === '') {
-                continue;
-            }
-
-            $this->cevapTipiniDogrula($soru, $deger, $key);
-
-            $kayitlar[] = [
-                'soru_id' => $soru->id,
-                'deger' => $deger,
-            ];
-        }
-
-        return $kayitlar;
-    }
-
-    private function cevapTipiniDogrula(KresSoru $soru, string $deger, string $key): void
-    {
-        $mesaj = match ($soru->tip) {
-            KresSoruTipi::Sayi => $this->sayiHatasi($soru, $deger),
-            KresSoruTipi::Eposta => filter_var($deger, FILTER_VALIDATE_EMAIL) ? null : 'Geçerli bir e-posta girin.',
-            KresSoruTipi::TcKimlik => preg_match('/^\d{11}$/', $deger) ? null : 'T.C. kimlik no 11 haneli olmalıdır.',
-            KresSoruTipi::CepTelefonu => preg_match('/^05\d{9}$/', preg_replace('/\D+/', '', $deger) ?? '') ? null : 'Cep telefonunu 05xx xxx xx xx formatında girin.',
-            KresSoruTipi::Tarih => strtotime($deger) ? null : 'Geçerli bir tarih girin.',
-            KresSoruTipi::Liste, KresSoruTipi::Radio => $soru->secenekler->contains('id', (int) $deger)
-                ? null
-                : 'Geçerli bir seçenek seçin.',
-            default => null,
-        };
-
-        if ($mesaj) {
-            throw ValidationException::withMessages([
-                $key => $soru->baslik.': '.$mesaj,
-            ]);
-        }
-    }
-
-    private function sayiHatasi(KresSoru $soru, string $deger): ?string
-    {
-        if (! is_numeric($deger)) {
-            return 'Sayı girin.';
-        }
-        $sayi = (float) $deger;
-        if ($soru->tam_sayi && floor($sayi) !== $sayi) {
-            return 'Tam sayı girin.';
-        }
-        if ($soru->min_deger !== null && $sayi < $soru->min_deger) {
-            return 'Minimum değer '.$soru->min_deger.'.';
-        }
-        if ($soru->max_deger !== null && $sayi > $soru->max_deger) {
-            return 'Maksimum değer '.$soru->max_deger.'.';
-        }
-
-        return null;
     }
 }

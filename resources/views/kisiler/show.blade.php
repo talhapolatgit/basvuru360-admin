@@ -14,10 +14,10 @@
             <label class="profil-avatar profil-avatar-lg profil-avatar-edit" title="Yeni fotoğraf yükle">
                 @if ($kisi->profil_foto_url)
                     <img src="{{ $kisi->profil_foto_url }}" alt="Profil fotoğrafı" data-avatar-img>
-                    <span class="profil-avatar-initials" data-avatar-initials hidden>{{ $kisi->bas_harfler ?: '?' }}</span>
+                    <span class="profil-avatar-initials" data-avatar-initials data-kisi-alan="bas_harfler" hidden>{{ $kisi->bas_harfler ?: '?' }}</span>
                 @else
                     <img src="" alt="Profil fotoğrafı" data-avatar-img hidden>
-                    <span class="profil-avatar-initials" data-avatar-initials>{{ $kisi->bas_harfler ?: '?' }}</span>
+                    <span class="profil-avatar-initials" data-avatar-initials data-kisi-alan="bas_harfler">{{ $kisi->bas_harfler ?: '?' }}</span>
                 @endif
                 <span class="profil-avatar-overlay" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
@@ -37,7 +37,7 @@
         </div>
         <div class="page-header-text">
             <p class="page-eyebrow">Kişiler</p>
-            <h1 class="page-title">{{ $kisi->tam_adi }}</h1>
+            <h1 class="page-title" data-kisi-alan="tam_adi">{{ $kisi->tam_adi }}</h1>
             <p class="page-subtitle">Kişi bilgilerini görüntüleyin ve ilişkili kayıtları inceleyin.</p>
         </div>
     </div>
@@ -102,7 +102,7 @@
     <div class="stat-card">
         <div class="stat-label">Cinsiyet</div>
         <div class="stat-value" style="font-size:16px;">
-            <span class="status status-hazirlik">{{ $kisi->cinsiyet?->label() ?? '—' }}</span>
+            <span class="status status-hazirlik" data-kisi-alan="cinsiyet">{{ $kisi->cinsiyet?->label() ?? '—' }}</span>
         </div>
     </div>
     <div class="stat-card">
@@ -146,23 +146,23 @@
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Doğum Yeri</div>
-            <div class="lesson-info-value">{{ $kisi->dogum_yeri ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="dogum_yeri">{{ $kisi->dogum_yeri ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Medeni Durum</div>
-            <div class="lesson-info-value">{{ $kisi->medeni_durum ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="medeni_durum">{{ $kisi->medeni_durum ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Uyruk</div>
-            <div class="lesson-info-value">{{ $kisi->uyruk ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="uyruk">{{ $kisi->uyruk ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Anne Adı</div>
-            <div class="lesson-info-value">{{ $kisi->anne_adi ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="anne_adi">{{ $kisi->anne_adi ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Baba Adı</div>
-            <div class="lesson-info-value">{{ $kisi->baba_adi ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="baba_adi">{{ $kisi->baba_adi ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Telefon</div>
@@ -174,7 +174,7 @@
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">İl / İlçe</div>
-            <div class="lesson-info-value">
+            <div class="lesson-info-value" data-kisi-alan="il_ilce">
                 @if ($kisi->il || $kisi->ilce)
                     {{ trim(($kisi->il ?? '').' / '.($kisi->ilce ?? ''), ' /') }}
                 @else
@@ -184,7 +184,7 @@
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Adres</div>
-            <div class="lesson-info-value">{{ $kisi->adres ?: '—' }}</div>
+            <div class="lesson-info-value" data-kisi-alan="adres">{{ $kisi->adres ?: '—' }}</div>
         </div>
         <div class="lesson-info-card">
             <div class="lesson-info-label">Kayıt Tarihi</div>
@@ -193,11 +193,20 @@
     </div>
 </div>
 
+@php
+    $kisiSorgulamaYetkisi = auth()->user()?->hasYetki('kisi.guncelle');
+    $sorguEksik = ! preg_match('/^\d{11}$/', (string) $kisi->tc_kimlik_no)
+        ? 'T.C. kimlik no yok'
+        : ($kisi->dogum_tarihi === null ? 'Doğum tarihi yok' : null);
+    $kimlikGuncelleEngel = $kimlikEntegrasyonAktif ? $sorguEksik : 'Kimlik entegrasyonu pasif';
+    $adresGuncelleEngel = $adresEntegrasyonAktif ? $sorguEksik : 'Adres entegrasyonu pasif';
+@endphp
+
 <div class="lesson-actions-block">
     <div class="lesson-actions-card">
         <div class="lesson-actions-card-head">
             <h3 class="lesson-actions-title">İşlemler</h3>
-            <p class="lesson-actions-subtitle">Kişi bilgilerini düzenleyin; SMS veya e-posta gönderin</p>
+            <p class="lesson-actions-subtitle">Kişi bilgilerini düzenleyin, entegrasyondan güncelleyin; SMS veya e-posta gönderin</p>
         </div>
         <div class="lesson-actions-grid">
             <a href="{{ route('kisiler.edit', $kisi) }}" class="lesson-action-btn lesson-action-btn-primary">
@@ -239,7 +248,47 @@
                     <span class="lesson-action-hint">{{ $emailVar ? $kisi->email : 'E-posta yok' }}</span>
                 </span>
             </button>
+            @if ($kisiSorgulamaYetkisi)
+                <button
+                    type="submit"
+                    form="kisi-kimlik-guncelle-form"
+                    class="lesson-action-btn lesson-action-btn-primary"
+                    @disabled($kimlikGuncelleEngel !== null)
+                    title="{{ $kimlikGuncelleEngel ?? 'Kimlik bilgilerini entegrasyondan güncelle' }}"
+                >
+                    <span class="lesson-action-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="5" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M15 10h3"/><path d="M15 14h3"/><path d="M6 16c.5-1.2 1.6-2 3-2s2.5.8 3 2"/></svg>
+                    </span>
+                    <span class="lesson-action-copy">
+                        <span class="lesson-action-label">Kimlik Güncelle</span>
+                        <span class="lesson-action-hint">{{ $kimlikGuncelleEngel ?? 'Kimlik bilgilerini sorgula' }}</span>
+                    </span>
+                </button>
+                <button
+                    type="submit"
+                    form="kisi-adres-guncelle-form"
+                    class="lesson-action-btn lesson-action-btn-primary"
+                    @disabled($adresGuncelleEngel !== null)
+                    title="{{ $adresGuncelleEngel ?? 'Adres bilgilerini entegrasyondan güncelle' }}"
+                >
+                    <span class="lesson-action-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    <span class="lesson-action-copy">
+                        <span class="lesson-action-label">Adres Güncelle</span>
+                        <span class="lesson-action-hint">{{ $adresGuncelleEngel ?? 'Adres bilgilerini sorgula' }}</span>
+                    </span>
+                </button>
+            @endif
         </div>
+        @if ($kisiSorgulamaYetkisi)
+            <form id="kisi-kimlik-guncelle-form" method="POST" action="{{ route('kisiler.kimlik-guncelle', $kisi) }}" hidden data-kisi-sorgu-form data-loading-text="Kimlik bilgileri sorgulanıyor…">
+                @csrf
+            </form>
+            <form id="kisi-adres-guncelle-form" method="POST" action="{{ route('kisiler.adres-guncelle', $kisi) }}" hidden data-kisi-sorgu-form data-loading-text="Adres bilgileri sorgulanıyor…">
+                @csrf
+            </form>
+        @endif
     </div>
 </div>
 
@@ -573,9 +622,9 @@
             <div class="table-toolbar-actions" style="display:flex; align-items:center; gap:0.5rem;">
                 <x-detail-table-tools :columns="$aileColumns" :visible="$aileOrder" excel-name="kisi-aile" />
                 @if ($canEditKisi && $yakinEntegrasyonAktif)
-                    <form method="POST" action="{{ route('kisiler.yakinlar.entegrasyon', $kisi) }}" style="margin:0;">
+                    <form method="POST" action="{{ route('kisiler.yakinlar.entegrasyon', $kisi) }}" style="margin:0;" data-kisi-aile-entegrasyon>
                         @csrf
-                        <x-back-button type="submit" icon="refresh">Entegrasyondan Getir</x-back-button>
+                        <x-back-button type="submit" icon="refresh">Sorgula</x-back-button>
                     </form>
                 @endif
                 @if ($canEditKisi)
@@ -602,69 +651,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($yakinlar as $kayit)
-                        @php
-                            $yakinKisi = $kayit->yakin;
-                        @endphp
-                        <tr>
-                            <td data-column="ad_soyad" data-sort-value="{{ $kayit->tam_adi }}">
-                                @if ($yakinKisi)
-                                    <a href="{{ route('kisiler.show', $yakinKisi) }}" class="kurs-no" title="Kişi kaydına git">{{ $kayit->tam_adi ?: $yakinKisi->tam_adi }}</a>
-                                @else
-                                    {{ $kayit->tam_adi ?: '—' }}
-                                @endif
-                            </td>
-                            <td data-column="tc">{{ $kayit->tc_kimlik_no ?: '—' }}</td>
-                            <td data-column="dogum" data-sort-value="{{ $kayit->dogum_tarihi?->toDateString() }}">
-                                {{ $kayit->dogum_tarihi?->format('d.m.Y') ?? '—' }}
-                            </td>
-                            <td data-column="yakinlik">{{ $kayit->yakinlikDerecesi?->ad ?? '—' }}</td>
-                            <td data-column="son_sorgu" data-sort-value="{{ $kayit->son_sorgu_at?->toDateTimeString() }}">
-                                {{ $kayit->son_sorgu_at?->format('d.m.Y H:i') ?? '—' }}
-                            </td>
-                            <td data-column="kaydeden" data-sort-value="{{ $kayit->created_at?->toDateTimeString() }}">
-                                {{ $kayit->kaydedenAdi() ?? '—' }}
-                                @if ($kayit->created_at)
-                                    <div class="form-hint" style="margin:0;">{{ $kayit->created_at->format('d.m.Y H:i') }}</div>
-                                @endif
-                            </td>
-                            @if ($canEditKisi)
-                                <td data-column="islemler">
-                                    <div class="row-actions" data-row-actions>
-                                        <button type="button" class="action-menu-btn" data-action-toggle aria-expanded="false" aria-haspopup="menu" title="İşlemler">•••</button>
-                                        <div class="action-dropdown" data-action-dropdown hidden role="menu">
-                                            @if ($yakinKisi)
-                                                <a href="{{ route('kisiler.show', $yakinKisi) }}" class="action-dropdown-item" role="menuitem">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                                    Kişi Kaydını Aç
-                                                </a>
-                                            @endif
-                                            <button
-                                                type="button"
-                                                class="action-dropdown-item action-dropdown-item-danger"
-                                                role="menuitem"
-                                                data-kisi-yakin-sil="{{ route('kisiler.yakinlar.destroy', [$kisi, $kayit]) }}"
-                                                data-ad="{{ $kayit->tam_adi }}"
-                                                data-yakinlik="{{ $kayit->yakinlikDerecesi?->ad }}"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                                                Sil
-                                            </button>
-                                        </div>
-                                    </div>
-                                </td>
-                            @endif
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="{{ count($aileColumns) + ($canEditKisi ? 1 : 0) }}">
-                                <div class="empty-state">
-                                    <div class="empty-state-title">Yakın bulunamadı</div>
-                                    <p class="empty-state-text">Bu kişi için henüz aile kaydı eklenmemiş.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
+                    @include('kisiler._aile_satirlar', ['kolonSayisi' => count($aileColumns) + ($canEditKisi ? 1 : 0)])
                 </tbody>
             </table>
         </div>
