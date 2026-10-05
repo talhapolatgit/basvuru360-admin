@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "ad": "Gençlik ve Spor İşleri Müdürlüğü",
+        "aktif": 1,
+        "sira": 1,
+        "created_at": "2026-07-22 14:04:48",
+        "updated_at": "2026-07-22 16:02:29"
+    },
+    {
+        "id": 2,
+        "ad": "Kadın ve Aile Müdürlüğü",
+        "aktif": 1,
+        "sira": 2,
+        "created_at": "2026-07-22 14:04:48",
+        "updated_at": "2026-07-22 16:02:45"
+    },
+    {
+        "id": 3,
+        "ad": "Halk Eğitim Merkezi",
+        "aktif": 1,
+        "sira": 3,
+        "created_at": "2026-07-22 14:04:48",
+        "updated_at": "2026-07-22 14:04:48"
+    }
+]

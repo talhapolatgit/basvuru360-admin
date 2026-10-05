@@ -1,0 +1,47 @@
+[
+    {
+        "id": 1,
+        "tur": "sms",
+        "aktif_saglayici": "demo_sms",
+        "aktif": 1,
+        "ayarlar": null,
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-07-29 23:46:56"
+    },
+    {
+        "id": 2,
+        "tur": "kimlik_sorgulama",
+        "aktif_saglayici": "flexcity_kimlik",
+        "aktif": 1,
+        "ayarlar": "{\"flexcity_kimlik\":{\"adres\":\"https:\\/\\/servis.beyoglu.bel.tr\\/FlexCityUi\\/rest\\/json\\/sbs\\/FindSbsKisiDtoByNvi\",\"authorization\":\"\",\"timeout\":\"15\"}}",
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-10-02 22:25:46"
+    },
+    {
+        "id": 3,
+        "tur": "adres_sorgulama",
+        "aktif_saglayici": "flexcity_adres",
+        "aktif": 1,
+        "ayarlar": "{\"flexcity_adres\":{\"adres\":\"https:\\/\\/servis.beyoglu.bel.tr\\/FlexCityUi\\/rest\\/json\\/nvi\\/FindAllBaseAdresDto\",\"authorization\":\"\",\"timeout\":\"30\"}}",
+        "created_at": "2026-07-24 17:09:13",
+        "updated_at": "2026-10-03 05:47:39"
+    },
+    {
+        "id": 4,
+        "tur": "eposta",
+        "aktif_saglayici": "gmail",
+        "aktif": 1,
+        "ayarlar": "{\"smtp\":{\"host\":\"basvuru360.com\",\"port\":\"587\",\"encryption\":\"tls\",\"username\":\"admin@basvuru360.com\",\"password\":\"\",\"from_address\":\"admin@basvuru360.com\"},\"gmail\":{\"email\":\"kubiskutuphane@gmail.com\",\"app_password\":\"\",\"from_name\":\"Başvuru 360\"}}",
+        "created_at": "2026-07-27 17:44:04",
+        "updated_at": "2026-10-03 14:47:52"
+    },
+    {
+        "id": 5,
+        "tur": "yakin_sorgulama",
+        "aktif_saglayici": "flexcity_yakin",
+        "aktif": 1,
+        "ayarlar": "{\"flexcity_yakin\":{\"adres\":\"https:\\/\\/servis.beyoglu.bel.tr\\/FlexCityUi\\/rest\\/json\\/sbs\\/FindAllSbsKisiAileBireyleriByNvi\",\"authorization\":\"\",\"timeout\":\"30\"}}",
+        "created_at": "2026-10-03 15:05:40",
+        "updated_at": "2026-10-03 15:54:24"
+    }
+]

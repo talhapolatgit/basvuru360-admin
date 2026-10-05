@@ -1,0 +1,178 @@
+[
+    {
+        "id": 1,
+        "alan_id": 1,
+        "ad": "Barista",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-21 17:34:47"
+    },
+    {
+        "id": 2,
+        "alan_id": 1,
+        "ad": "İlk Yardım",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 3,
+        "alan_id": 1,
+        "ad": "İngilizce A1",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 4,
+        "alan_id": 1,
+        "ad": "İngilizce A2",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 5,
+        "alan_id": 1,
+        "ad": "İngilizce B1",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 6,
+        "alan_id": 1,
+        "ad": "İngilizce B2",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 7,
+        "alan_id": 1,
+        "ad": "İngilizce C1",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 8,
+        "alan_id": 1,
+        "ad": "İngilizce C2",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 9,
+        "alan_id": 1,
+        "ad": "İşaret Dili",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 10,
+        "alan_id": 1,
+        "ad": "Keman",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 11,
+        "alan_id": 1,
+        "ad": "Keman (Çocuk)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 12,
+        "alan_id": 1,
+        "ad": "Keman (Yetişkin)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 13,
+        "alan_id": 1,
+        "ad": "Keman (İleri)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 14,
+        "alan_id": 1,
+        "ad": "Keman (Başlangıç)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 15,
+        "alan_id": 1,
+        "ad": "Keman (Orta)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 16,
+        "alan_id": 1,
+        "ad": "Keman (Uzman)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 17,
+        "alan_id": 1,
+        "ad": "Keman (Profesyonel)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 18,
+        "alan_id": 1,
+        "ad": "Keman (Amatör)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 19,
+        "alan_id": 1,
+        "ad": "Keman (Hobi)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 20,
+        "alan_id": 1,
+        "ad": "Keman (Master)",
+        "aktif": 1,
+        "created_at": "2026-07-19 11:00:27",
+        "updated_at": "2026-07-19 11:00:27"
+    },
+    {
+        "id": 21,
+        "alan_id": 4,
+        "ad": "Futbol",
+        "aktif": 1,
+        "created_at": "2026-08-01 21:10:19",
+        "updated_at": "2026-08-01 21:10:19"
+    },
+    {
+        "id": 22,
+        "alan_id": 4,
+        "ad": "Fitness",
+        "aktif": 1,
+        "created_at": "2026-08-01 21:10:35",
+        "updated_at": "2026-08-01 21:10:35"
+    }
+]
