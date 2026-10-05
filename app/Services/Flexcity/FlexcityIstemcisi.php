@@ -44,6 +44,16 @@ class FlexcityIstemcisi
      */
     public function post(array $govde): array
     {
+        return $this->postHam(http_build_query($govde));
+    }
+
+    /**
+     * Encode edilmemiş ham gövde ile POST (SMS hizliGonder gibi servisler).
+     *
+     * @return array<string, mixed>
+     */
+    public function postHam(string $govde): array
+    {
         $adres = trim((string) ($this->ayarlar['adres'] ?? ''));
         $authorization = trim((string) ($this->ayarlar['authorization'] ?? ''));
 
@@ -58,7 +68,7 @@ class FlexcityIstemcisi
                 ->connectTimeout(min($timeout, 10))
                 ->accept('*/*')
                 ->withHeaders(['Authorization' => $authorization])
-                ->withBody(http_build_query($govde), 'application/json')
+                ->withBody($govde, 'application/json')
                 ->post($adres);
         } catch (ConnectionException $e) {
             if (preg_match('/cURL error (35|51|58|59|60|77|83)\b/', $e->getMessage())) {

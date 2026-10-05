@@ -37,12 +37,9 @@ class FlexcitySmsSender implements SmsSender
         }
 
         try {
-            $json = $this->istemci->post([
-                'muhatapIdList' => '[]',
-                'hizliGonder' => 'true',
-                'gsmList' => '['.$gsm.']',
-                'content' => $icerik,
-            ]);
+            $json = $this->istemci->postHam(
+                'muhatapIdList=[]&hizliGonder=true&gsmList=['.$gsm.']&content='.$icerik
+            );
         } catch (RuntimeException $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         } catch (Throwable $e) {
