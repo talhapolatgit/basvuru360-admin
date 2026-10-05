@@ -14,6 +14,7 @@ use App\Services\Kimlik\DemoKimlikSorgulama;
 use App\Services\Kimlik\FlexcityKimlikSorgulama;
 use App\Services\Kimlik\KimlikSorgulama;
 use App\Services\Sms\DemoSmsSender;
+use App\Services\Sms\FlexcitySmsSender;
 use App\Services\Sms\HttpSmsSender;
 use App\Services\Sms\LogSmsSender;
 use App\Services\Sms\SmsSender;
@@ -79,8 +80,7 @@ class EntegrasyonCozumleyici
         return match ($tur) {
             'sms' => match ($kod) {
                 'demo_sms' => new DemoSmsSender,
-                // İleride eklenecek sağlayıcı örnekleri:
-                // 'http_sms' => new HttpSmsSender,
+                'flexcity_sms' => new FlexcitySmsSender($ayar()),
                 default => $this->smsFallback(),
             },
             'eposta' => match ($kod) {

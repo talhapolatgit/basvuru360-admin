@@ -44,6 +44,34 @@ return [
             'aciklama' => 'Gerçek SMS göndermez; mesajları uygulama loguna yazar. Geliştirme ve test ortamı için uygundur.',
         ],
 
+        'flexcity_sms' => [
+            'tur' => 'sms',
+            'ad' => 'Flexcity',
+            'aciklama' => 'Flexcity SMS servisi üzerinden hızlı SMS gönderir (hizliGonder).',
+            'alanlar' => [
+                'adres' => [
+                    'etiket' => 'Servis adresi',
+                    'tip' => 'text',
+                    'zorunlu' => true,
+                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/mesaj/HizliGonder',
+                    'placeholder' => 'https://.../FlexCityUi/rest/json/mesaj/HizliGonder',
+                ],
+                'authorization' => [
+                    'etiket' => 'Authorization',
+                    'tip' => 'password',
+                    'zorunlu' => true,
+                    'gizli' => true,
+                ],
+                'timeout' => [
+                    'etiket' => 'Zaman aşımı (saniye)',
+                    'tip' => 'number',
+                    'zorunlu' => false,
+                    'varsayilan' => '30',
+                    'placeholder' => '30',
+                ],
+            ],
+        ],
+
         'demo_eposta' => [
             'tur' => 'eposta',
             'ad' => 'Demo E-posta',
