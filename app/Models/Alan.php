@@ -36,4 +36,21 @@ class Alan extends Model
     {
         return $this->hasMany(Kurs::class, 'alan_id');
     }
+
+    /**
+     * Silmeyi engelleyen bağlı kayıtlar, ör. ["3 kurs", "2 branş"].
+     *
+     * @return list<string>
+     */
+    public function silmeEngelleri(): array
+    {
+        return collect([
+            'kurs' => $this->kurslar()->count(),
+            'branş' => $this->branslar()->count(),
+            'portal sayfası kuralı' => PortalSayfaKurali::query()
+                ->where('secim_tipi', 'alan')
+                ->where('hedef_id', $this->id)
+                ->count(),
+        ])->filter()->map(fn (int $adet, string $etiket) => "{$adet} {$etiket}")->values()->all();
+    }
 }

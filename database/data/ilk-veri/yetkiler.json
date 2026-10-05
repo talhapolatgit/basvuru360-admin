@@ -1108,5 +1108,35 @@
         "sira": 104,
         "created_at": "2026-09-28 19:51:56",
         "updated_at": "2026-09-28 19:51:56"
+    },
+    {
+        "id": 112,
+        "kod": "merkez.sil",
+        "ad": "Merkez Sil",
+        "modul": "merkez",
+        "aciklama": null,
+        "sira": 105,
+        "created_at": "2026-10-05 19:54:55",
+        "updated_at": "2026-10-05 19:54:55"
+    },
+    {
+        "id": 113,
+        "kod": "alan.sil",
+        "ad": "Alan Sil",
+        "modul": "alan",
+        "aciklama": null,
+        "sira": 106,
+        "created_at": "2026-10-05 19:54:55",
+        "updated_at": "2026-10-05 19:54:55"
+    },
+    {
+        "id": 114,
+        "kod": "brans.sil",
+        "ad": "Branş Sil",
+        "modul": "brans",
+        "aciklama": null,
+        "sira": 107,
+        "created_at": "2026-10-05 19:54:55",
+        "updated_at": "2026-10-05 19:54:55"
     }
 ]

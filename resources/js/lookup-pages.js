@@ -1,5 +1,5 @@
 import { initEntityTable } from './entity-table';
-import { initEntityModal } from './entity-modals';
+import { initEntityDelete, initEntityModal } from './entity-modals';
 import { initSearchModes } from './search-mode';
 
 function normTr(value) {
@@ -63,6 +63,13 @@ function wireMerkezIlIlce(form) {
 
 function initLookupPage({ tableId, tableConfig, modalId, modalConfig }) {
     const table = document.getElementById(tableId) ? initEntityTable(tableConfig) : null;
+
+    if (table) {
+        initEntityDelete({
+            containerSelector: `#${tableConfig.cardId}`,
+            onSuccess: () => table.reload(),
+        });
+    }
 
     if (document.getElementById(modalId)) {
         initEntityModal({

@@ -92,6 +92,27 @@ class BransController extends Controller
         return redirect()->route('branslar.index')->with('success', $message);
     }
 
+    public function destroy(Brans $brans): JsonResponse
+    {
+        if ($engeller = $brans->silmeEngelleri()) {
+            return response()->json([
+                'message' => '"'.$brans->ad.'" branşı silinemez; bağlı kayıtlar var: '.implode(', ', $engeller).'.',
+            ], 422);
+        }
+
+        $eski = ['ad' => $brans->ad, 'aktif' => (bool) $brans->aktif];
+        $brans->delete();
+
+        LogKaydedici::kaydet(
+            islem: 'brans.silindi',
+            aciklama: '"'.$eski['ad'].'" branşı silindi.',
+            eski: $eski,
+            konuAdi: $eski['ad'],
+        );
+
+        return response()->json(['message' => "\"{$eski['ad']}\" branşı silindi."]);
+    }
+
     public function export(Request $request): StreamedResponse
     {
         if (! $request->filled('durum')) {

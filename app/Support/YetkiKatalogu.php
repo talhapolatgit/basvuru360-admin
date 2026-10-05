@@ -123,6 +123,7 @@ class YetkiKatalogu
             ['kod' => 'merkez.goruntule', 'ad' => 'Merkezleri Görüntüle', 'modul' => 'merkez'],
             ['kod' => 'merkez.olustur', 'ad' => 'Merkez Oluştur', 'modul' => 'merkez'],
             ['kod' => 'merkez.guncelle', 'ad' => 'Merkez Güncelle', 'modul' => 'merkez'],
+            ['kod' => 'merkez.sil', 'ad' => 'Merkez Sil', 'modul' => 'merkez'],
             ['kod' => 'merkez.sms', 'ad' => 'Merkez SMS Gönder', 'modul' => 'merkez'],
             ['kod' => 'merkez.eposta', 'ad' => 'Merkez E-posta Gönder', 'modul' => 'merkez'],
             ['kod' => 'merkez.export', 'ad' => 'Merkez Excel Dışa Aktar', 'modul' => 'merkez'],
@@ -130,11 +131,13 @@ class YetkiKatalogu
             ['kod' => 'alan.goruntule', 'ad' => 'Alanları Görüntüle', 'modul' => 'alan'],
             ['kod' => 'alan.olustur', 'ad' => 'Alan Oluştur', 'modul' => 'alan'],
             ['kod' => 'alan.guncelle', 'ad' => 'Alan Güncelle', 'modul' => 'alan'],
+            ['kod' => 'alan.sil', 'ad' => 'Alan Sil', 'modul' => 'alan'],
             ['kod' => 'alan.export', 'ad' => 'Alan Excel Dışa Aktar', 'modul' => 'alan'],
 
             ['kod' => 'brans.goruntule', 'ad' => 'Branşları Görüntüle', 'modul' => 'brans'],
             ['kod' => 'brans.olustur', 'ad' => 'Branş Oluştur', 'modul' => 'brans'],
             ['kod' => 'brans.guncelle', 'ad' => 'Branş Güncelle', 'modul' => 'brans'],
+            ['kod' => 'brans.sil', 'ad' => 'Branş Sil', 'modul' => 'brans'],
             ['kod' => 'brans.export', 'ad' => 'Branş Excel Dışa Aktar', 'modul' => 'brans'],
 
             ['kod' => 'sabit.goruntule', 'ad' => 'Sabit Tanımları Görüntüle', 'modul' => 'sabit'],

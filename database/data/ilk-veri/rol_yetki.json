@@ -608,5 +608,20 @@
         "id": 173,
         "rol_id": 2,
         "yetki_id": 109
+    },
+    {
+        "id": 174,
+        "rol_id": 2,
+        "yetki_id": 112
+    },
+    {
+        "id": 175,
+        "rol_id": 2,
+        "yetki_id": 113
+    },
+    {
+        "id": 176,
+        "rol_id": 2,
+        "yetki_id": 114
     }
 ]

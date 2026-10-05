@@ -213,6 +213,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/merkezler/{merkez}/eposta', [MerkezController::class, 'sendEposta'])->middleware(['yetki:merkez.eposta', 'merkez.kapsam'])->name('merkezler.eposta.send');
     Route::get('/merkezler/{merkez}', [MerkezController::class, 'show'])->middleware(['yetki:merkez.goruntule', 'merkez.kapsam'])->name('merkezler.show');
     Route::put('/merkezler/{merkez}', [MerkezController::class, 'update'])->middleware(['yetki:merkez.guncelle', 'merkez.kapsam'])->name('merkezler.update');
+    Route::delete('/merkezler/{merkez}', [MerkezController::class, 'destroy'])->middleware(['yetki:merkez.sil', 'merkez.kapsam'])->name('merkezler.destroy');
 
     // —— Alanlar ——
     Route::get('/alanlar', [AlanController::class, 'index'])->middleware('yetki:alan.goruntule')->name('alanlar.index');
@@ -220,6 +221,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/alanlar/excel', [AlanController::class, 'export'])->middleware('yetki:alan.export')->name('alanlar.export');
     Route::get('/alanlar/{alan}', [AlanController::class, 'show'])->middleware('yetki:alan.goruntule')->name('alanlar.show');
     Route::put('/alanlar/{alan}', [AlanController::class, 'update'])->middleware('yetki:alan.guncelle')->name('alanlar.update');
+    Route::delete('/alanlar/{alan}', [AlanController::class, 'destroy'])->middleware('yetki:alan.sil')->name('alanlar.destroy');
 
     // —— Branşlar ——
     Route::get('/branslar', [BransController::class, 'index'])->middleware('yetki:brans.goruntule')->name('branslar.index');
@@ -227,6 +229,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/branslar/excel', [BransController::class, 'export'])->middleware('yetki:brans.export')->name('branslar.export');
     Route::get('/branslar/{brans}', [BransController::class, 'show'])->middleware('yetki:brans.goruntule')->name('branslar.show');
     Route::put('/branslar/{brans}', [BransController::class, 'update'])->middleware('yetki:brans.guncelle')->name('branslar.update');
+    Route::delete('/branslar/{brans}', [BransController::class, 'destroy'])->middleware('yetki:brans.sil')->name('branslar.destroy');
 
     // —— Sabit Tanımlar ——
     Route::get('/sabit-tanimlar', [SabitTanimController::class, 'index'])->middleware('yetki:sabit.goruntule')->name('sabit-tanimlar.index');

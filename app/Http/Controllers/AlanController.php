@@ -90,6 +90,27 @@ class AlanController extends Controller
         return redirect()->route('alanlar.index')->with('success', $message);
     }
 
+    public function destroy(Alan $alan): JsonResponse
+    {
+        if ($engeller = $alan->silmeEngelleri()) {
+            return response()->json([
+                'message' => '"'.$alan->ad.'" alanı silinemez; bağlı kayıtlar var: '.implode(', ', $engeller).'.',
+            ], 422);
+        }
+
+        $eski = ['ad' => $alan->ad, 'aktif' => (bool) $alan->aktif];
+        $alan->delete();
+
+        LogKaydedici::kaydet(
+            islem: 'alan.silindi',
+            aciklama: '"'.$eski['ad'].'" alanı silindi.',
+            eski: $eski,
+            konuAdi: $eski['ad'],
+        );
+
+        return response()->json(['message' => "\"{$eski['ad']}\" alanı silindi."]);
+    }
+
     public function export(Request $request): StreamedResponse
     {
         if (! $request->filled('durum')) {

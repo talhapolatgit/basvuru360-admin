@@ -51,6 +51,24 @@ class Merkez extends Model
     }
 
     /**
+     * Silmeyi engelleyen bağlı kayıtlar, ör. ["3 kurs", "1 portal sayfası kuralı"].
+     *
+     * @return list<string>
+     */
+    public function silmeEngelleri(): array
+    {
+        return collect([
+            'kurs' => $this->kurslar()->count(),
+            'etkinlik' => $this->etkinlikler()->count(),
+            'kullanıcı merkez yetkisi' => $this->kullanicilar()->count(),
+            'portal sayfası kuralı' => PortalSayfaKurali::query()
+                ->where('secim_tipi', 'merkez')
+                ->where('hedef_id', $this->id)
+                ->count(),
+        ])->filter()->map(fn (int $adet, string $etiket) => "{$adet} {$etiket}")->values()->all();
+    }
+
+    /**
      * @param  Builder<Merkez>  $query
      * @return Builder<Merkez>
      */

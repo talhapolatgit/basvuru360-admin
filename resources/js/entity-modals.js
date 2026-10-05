@@ -33,6 +33,55 @@ function validationMessage(error) {
     return 'İşlem sırasında bir hata oluştu.';
 }
 
+function closeRowActions(btn) {
+    const rowActions = btn.closest('[data-row-actions]');
+    if (!rowActions) return;
+
+    rowActions.classList.remove('is-open');
+    rowActions.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
+    const dropdown = rowActions.querySelector('[data-action-dropdown]');
+    if (dropdown) {
+        dropdown.hidden = true;
+        dropdown.classList.remove('is-dropup');
+        dropdown.style.top = '';
+        dropdown.style.bottom = '';
+        dropdown.style.left = '';
+        dropdown.style.right = '';
+        dropdown.style.position = '';
+    }
+}
+
+/**
+ * Row "Sil" buttons: [data-entity-delete] with data-delete-url and optional data-confirm.
+ * Only buttons inside `containerSelector` are handled.
+ */
+export function initEntityDelete({ containerSelector, onSuccess }) {
+    document.addEventListener('click', async (event) => {
+        const btn = event.target.closest('[data-entity-delete]');
+        if (!btn || !btn.closest(containerSelector)) return;
+
+        event.preventDefault();
+        closeRowActions(btn);
+
+        if (!window.confirm(btn.dataset.confirm || 'Bu kaydı silmek istediğinize emin misiniz?')) {
+            return;
+        }
+
+        btn.disabled = true;
+        try {
+            const { data } = await window.axios.delete(btn.dataset.deleteUrl, {
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+            });
+            showToast(data.message || 'Kayıt silindi.', 'success');
+            onSuccess?.(data);
+        } catch (error) {
+            showToast(validationMessage(error), 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+
 function setReadonlyOnEdit(form, isEdit) {
     form.querySelectorAll('[data-readonly-on-edit]').forEach((field) => {
         field.readOnly = isEdit;
@@ -113,22 +162,7 @@ export function initEntityModal({
         }
 
         event.preventDefault();
-
-        const rowActions = btn.closest('[data-row-actions]');
-        if (rowActions) {
-            rowActions.classList.remove('is-open');
-            rowActions.querySelector('[data-action-toggle]')?.setAttribute('aria-expanded', 'false');
-            const dropdown = rowActions.querySelector('[data-action-dropdown]');
-            if (dropdown) {
-                dropdown.hidden = true;
-                dropdown.classList.remove('is-dropup');
-                dropdown.style.top = '';
-                dropdown.style.bottom = '';
-                dropdown.style.left = '';
-                dropdown.style.right = '';
-                dropdown.style.position = '';
-            }
-        }
+        closeRowActions(btn);
 
         form.reset();
         fillForm(btn.dataset);

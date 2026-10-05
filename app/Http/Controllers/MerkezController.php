@@ -101,6 +101,27 @@ class MerkezController extends Controller
         return redirect()->route('merkezler.index')->with('success', $message);
     }
 
+    public function destroy(Merkez $merkez): JsonResponse
+    {
+        if ($engeller = $merkez->silmeEngelleri()) {
+            return response()->json([
+                'message' => '"'.$merkez->ad.'" merkezi silinemez; bağlı kayıtlar var: '.implode(', ', $engeller).'.',
+            ], 422);
+        }
+
+        $eski = ['ad' => $merkez->ad, 'il' => $merkez->il, 'ilce' => $merkez->ilce, 'aktif' => (bool) $merkez->aktif];
+        $merkez->delete();
+
+        LogKaydedici::kaydet(
+            islem: 'merkez.silindi',
+            aciklama: '"'.$eski['ad'].'" merkezi silindi.',
+            eski: $eski,
+            konuAdi: $eski['ad'],
+        );
+
+        return response()->json(['message' => "\"{$eski['ad']}\" merkezi silindi."]);
+    }
+
     public function export(Request $request): StreamedResponse
     {
         if (! $request->filled('durum')) {
@@ -198,6 +219,7 @@ class MerkezController extends Controller
                 if (! $telefon) {
                     $kAtlanan++;
                     $detay[] = ['basvuru_id' => $basvuru->id, 'ad' => $ad, 'telefon' => null, 'durum' => 'atlandi', 'hata' => 'Telefon yok'];
+
                     continue;
                 }
 
@@ -205,6 +227,7 @@ class MerkezController extends Controller
                 if (mb_strlen($kisisel) > 480) {
                     $kAtlanan++;
                     $detay[] = ['basvuru_id' => $basvuru->id, 'ad' => $ad, 'telefon' => $telefon, 'durum' => 'atlandi', 'hata' => 'Kişiselleştirilmiş mesaj 480 karakteri aşıyor', 'mesaj' => $kisisel];
+
                     continue;
                 }
 
@@ -282,6 +305,7 @@ class MerkezController extends Controller
                 if (! $email) {
                     $kAtlanan++;
                     $detay[] = ['basvuru_id' => $basvuru->id, 'ad' => $ad, 'email' => null, 'durum' => 'atlandi', 'hata' => 'E-posta yok'];
+
                     continue;
                 }
 
@@ -291,6 +315,7 @@ class MerkezController extends Controller
                 if (mb_strlen($kisiselKonu) > 200 || mb_strlen($kisiselMesaj) > 5000) {
                     $kAtlanan++;
                     $detay[] = ['basvuru_id' => $basvuru->id, 'ad' => $ad, 'email' => $email, 'durum' => 'atlandi', 'hata' => 'Kişiselleştirilmiş içerik karakter sınırını aşıyor', 'konu' => $kisiselKonu, 'mesaj' => $kisiselMesaj];
+
                     continue;
                 }
 
@@ -504,7 +529,7 @@ class MerkezController extends Controller
     }
 
     /**
-     * @return array{iller: \Illuminate\Support\Collection<int, Il>, ilcelerByIl: array<string, list<string>>}
+     * @return array{iller: Collection<int, Il>, ilcelerByIl: array<string, list<string>>}
      */
     private function formLookups(): array
     {

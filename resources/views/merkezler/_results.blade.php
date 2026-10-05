@@ -72,6 +72,19 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
                                     Takvim
                                 </a>
+                                @yetki('merkez.sil')
+                                    <button
+                                        type="button"
+                                        class="action-dropdown-item action-dropdown-item-danger"
+                                        role="menuitem"
+                                        data-entity-delete
+                                        data-delete-url="{{ route('merkezler.destroy', $merkez) }}"
+                                        data-confirm="&quot;{{ $merkez->ad }}&quot; merkezini silmek istediğinize emin misiniz?"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        Sil
+                                    </button>
+                                @endyetki
                             </div>
                         </div>
                     </td>
