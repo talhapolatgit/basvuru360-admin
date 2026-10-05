@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Flexcity REST servislerine (T.C. kimlik no + doğum tarihi ile) istek atar.
+ * Flexcity REST servislerine istek atar.
  */
 class FlexcityIstemcisi
 {
@@ -16,7 +16,7 @@ class FlexcityIstemcisi
 
     /**
      * @param  array<string, mixed>  $ayarlar  adres, authorization, timeout
-     * @param  string  $servis  Hata mesajlarında kullanılan servis adı (ör. "Kimlik", "Adres")
+     * @param  string  $servis  Hata mesajlarında kullanılan servis adı (ör. "Kimlik", "Adres", "SMS")
      */
     public function __construct(
         private readonly array $ayarlar,
@@ -24,9 +24,25 @@ class FlexcityIstemcisi
     ) {}
 
     /**
+     * T.C. kimlik no + doğum tarihi ile sorgulayan servisler için.
+     *
      * @return array<string, mixed>
      */
     public function sorgula(string $tcKimlikNo, string $dogumTarihi): array
+    {
+        return $this->post([
+            'dogumTarihi' => $this->servisTarihi($dogumTarihi),
+            'tcKimlikNo' => $tcKimlikNo,
+        ]);
+    }
+
+    /**
+     * Form-urlencoded gövde ile POST (Content-Type: application/json — Flexcity sözleşmesi).
+     *
+     * @param  array<string, scalar|null>  $govde
+     * @return array<string, mixed>
+     */
+    public function post(array $govde): array
     {
         $adres = trim((string) ($this->ayarlar['adres'] ?? ''));
         $authorization = trim((string) ($this->ayarlar['authorization'] ?? ''));
@@ -42,10 +58,7 @@ class FlexcityIstemcisi
                 ->connectTimeout(min($timeout, 10))
                 ->accept('*/*')
                 ->withHeaders(['Authorization' => $authorization])
-                ->withBody(http_build_query([
-                    'dogumTarihi' => $this->servisTarihi($dogumTarihi),
-                    'tcKimlikNo' => $tcKimlikNo,
-                ]), 'application/json')
+                ->withBody(http_build_query($govde), 'application/json')
                 ->post($adres);
         } catch (ConnectionException $e) {
             if (preg_match('/cURL error (35|51|58|59|60|77|83)\b/', $e->getMessage())) {
