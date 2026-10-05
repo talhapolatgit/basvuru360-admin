@@ -41,7 +41,7 @@ return [
         'demo_sms' => [
             'tur' => 'sms',
             'ad' => 'Demo SMS',
-            'aciklama' => 'Gerçek SMS göndermez; mesajları uygulama loguna yazar. Geliştirme ve test için uygundur.',
+            'aciklama' => 'Gerçek SMS göndermez; mesajları uygulama loguna yazar. Geliştirme ve test ortamı için uygundur.',
         ],
 
         'demo_eposta' => [
