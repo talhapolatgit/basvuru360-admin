@@ -33,11 +33,32 @@ class BasvuruDogrulamaServisi extends PortalDogrulamaKoduServisi
 
     protected function epostaMetni(Kisi $kisi, string $kod, int $dakika): string
     {
-        return "Merhaba {$kisi->tam_adi},\n\nBaşvurunuzu tamamlamak için doğrulama kodunuz: {$kod}\n\nBu kod {$dakika} dakika geçerlidir. Bu işlem size ait değilse bu e-postayı dikkate almayın ve şifrenizi değiştirin.";
+        return view('emails.basvuru-dogrulama-metin', $this->sablonVerisi($kisi, $kod, $dakika))->render();
+    }
+
+    protected function epostaHtmlBaglami(Kisi $kisi, string $kod, int $dakika): array
+    {
+        return app(EpostaTasarimServisi::class)->htmlBaglami('emails.basvuru-dogrulama', $this->sablonVerisi($kisi, $kod, $dakika));
     }
 
     protected function yenidenBaslatMesaji(): string
     {
         return 'Lütfen yeni bir doğrulama kodu isteyin.';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function sablonVerisi(Kisi $kisi, string $kod, int $dakika): array
+    {
+        $tasarim = app(EpostaTasarimServisi::class);
+
+        return [
+            ...$tasarim->ortakVeri(),
+            'konu' => $this->epostaKonusu(),
+            'tamAd' => $tasarim->ozelAd((string) $kisi->tam_adi),
+            'kod' => $kod,
+            'dakika' => $dakika,
+        ];
     }
 }

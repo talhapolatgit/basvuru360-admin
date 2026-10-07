@@ -41,6 +41,16 @@ abstract class PortalDogrulamaKoduServisi
 
     abstract protected function epostaMetni(Kisi $kisi, string $kod, int $dakika): string;
 
+    /**
+     * E-postayı HTML olarak göndermek için EmailSender context'ine eklenecek html / gomulu_gorseller.
+     *
+     * @return array{html?: string, gomulu_gorseller?: array<string, string>}
+     */
+    protected function epostaHtmlBaglami(Kisi $kisi, string $kod, int $dakika): array
+    {
+        return [];
+    }
+
     /** Oturum geçersiz olduğunda kullanıcıya ne yapması gerektiğini söyleyen cümle. */
     abstract protected function yenidenBaslatMesaji(): string;
 
@@ -263,7 +273,12 @@ abstract class PortalDogrulamaKoduServisi
         }
 
         if ($email !== '') {
-            $sonuc = $this->emailSender->send($email, $this->epostaKonusu(), $this->epostaMetni($kisi, $kod, $dakika), $context);
+            $sonuc = $this->emailSender->send(
+                $email,
+                $this->epostaKonusu(),
+                $this->epostaMetni($kisi, $kod, $dakika),
+                [...$context, ...$this->epostaHtmlBaglami($kisi, $kod, $dakika)],
+            );
             ($sonuc['ok'] ?? false)
                 ? $hedefler[] = ['kanal' => 'eposta', 'hedef' => $this->epostaMaskele($email)]
                 : $hata = $sonuc['message'] ?? $hata;

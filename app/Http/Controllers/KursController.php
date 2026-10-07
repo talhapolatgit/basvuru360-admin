@@ -30,6 +30,7 @@ use App\Models\SoruFormu;
 use App\Models\User;
 use App\Models\Merkez;
 use App\Services\Email\EmailSender;
+use App\Services\EpostaTasarimServisi;
 use App\Services\KursAyarServisi;
 use App\Services\KursDersOlusturucu;
 use App\Services\KursYedekListeServisi;
@@ -2303,6 +2304,9 @@ class KursController extends Controller implements HasMiddleware
                     'kurs_id' => $kurs->id,
                     'basvuru_id' => $basvuru->id,
                     'gonderen_id' => $request->user()?->id,
+                    ...($kapsam === 'basvuru_onay'
+                        ? app(EpostaTasarimServisi::class)->kursBasvuruOnayBaglami($kurs, $basvuru, $kisiselKonu, $mesajSablon)
+                        : []),
                 ]);
 
                 if ($sonuc['ok'] ?? false) {
