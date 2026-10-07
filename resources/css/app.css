@@ -7344,6 +7344,10 @@ body.page-is-loading {
     gap: 0.5rem;
 }
 
+.kres-school-card__stats--4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 .kres-stat-label {
     display: block;
     font-size: 0.68rem;

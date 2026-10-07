@@ -199,8 +199,6 @@ class KresBasvuruController extends ApiController
         $cevapServisi = app(SoruFormuCevapServisi::class);
         $cevaplar = $cevapServisi->dogrula($request, $this->aktifSoruFormu($donem));
 
-        $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $oturum);
-
         $telefon = $this->cepTelefonuDogrula((string) $validated['veli_telefon']);
         $ogrenciCinsiyet = $this->cocukKimlikDogrula([
             'cocuk_tc_kimlik_no' => $validated['ogrenci_tc_kimlik_no'],
@@ -237,6 +235,9 @@ class KresBasvuruController extends ApiController
                 'grup_id' => 'Başvuru durumu tanımlı değil. Yöneticinizle iletişime geçin.',
             ]);
         }
+
+        // Kod en son istenir: portal kodu, ancak kimlik ve diğer kontroller geçtikten sonra gönderir.
+        $dogrulamaToken = $this->basvuruDogrulamaKoduKontrol($request, $oturum);
 
         try {
             $basvuru = $this->basvuruyuOlustur($validated, $telefon, $oturum, $grup, $durumId, $cevaplar, $ogrenciCinsiyet, $cevapServisi);

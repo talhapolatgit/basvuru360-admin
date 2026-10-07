@@ -46,10 +46,10 @@
             @if ($okul->adres)
                 <p class="kres-school-card__meta">{{ $okul->adres }}</p>
             @endif
-            <div class="kres-school-card__stats">
+            <div class="kres-school-card__stats kres-school-card__stats--4">
                 <div>
-                    <span class="kres-stat-label">Grup</span>
-                    <strong>{{ $row['grup_sayisi'] }}</strong>
+                    <span class="kres-stat-label">Kontenjan</span>
+                    <strong>{{ $row['kontenjan'] }}</strong>
                 </div>
                 <div>
                     <span class="kres-stat-label">Kesin kayıt</span>
@@ -58,6 +58,10 @@
                 <div>
                     <span class="kres-stat-label">Yedek</span>
                     <strong>{{ $row['yedek'] }}</strong>
+                </div>
+                <div>
+                    <span class="kres-stat-label">Bekleyen</span>
+                    <strong>{{ $row['bekleyen'] }}</strong>
                 </div>
             </div>
             <div class="kres-fill">

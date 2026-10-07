@@ -28,11 +28,12 @@ class KresController extends Controller
 
         $kesinId = KresBasvuruDurum::idByKod('kesin_kayit');
         $yedekId = KresBasvuruDurum::idByKod('yedek');
+        $bekleyenId = KresBasvuruDurum::idByKod('onay_bekliyor');
 
         $okullar = KresOkul::query()
             ->orderBy('ad')
             ->get()
-            ->map(function (KresOkul $okul) use ($aktifDonem, $kesinId, $yedekId) {
+            ->map(function (KresOkul $okul) use ($aktifDonem, $kesinId, $yedekId, $bekleyenId) {
                 $grupQuery = KresGrup::query()->where('okul_id', $okul->id);
                 if ($aktifDonem) {
                     $grupQuery->where('donem_id', $aktifDonem->id);
@@ -41,7 +42,6 @@ class KresController extends Controller
                 }
 
                 $grupIds = (clone $grupQuery)->pluck('id');
-                $grupSayisi = $grupIds->count();
 
                 $kesin = $grupIds->isEmpty() || ! $kesinId
                     ? 0
@@ -57,13 +57,20 @@ class KresController extends Controller
                         ->where('durum_id', $yedekId)
                         ->count();
 
+                $bekleyen = $grupIds->isEmpty() || ! $bekleyenId
+                    ? 0
+                    : KresBasvuru::query()
+                        ->whereIn('grup_id', $grupIds)
+                        ->where('durum_id', $bekleyenId)
+                        ->count();
+
                 $kontenjan = (int) (clone $grupQuery)->sum('kontenjan');
 
                 return [
                     'model' => $okul,
-                    'grup_sayisi' => $grupSayisi,
                     'kesin_kayit' => $kesin,
                     'yedek' => $yedek,
+                    'bekleyen' => $bekleyen,
                     'kontenjan' => $kontenjan,
                     'doluluk' => $kontenjan > 0 ? min(100, (int) round(($kesin / $kontenjan) * 100)) : 0,
                 ];

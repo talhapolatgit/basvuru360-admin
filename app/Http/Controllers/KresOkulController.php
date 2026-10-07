@@ -105,6 +105,8 @@ class KresOkulController extends Controller
         $aktifDonem = $donemData['aktifDonem'];
 
         $kesinId = KresBasvuruDurum::idByKod('kesin_kayit');
+        $yedekId = KresBasvuruDurum::idByKod('yedek');
+        $bekleyenId = KresBasvuruDurum::idByKod('onay_bekliyor');
 
         $gruplar = collect();
         if ($aktifDonem) {
@@ -113,20 +115,20 @@ class KresOkulController extends Controller
                 ->where('donem_id', $aktifDonem->id)
                 ->orderBy('ad')
                 ->get()
-                ->map(function (KresGrup $grup) use ($kesinId) {
-                    $kesin = $kesinId
-                        ? KresBasvuru::query()
-                            ->where('grup_id', $grup->id)
-                            ->where('durum_id', $kesinId)
-                            ->count()
-                        : 0;
-                    $toplam = KresBasvuru::query()->where('grup_id', $grup->id)->count();
+                ->map(function (KresGrup $grup) use ($kesinId, $yedekId, $bekleyenId) {
+                    $durumSayilari = KresBasvuru::query()
+                        ->where('grup_id', $grup->id)
+                        ->selectRaw('durum_id, COUNT(*) as sayi')
+                        ->groupBy('durum_id')
+                        ->pluck('sayi', 'durum_id');
+                    $kesin = (int) ($durumSayilari[$kesinId] ?? 0);
                     $kontenjan = (int) $grup->kontenjan;
 
                     return [
                         'model' => $grup,
                         'kesin_kayit' => $kesin,
-                        'basvuru_sayisi' => $toplam,
+                        'yedek' => (int) ($durumSayilari[$yedekId] ?? 0),
+                        'bekleyen' => (int) ($durumSayilari[$bekleyenId] ?? 0),
                         'doluluk' => $kontenjan > 0 ? min(100, (int) round(($kesin / $kontenjan) * 100)) : 0,
                     ];
                 });
