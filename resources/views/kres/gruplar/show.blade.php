@@ -9,12 +9,12 @@
             <p class="page-eyebrow" style="margin-bottom:6px;">Kreş Yönetimi · {{ $okul->ad }}</p>
             <h1 class="lesson-detail-title">{{ $grup->ad }}</h1>
             <p class="page-subtitle" style="margin-top:6px;">
-                {{ $grup->yasAraligiLabel() }}
+                {{ $grup->kriterEtiketi() }}
                 @if ($grup->cinsiyet_sarti)
                     · {{ $grup->cinsiyet_sarti->label() }}
                 @endif
                 · Kontenjan {{ $grup->kontenjan }}
-                · Kesin kayıt {{ $kesinSayisi }}
+                · Kesin kayıt <span data-kres-kesin-ozet>{{ $kesinSayisi }}</span>
             </p>
         </div>
         <div class="kres-page-actions">
@@ -37,15 +37,15 @@
         </div>
         <div class="lesson-stat-card">
             <h3 class="lesson-stat-label">Kesin Kayıt</h3>
-            <div class="lesson-stat-value">{{ number_format($kesinSayisi) }}</div>
+            <div class="lesson-stat-value" data-kres-kesin>{{ number_format($kesinSayisi) }}</div>
         </div>
         <div class="lesson-stat-card">
             <h3 class="lesson-stat-label">Doluluk</h3>
-            <div class="lesson-stat-value">%{{ $doluluk }}</div>
+            <div class="lesson-stat-value" data-kres-doluluk>%{{ $doluluk }}</div>
         </div>
         <div class="lesson-stat-card">
-            <h3 class="lesson-stat-label">Yaş Grubu</h3>
-            <div class="lesson-stat-value" style="font-size:18px;">{{ $grup->yasAraligiLabel() }}</div>
+            <h3 class="lesson-stat-label">{{ $grup->dogumAraligiKullaniliyorMu() ? 'Doğum Tarihi' : 'Yaş Grubu' }}</h3>
+            <div class="lesson-stat-value" style="font-size:18px;">{{ $grup->kriterEtiketi() }}</div>
         </div>
     </div>
 
@@ -168,20 +168,39 @@
 </div>
 
 @yetki('kres.basvuru_olustur')
-<div class="confirm-modal" id="kres-basvuru-create-modal" hidden>
+<div class="confirm-modal" id="kres-basvuru-create-modal" hidden @if ($errors->has('kisi_id')) data-open-on-load="1" @endif>
     <div class="confirm-modal-backdrop" data-kres-modal-close></div>
     <div class="confirm-modal-dialog confirm-modal-dialog--wide" role="dialog" aria-modal="true">
         <div class="confirm-modal-header">
             <h3 class="confirm-modal-title">Yeni kayıt</h3>
             <button type="button" class="confirm-modal-x" data-kres-modal-close aria-label="Kapat">&times;</button>
         </div>
-        <form method="POST" action="{{ route('kres.basvurular.store', [$okul, $grup]) }}" class="confirm-modal-body">
+        <form
+            method="POST"
+            action="{{ route('kres.basvurular.store', [$okul, $grup]) }}"
+            class="confirm-modal-body"
+            data-kriter="{{ $grup->dogumAraligiKullaniliyorMu() ? 'dogum' : (($grup->min_yas !== null || $grup->max_yas !== null) ? 'yas' : '') }}"
+            data-yas-min="{{ $grup->min_yas ?? '' }}"
+            data-yas-max="{{ $grup->max_yas ?? '' }}"
+            data-dogum-baslangic="{{ $grup->dogum_baslangic?->format('Y-m-d') }}"
+            data-dogum-bitis="{{ $grup->dogum_bitis?->format('Y-m-d') }}"
+            data-kriter-label="{{ $grup->kriterEtiketi() }}"
+        >
             @csrf
+            @if ($grup->dogumAraligiKullaniliyorMu())
+                <p class="text-muted" style="font-size:13px;margin:0 0 12px;">Bu gruba yalnızca {{ $grup->kriterEtiketi() }} doğumlu öğrenciler kaydedilebilir.</p>
+            @elseif ($grup->min_yas !== null || $grup->max_yas !== null)
+                <p class="text-muted" style="font-size:13px;margin:0 0 12px;">Bu gruba yalnızca {{ $grup->yasAraligiLabel() }} aralığındaki öğrenciler kaydedilebilir.</p>
+            @endif
             <div class="form-group">
                 <label for="kisi_ara">Öğrenci ara *</label>
                 <input id="kisi_ara" type="search" class="form-control" placeholder="Ad, soyad veya T.C. kimlik no" autocomplete="off" data-kisi-search data-kisi-target="kisi_id" data-kisi-label="kisi_label">
-                <input type="hidden" name="kisi_id" id="kisi_id" required>
+                <input type="hidden" name="kisi_id" id="kisi_id" value="{{ old('kisi_id') }}" required>
                 <p class="kres-kisi-picked" data-kisi-picked="kisi_label">Öğrenci seçilmedi</p>
+                @error('kisi_id')
+                    <p class="form-error">{{ $message }}</p>
+                @enderror
+                <p class="form-error" data-yas-uyari hidden></p>
                 <div class="kres-kisi-results" data-kisi-results hidden></div>
             </div>
             <div class="form-group">
@@ -221,33 +240,75 @@
 </div>
 @endyetki
 
+@yetki('kres.basvuru_guncelle')
+<div class="confirm-modal" id="kres-basvuru-sil-modal" hidden>
+    <div class="confirm-modal-backdrop" data-kres-modal-close></div>
+    <div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="kres-basvuru-sil-title">
+        <div class="confirm-modal-header">
+            <h3 id="kres-basvuru-sil-title" class="confirm-modal-title">Başvuruyu sil</h3>
+            <button type="button" class="confirm-modal-x" data-kres-modal-close aria-label="Kapat">&times;</button>
+        </div>
+        <form method="POST" action="#" data-kres-sil-form>
+            @csrf
+            @method('DELETE')
+            <div class="confirm-modal-body">
+                <div class="kres-modal-summary kres-modal-summary--danger">
+                    <span class="kres-modal-summary__icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </span>
+                    <div>
+                        <p class="kres-modal-summary__title" data-kres-sil-kisi>Başvuru</p>
+                        <p class="kres-modal-summary__text">Bu başvuru listeden kalkar ve bu işlem geri alınamaz. Aynı öğrenci için yeniden başvuru alınabilir.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn btn-secondary btn-wide" data-kres-modal-close>Vazgeç</button>
+                <button type="submit" class="btn btn-danger btn-wide">Sil</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endyetki
+
 @yetki('kres.basvuru_durum_guncelle')
 <div class="confirm-modal" id="kres-basvuru-durum-modal" hidden>
     <div class="confirm-modal-backdrop" data-kres-modal-close></div>
-    <div class="confirm-modal-dialog" role="dialog" aria-modal="true">
+    <div class="confirm-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="kres-basvuru-durum-title">
         <div class="confirm-modal-header">
-            <h3 class="confirm-modal-title">Durum güncelle</h3>
+            <h3 id="kres-basvuru-durum-title" class="confirm-modal-title">Durum güncelle</h3>
             <button type="button" class="confirm-modal-x" data-kres-modal-close aria-label="Kapat">&times;</button>
         </div>
-        <form method="POST" action="#" class="confirm-modal-body" data-durum-form>
+        <form method="POST" action="#" data-durum-form>
             @csrf
             @method('PUT')
-            <p class="kres-kisi-picked" data-durum-kisi></p>
-            <div class="form-group">
-                <label for="upd_durum">Durum *</label>
-                <select id="upd_durum" name="durum_id" class="form-control" required data-yedek-toggle>
-                    @foreach ($durumlar as $durum)
-                        <option value="{{ $durum->id }}" data-kod="{{ $durum->kod }}">{{ $durum->ad }}</option>
-                    @endforeach
-                </select>
+            <div class="confirm-modal-body">
+                <div class="kres-modal-summary">
+                    <span class="kres-modal-summary__icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                    <div>
+                        <p class="kres-modal-summary__title" data-durum-kisi>Öğrenci</p>
+                        <p class="kres-modal-summary__text">Mevcut durum: <strong data-durum-mevcut>—</strong></p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="upd_durum">Yeni durum <span class="req">*</span></label>
+                    <select id="upd_durum" name="durum_id" class="form-control" required data-yedek-toggle>
+                        @foreach ($durumlar as $durum)
+                            <option value="{{ $durum->id }}" data-kod="{{ $durum->kod }}">{{ $durum->ad }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group" data-yedek-field hidden>
+                    <label for="upd_yedek">Yedek sıra</label>
+                    <input id="upd_yedek" name="yedek_sira" type="number" class="form-control" min="1" max="9999" placeholder="1">
+                    <p class="form-hint">Yedek listedeki sırası. Küçük numara daha öndedir.</p>
+                </div>
             </div>
-            <div class="form-group" data-yedek-field hidden>
-                <label for="upd_yedek">Yedek sıra</label>
-                <input id="upd_yedek" name="yedek_sira" type="number" class="form-control" min="1" max="9999">
-            </div>
-            <div class="confirm-modal-actions">
-                <button type="button" class="btn btn-secondary" data-kres-modal-close>Vazgeç</button>
-                <button type="submit" class="btn btn-primary">Güncelle</button>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn btn-secondary btn-wide" data-kres-modal-close>Vazgeç</button>
+                <button type="submit" class="btn btn-primary btn-wide">Güncelle</button>
             </div>
         </form>
     </div>

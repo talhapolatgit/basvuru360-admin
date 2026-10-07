@@ -46,14 +46,27 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="kres-grup-form-min-yas">Min. yaş</label>
-                        <input type="number" id="kres-grup-form-min-yas" name="min_yas" class="form-control" data-field="minYas" min="0" max="18">
+                        <input type="number" id="kres-grup-form-min-yas" name="min_yas" class="form-control" data-field="minYas" data-kriter-grup="yas" min="0" max="18">
                     </div>
 
                     <div class="form-group">
                         <label for="kres-grup-form-max-yas">Maks. yaş</label>
-                        <input type="number" id="kres-grup-form-max-yas" name="max_yas" class="form-control" data-field="maxYas" min="0" max="18">
+                        <input type="number" id="kres-grup-form-max-yas" name="max_yas" class="form-control" data-field="maxYas" data-kriter-grup="yas" min="0" max="18">
                     </div>
                 </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="kres-grup-form-dogum-baslangic">Doğum tarihi başlangıç</label>
+                        <input type="date" id="kres-grup-form-dogum-baslangic" name="dogum_baslangic" class="form-control" data-field="dogumBaslangic" data-kriter-grup="dogum">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="kres-grup-form-dogum-bitis">Doğum tarihi bitiş</label>
+                        <input type="date" id="kres-grup-form-dogum-bitis" name="dogum_bitis" class="form-control" data-field="dogumBitis" data-kriter-grup="dogum">
+                    </div>
+                </div>
+                <p class="text-muted" style="font-size:13px;margin:-4px 0 12px;">Yaş aralığı veya doğum tarihi aralığından birini girin. Doldurulan kriter, bu gruba kayıtta kullanılır.</p>
 
                 <div class="form-row">
                     <div class="form-group">

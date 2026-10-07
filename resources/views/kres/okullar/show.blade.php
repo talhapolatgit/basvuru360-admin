@@ -39,7 +39,7 @@
             <div class="kres-group-card__top">
                 <h2>{{ $grup->ad }}</h2>
                 <span class="kres-group-card__ages">
-                    {{ $grup->yasAraligiLabel() }}
+                    {{ $grup->kriterEtiketi() }}
                     @if ($grup->cinsiyet_sarti)
                         · {{ $grup->cinsiyet_sarti->label() }}
                     @endif

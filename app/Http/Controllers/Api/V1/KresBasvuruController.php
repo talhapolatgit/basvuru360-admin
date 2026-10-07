@@ -62,15 +62,15 @@ class KresBasvuruController extends ApiController
     public function okullar(Request $request): JsonResponse
     {
         $donem = $this->yayindakiDonemVeyaFail();
-        $yas = $this->ogrenciYasiniAl($request);
+        ['yas' => $yas, 'dogum' => $dogum] = $this->ogrenciBilgisiniAl($request);
 
         $okullar = KresOkul::query()
             ->where('aktif', true)
             ->with(['gruplar' => fn ($q) => $q->where('donem_id', $donem->id)->where('aktif', true)])
             ->orderBy('ad')
             ->get()
-            ->filter(function (KresOkul $okul) use ($yas) {
-                return $okul->gruplar->contains(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas));
+            ->filter(function (KresOkul $okul) use ($yas, $dogum) {
+                return $okul->gruplar->contains(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas, null, $dogum));
             })
             ->values()
             ->map(fn (KresOkul $okul) => [
@@ -79,7 +79,7 @@ class KresBasvuruController extends ApiController
                 'adres' => $okul->adres,
                 'telefon' => $okul->telefon,
                 'uygun_grup_sayisi' => $okul->gruplar
-                    ->filter(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas))
+                    ->filter(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas, null, $dogum))
                     ->count(),
             ]);
 
@@ -92,7 +92,7 @@ class KresBasvuruController extends ApiController
     public function gruplar(Request $request, int $okulId): JsonResponse
     {
         $donem = $this->yayindakiDonemVeyaFail();
-        $yas = $this->ogrenciYasiniAl($request);
+        ['yas' => $yas, 'dogum' => $dogum] = $this->ogrenciBilgisiniAl($request);
         $kesinId = KresBasvuruDurum::idByKod('kesin_kayit');
 
         $okul = KresOkul::query()->whereKey($okulId)->where('aktif', true)->firstOrFail();
@@ -109,12 +109,12 @@ class KresBasvuruController extends ApiController
             ->orderBy('min_yas')
             ->orderBy('ad')
             ->get()
-            ->filter(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas))
+            ->filter(fn (KresGrup $grup) => $grup->ogrenciUygunMu($yas, null, $dogum))
             ->values()
             ->map(fn (KresGrup $grup) => [
                 'id' => $grup->id,
                 'ad' => $grup->ad,
-                'yas_araligi' => $grup->yasAraligiLabel(),
+                'yas_araligi' => $grup->kriterEtiketi(),
                 'cinsiyet_sarti' => $grup->cinsiyetSartiLabel(),
                 'kontenjan' => (int) $grup->kontenjan,
                 'kesin_kayit' => (int) $grup->kesin_sayisi,
@@ -223,9 +223,11 @@ class KresBasvuruController extends ApiController
         }
 
         $yas = $this->yasHesapla($validated['ogrenci_dogum_tarihi']);
-        if (! $grup->ogrenciUygunMu($yas)) {
+        if (! $grup->ogrenciUygunMu($yas, null, $validated['ogrenci_dogum_tarihi'])) {
             throw ValidationException::withMessages([
-                'grup_id' => 'Öğrenci bu grubun yaş aralığına uygun değil.',
+                'grup_id' => $grup->dogumAraligiKullaniliyorMu()
+                    ? 'Öğrenci bu grubun doğum tarihi aralığına uygun değil.'
+                    : 'Öğrenci bu grubun yaş aralığına uygun değil.',
             ]);
         }
 
@@ -357,7 +359,10 @@ class KresBasvuruController extends ApiController
         return $donem;
     }
 
-    private function ogrenciYasiniAl(Request $request): int
+    /**
+     * @return array{yas: int, dogum: string}
+     */
+    private function ogrenciBilgisiniAl(Request $request): array
     {
         $validated = $request->validate([
             'ogrenci_dogum_tarihi' => ['required', 'date', 'before:today'],
@@ -372,7 +377,10 @@ class KresBasvuruController extends ApiController
             ]);
         }
 
-        return $yas;
+        return [
+            'yas' => $yas,
+            'dogum' => $validated['ogrenci_dogum_tarihi'],
+        ];
     }
 
     private function cepTelefonuDogrula(string $raw): string

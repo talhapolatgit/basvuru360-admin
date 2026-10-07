@@ -7431,6 +7431,61 @@ body.page-is-loading {
     font-weight: 600;
 }
 
+.kres-modal-summary {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid #eff2f5;
+    border-radius: 10px;
+    background: #f8f9fb;
+}
+
+.kres-modal-summary--danger {
+    border-color: #ffe2e5;
+    background: #fff5f8;
+}
+
+.kres-modal-summary__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #3f4254;
+}
+
+.kres-modal-summary--danger .kres-modal-summary__icon {
+    color: #f64e60;
+}
+
+.kres-modal-summary__title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #181c32;
+}
+
+.kres-modal-summary__text {
+    margin: 4px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #7e8299;
+}
+
+.kres-modal-summary__text strong {
+    color: #3f4254;
+    font-weight: 600;
+}
+
+#kres-basvuru-sil-modal .kres-modal-summary {
+    margin-bottom: 0;
+}
+
 .kres-kisi-results {
     margin-top: 0.45rem;
     border: 1px solid rgba(12, 33, 56, 0.1);

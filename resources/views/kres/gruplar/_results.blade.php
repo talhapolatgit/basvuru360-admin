@@ -3,7 +3,7 @@
         'ad' => 'Ad',
         'okul' => 'Okul',
         'donem' => 'Dönem',
-        'yas' => 'Yaş Aralığı',
+        'yas' => 'Yaş / Doğum',
         'kontenjan' => 'Kontenjan',
         'yedek' => 'Yedek K.',
         'cinsiyet' => 'Cinsiyet',
@@ -42,7 +42,7 @@
                     <td data-column="ad">{{ $grup->ad }}</td>
                     <td data-column="okul">{{ $grup->okul?->ad ?? '—' }}</td>
                     <td data-column="donem">{{ $grup->donem?->ad ?? '—' }}</td>
-                    <td data-column="yas">{{ $grup->yasAraligiLabel() }}</td>
+                    <td data-column="yas">{{ $grup->kriterEtiketi() }}</td>
                     <td data-column="kontenjan">{{ number_format($grup->kontenjan) }}</td>
                     <td data-column="yedek">{{ number_format($grup->yedek_kontenjan) }}</td>
                     <td data-column="cinsiyet">{{ $grup->cinsiyetSartiLabel() }}</td>
@@ -69,6 +69,8 @@
                                     data-donem-id="{{ $grup->donem_id }}"
                                     data-min-yas="{{ $grup->min_yas }}"
                                     data-max-yas="{{ $grup->max_yas }}"
+                                    data-dogum-baslangic="{{ $grup->dogum_baslangic?->format('Y-m-d') }}"
+                                    data-dogum-bitis="{{ $grup->dogum_bitis?->format('Y-m-d') }}"
                                     data-kontenjan="{{ $grup->kontenjan }}"
                                     data-yedek-kontenjan="{{ $grup->yedek_kontenjan }}"
                                     data-cinsiyet-sarti="{{ $grup->cinsiyet_sarti?->value }}"

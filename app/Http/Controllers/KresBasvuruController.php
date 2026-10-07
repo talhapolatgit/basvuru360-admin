@@ -12,6 +12,7 @@ use App\Models\KresOkul;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -19,7 +20,7 @@ class KresBasvuruController extends Controller
 {
     use ResolvesKresDonem;
 
-    public function store(Request $request, KresOkul $kresOkul, KresGrup $kresGrup): RedirectResponse
+    public function store(Request $request, KresOkul $kresOkul, KresGrup $kresGrup): Response
     {
         abort_unless($kresGrup->okul_id === $kresOkul->id, 404);
 
@@ -61,6 +62,8 @@ class KresBasvuruController extends Controller
             }
         }
 
+        $this->kayitKriteriniKontrolEt($kresGrup, $kisi);
+
         $durumKod = KresBasvuruDurum::query()->whereKey($validated['durum_id'])->value('kod');
         if ($durumKod !== 'yedek') {
             $validated['yedek_sira'] = null;
@@ -72,9 +75,7 @@ class KresBasvuruController extends Controller
             'olusturan_id' => $request->user()?->id,
         ]);
 
-        return redirect()
-            ->route('kres.gruplar.show', [$kresOkul, $kresGrup])
-            ->with('success', 'Başvuru kaydı oluşturuldu.');
+        return $this->islemYaniti($request, $kresOkul, $kresGrup, 'Başvuru kaydı oluşturuldu.');
     }
 
     public function updateDurum(
@@ -82,7 +83,7 @@ class KresBasvuruController extends Controller
         KresOkul $kresOkul,
         KresGrup $kresGrup,
         KresBasvuru $kresBasvuru,
-    ): RedirectResponse {
+    ): Response {
         abort_unless($kresGrup->okul_id === $kresOkul->id, 404);
         abort_unless($kresBasvuru->grup_id === $kresGrup->id, 404);
 
@@ -101,9 +102,78 @@ class KresBasvuruController extends Controller
             'yedek_sira' => $durumKod === 'yedek' ? ($validated['yedek_sira'] ?? $kresBasvuru->yedek_sira) : null,
         ]);
 
+        return $this->islemYaniti($request, $kresOkul, $kresGrup, 'Başvuru durumu güncellendi.');
+    }
+
+    public function destroy(Request $request, KresOkul $kresOkul, KresGrup $kresGrup, KresBasvuru $kresBasvuru): Response
+    {
+        abort_unless($kresGrup->okul_id === $kresOkul->id, 404);
+        abort_unless($kresBasvuru->grup_id === $kresGrup->id, 404);
+
+        $ad = $kresBasvuru->kisi?->tam_adi ?: 'Başvuru';
+        $kresBasvuru->delete();
+
+        return $this->islemYaniti($request, $kresOkul, $kresGrup, $ad.' başvurusu listeden kaldırıldı.');
+    }
+
+    private function islemYaniti(Request $request, KresOkul $okul, KresGrup $grup, string $message): Response
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
         return redirect()
-            ->route('kres.gruplar.show', [$kresOkul, $kresGrup])
-            ->with('success', 'Başvuru durumu güncellendi.');
+            ->route('kres.gruplar.show', [$okul, $grup])
+            ->with('success', $message);
+    }
+
+    private function kayitKriteriniKontrolEt(KresGrup $grup, ?Kisi $kisi): void
+    {
+        if ($grup->dogumAraligiKullaniliyorMu()) {
+            $this->dogumTarihiKriteriniKontrolEt($grup, $kisi);
+
+            return;
+        }
+
+        $this->yasKriteriniKontrolEt($grup, $kisi);
+    }
+
+    private function dogumTarihiKriteriniKontrolEt(KresGrup $grup, ?Kisi $kisi): void
+    {
+        if ($grup->dogumTarihiAraliginaUygunMu($kisi?->dogum_tarihi)) {
+            return;
+        }
+
+        $etiket = $grup->kriterEtiketi();
+        if ($kisi?->dogum_tarihi === null) {
+            throw ValidationException::withMessages([
+                'kisi_id' => 'Seçilen kişinin doğum tarihi kayıtlı değil. Bu grup '.$etiket.' içindir.',
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'kisi_id' => 'Seçilen kişinin doğum tarihi '.$kisi->dogum_tarihi->format('d.m.Y').'. Bu grup '.$etiket.' içindir.',
+        ]);
+    }
+
+    private function yasKriteriniKontrolEt(KresGrup $grup, ?Kisi $kisi): void
+    {
+        $yas = $kisi?->dogum_tarihi !== null ? (int) $kisi->dogum_tarihi->age : null;
+
+        if ($grup->yasKriterineUygunMu($yas)) {
+            return;
+        }
+
+        $etiket = $grup->kriterEtiketi();
+        if ($yas === null) {
+            throw ValidationException::withMessages([
+                'kisi_id' => 'Seçilen kişinin doğum tarihi kayıtlı değil. Bu grup '.$etiket.' içindir.',
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'kisi_id' => 'Seçilen kişi '.$yas.' yaşında. Bu grup '.$etiket.' içindir.',
+        ]);
     }
 
     public function kisiAra(Request $request): JsonResponse

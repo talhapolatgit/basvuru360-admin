@@ -61,6 +61,20 @@ function wireMerkezIlIlce(form) {
     });
 }
 
+function wireKresGrupKriter(form) {
+    if (!form || form.dataset.kriterWired === '1') return;
+    form.dataset.kriterWired = '1';
+    form.querySelectorAll('[data-kriter-grup]').forEach((field) => {
+        field.addEventListener('input', () => {
+            if (String(field.value).trim() === '') return;
+            const diger = field.dataset.kriterGrup === 'yas' ? 'dogum' : 'yas';
+            form.querySelectorAll(`[data-kriter-grup="${diger}"]`).forEach((other) => {
+                other.value = '';
+            });
+        });
+    });
+}
+
 function initLookupPage({ tableId, tableConfig, modalId, modalConfig }) {
     const table = document.getElementById(tableId) ? initEntityTable(tableConfig) : null;
 
@@ -427,6 +441,8 @@ export function initKresGruplarTanimPage() {
     if (document.getElementById('kres-gruplar-table')) {
         initSearchModes();
     }
+
+    wireKresGrupKriter(document.querySelector('.kres-grup-form'));
 
     initLookupPage({
         tableId: 'kres-gruplar-table',

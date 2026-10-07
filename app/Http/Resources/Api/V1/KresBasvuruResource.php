@@ -40,7 +40,7 @@ class KresBasvuruResource extends JsonResource
                 'okul' => $okul?->ad,
                 'grup' => $grup?->ad,
                 'donem' => $donem?->ad,
-                'yas_araligi' => $grup?->yasAraligiLabel(),
+                'yas_araligi' => $grup?->kriterEtiketi(),
             ],
             'durum' => $basvuru->relationLoaded('durum') && $basvuru->durum
                 ? [

@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -100,7 +101,7 @@ class KresGrupController extends Controller
         return response()->streamDownload(function () use ($gruplar) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($handle, ['Ad', 'Okul', 'Dönem', 'Yaş Aralığı', 'Kontenjan', 'Cinsiyet', 'Durum', 'Oluşturma Tarihi'], ';');
+            fputcsv($handle, ['Ad', 'Okul', 'Dönem', 'Yaş / Doğum', 'Kontenjan', 'Cinsiyet', 'Durum', 'Oluşturma Tarihi'], ';');
 
             $gruplar->chunk(200, function ($rows) use ($handle) {
                 foreach ($rows as $grup) {
@@ -108,7 +109,7 @@ class KresGrupController extends Controller
                         $grup->ad,
                         $grup->okul?->ad ?? '',
                         $grup->donem?->ad ?? '',
-                        $grup->yasAraligiLabel(),
+                        $grup->kriterEtiketi(),
                         $grup->kontenjan,
                         $grup->cinsiyetSartiLabel(),
                         $grup->aktif ? 'Aktif' : 'Pasif',
@@ -129,10 +130,7 @@ class KresGrupController extends Controller
 
         $donemData = $this->donemViewData($request);
         $durumlar = KresBasvuruDurum::query()->where('aktif', true)->orderBy('sira')->get();
-        $kesinId = KresBasvuruDurum::idByKod('kesin_kayit');
-        $kesinSayisi = $kesinId
-            ? KresBasvuru::query()->where('grup_id', $kresGrup->id)->where('durum_id', $kesinId)->count()
-            : 0;
+        $kesinSayisi = $this->kesinKayitSayisi($kresGrup);
 
         $soruFormu = $this->grupSoruFormu($kresGrup);
         $columns = $this->basvuruTableColumns($soruFormu);
@@ -160,6 +158,10 @@ class KresGrupController extends Controller
 
         [$basvurular, $basvuruDurum, $sort, $direction] = $this->searchBasvurular($request, $kresGrup);
         $columns = $this->basvuruTableColumns($this->grupSoruFormu($kresGrup));
+        $kesinSayisi = $this->kesinKayitSayisi($kresGrup);
+        $doluluk = $kresGrup->kontenjan > 0
+            ? min(100, (int) round(($kesinSayisi / $kresGrup->kontenjan) * 100))
+            : 0;
 
         return response()->json([
             'html' => view('kres.gruplar._basvurular_list', [
@@ -174,10 +176,22 @@ class KresGrupController extends Controller
                 'direction' => $direction,
             ])->render(),
             'total' => $basvurular->total(),
+            'last_page' => $basvurular->lastPage(),
+            'kesin_sayisi' => $kesinSayisi,
+            'doluluk' => $doluluk,
             'durum' => $basvuruDurum,
             'sort' => $sort,
             'direction' => $direction,
         ]);
+    }
+
+    private function kesinKayitSayisi(KresGrup $grup): int
+    {
+        $kesinId = KresBasvuruDurum::idByKod('kesin_kayit');
+
+        return $kesinId
+            ? KresBasvuru::query()->where('grup_id', $grup->id)->where('durum_id', $kesinId)->count()
+            : 0;
     }
 
     public function exportBasvurular(Request $request, KresOkul $kresOkul, KresGrup $kresGrup): StreamedResponse
@@ -481,6 +495,8 @@ class KresGrupController extends Controller
             ],
             'min_yas' => ['nullable', 'integer', 'min:0', 'max:18'],
             'max_yas' => ['nullable', 'integer', 'min:0', 'max:18', 'gte:min_yas'],
+            'dogum_baslangic' => ['nullable', 'date'],
+            'dogum_bitis' => ['nullable', 'date'],
             'kontenjan' => ['required', 'integer', 'min:0', 'max:500'],
             'yedek_kontenjan' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'cinsiyet_sarti' => ['nullable', Rule::enum(Cinsiyet::class)],
@@ -489,8 +505,30 @@ class KresGrupController extends Controller
             'ad.required' => 'Grup adı zorunludur.',
             'ad.unique' => 'Bu okul ve dönemde aynı grup adı var.',
             'max_yas.gte' => 'Maksimum yaş minimumdan küçük olamaz.',
+            'dogum_baslangic.date' => 'Doğum tarihi başlangıcı geçerli bir tarih olmalıdır.',
+            'dogum_bitis.date' => 'Doğum tarihi bitişi geçerli bir tarih olmalıdır.',
             'kontenjan.required' => 'Kontenjan zorunludur.',
         ]);
+
+        $validated['min_yas'] = $validated['min_yas'] ?? null;
+        $validated['max_yas'] = $validated['max_yas'] ?? null;
+        $validated['dogum_baslangic'] = $validated['dogum_baslangic'] ?? null;
+        $validated['dogum_bitis'] = $validated['dogum_bitis'] ?? null;
+
+        $yasGirildi = $validated['min_yas'] !== null || $validated['max_yas'] !== null;
+        $dogumGirildi = $validated['dogum_baslangic'] !== null || $validated['dogum_bitis'] !== null;
+
+        if ($yasGirildi && $dogumGirildi) {
+            throw ValidationException::withMessages([
+                'dogum_baslangic' => 'Yaş aralığı ile doğum tarihi aralığı birlikte kullanılamaz.',
+            ]);
+        }
+
+        if ($dogumGirildi && $validated['dogum_baslangic'] && $validated['dogum_bitis'] && $validated['dogum_bitis'] < $validated['dogum_baslangic']) {
+            throw ValidationException::withMessages([
+                'dogum_bitis' => 'Doğum tarihi bitişi başlangıçtan önce olamaz.',
+            ]);
+        }
 
         $validated['aktif'] = $request->boolean('aktif');
         $validated['cinsiyet_sarti'] = $validated['cinsiyet_sarti'] ?? null;

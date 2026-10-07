@@ -101,6 +101,66 @@ function formatNumber(value) {
     return new Intl.NumberFormat('tr-TR').format(Number(value) || 0);
 }
 
+function tamamlanmisYas(isoDate) {
+    if (!isoDate) return null;
+    const dogum = new Date(`${isoDate}T00:00:00`);
+    if (Number.isNaN(dogum.getTime())) return null;
+    const bugun = new Date();
+    let yas = bugun.getFullYear() - dogum.getFullYear();
+    const ay = bugun.getMonth() - dogum.getMonth();
+    if (ay < 0 || (ay === 0 && bugun.getDate() < dogum.getDate())) yas -= 1;
+    return yas;
+}
+
+function tarihMetni(isoDate) {
+    const [yil, ay, gun] = String(isoDate || '').split('-');
+    if (!yil || !ay || !gun) return isoDate || '';
+    return `${gun}.${ay}.${yil}`;
+}
+
+function kriterUyuyorMu(form) {
+    const tur = form.dataset.kriter || '';
+    if (tur !== 'yas' && tur !== 'dogum') return { uygun: true, mesaj: '' };
+
+    const hidden = form.querySelector('#kisi_id');
+    if (!hidden || !Object.prototype.hasOwnProperty.call(hidden.dataset, 'dogumTarihi')) {
+        return { uygun: true, mesaj: '' };
+    }
+
+    const dogum = hidden.dataset.dogumTarihi || '';
+    const etiket = form.dataset.kriterLabel || '';
+    if (!dogum) {
+        return {
+            uygun: false,
+            mesaj: `Seçilen kişinin doğum tarihi kayıtlı değil. Bu grup ${etiket} içindir.`,
+        };
+    }
+
+    if (tur === 'dogum') {
+        const baslangic = form.dataset.dogumBaslangic || '';
+        const bitis = form.dataset.dogumBitis || '';
+        const uygun = (!baslangic || dogum >= baslangic) && (!bitis || dogum <= bitis);
+        if (uygun) return { uygun: true, mesaj: '' };
+        return {
+            uygun: false,
+            mesaj: `Seçilen kişinin doğum tarihi ${tarihMetni(dogum)}. Bu grup ${etiket} içindir.`,
+        };
+    }
+
+    const yas = tamamlanmisYas(dogum);
+    const minRaw = form.dataset.yasMin ?? '';
+    const maxRaw = form.dataset.yasMax ?? '';
+    const min = minRaw === '' ? null : Number(minRaw);
+    const max = maxRaw === '' ? null : Number(maxRaw);
+    const uygun = yas !== null && (min === null || yas >= min) && (max === null || yas <= max);
+    if (uygun) return { uygun: true, mesaj: '' };
+
+    return {
+        uygun: false,
+        mesaj: `Seçilen kişi ${yas} yaşında. Bu grup ${etiket} içindir.`,
+    };
+}
+
 function syncYedek(root) {
     const select = root.querySelector('[data-yedek-toggle]');
     const field = root.querySelector('[data-yedek-field]');
@@ -126,6 +186,7 @@ function wireKisiSearch(input, araUrl) {
     let timer = null;
     const clearPick = () => {
         hidden.value = '';
+        delete hidden.dataset.dogumTarihi;
         if (picked) {
             picked.textContent = labelKey === 'kisi_label' ? 'Öğrenci seçilmedi' : 'Seçilmedi';
         }
@@ -154,9 +215,11 @@ function wireKisiSearch(input, araUrl) {
                     btn.textContent = item.label;
                     btn.addEventListener('click', () => {
                         hidden.value = item.id;
+                        hidden.dataset.dogumTarihi = item.dogum_tarihi || '';
                         if (picked) picked.textContent = item.label;
                         input.value = item.tam_adi;
                         results.hidden = true;
+                        wrap?.querySelector('[data-yas-uyari]')?.setAttribute('hidden', '');
                     });
                     results.appendChild(btn);
                 });
@@ -188,6 +251,11 @@ export function initKresGrupDetailPage() {
             document.body.classList.add('modal-open');
         });
     });
+
+    const createModal = document.getElementById('kres-basvuru-create-modal');
+    if (createModal?.dataset.openOnLoad === '1') {
+        setModalOpen(createModal, true);
+    }
 
     document.querySelectorAll('.confirm-modal').forEach((modal) => {
         modal.querySelectorAll('[data-kres-modal-close]').forEach((el) => {
@@ -321,7 +389,10 @@ export function initKresGrupDetailPage() {
         form.action = btn.dataset.url;
         form.durum_id.value = btn.dataset.durumId || '';
         form.yedek_sira.value = btn.dataset.yedekSira || '';
-        durumModal.querySelector('[data-durum-kisi]').textContent = btn.dataset.kisi || '';
+        const kisi = durumModal.querySelector('[data-durum-kisi]');
+        const mevcut = durumModal.querySelector('[data-durum-mevcut]');
+        if (kisi) kisi.textContent = btn.dataset.kisi || 'Öğrenci';
+        if (mevcut) mevcut.textContent = btn.dataset.durumAd || '—';
         syncYedek(form);
         setModalOpen(durumModal, true);
     }
@@ -477,7 +548,22 @@ export function initKresGrupDetailPage() {
         }
     });
 
+    const silModal = document.getElementById('kres-basvuru-sil-modal');
+
     panel.addEventListener('click', (event) => {
+        const silBtn = event.target.closest('[data-kres-sil-open]');
+        if (silBtn && panel.contains(silBtn)) {
+            event.preventDefault();
+            closeRowMenus();
+            const form = silModal?.querySelector('[data-kres-sil-form]');
+            if (!form || !silModal) return;
+            form.action = silBtn.dataset.url || '#';
+            const kisi = silModal.querySelector('[data-kres-sil-kisi]');
+            if (kisi) kisi.textContent = silBtn.dataset.kisi || 'Bu başvuru';
+            setModalOpen(silModal, true);
+            return;
+        }
+
         const durumBtn = event.target.closest('[data-kres-durum-open]');
         if (durumBtn && panel.contains(durumBtn)) {
             event.preventDefault();
@@ -614,7 +700,28 @@ export function initKresGrupDetailPage() {
             });
             if (thisRequest !== requestId) return;
 
+            const lastPage = Math.max(1, Number(data.last_page) || 1);
+            if (currentPage > lastPage) {
+                loading = false;
+                content.classList.remove('is-loading');
+                return loadBasvurular({ durum: currentDurum, page: lastPage, force: true });
+            }
+
             content.innerHTML = data.html || '';
+            if (data.kesin_sayisi != null) {
+                const kesin = formatNumber(data.kesin_sayisi);
+                document.querySelectorAll('[data-kres-kesin]').forEach((el) => {
+                    el.textContent = kesin;
+                });
+                document.querySelectorAll('[data-kres-kesin-ozet]').forEach((el) => {
+                    el.textContent = String(data.kesin_sayisi);
+                });
+            }
+            if (data.doluluk != null) {
+                document.querySelectorAll('[data-kres-doluluk]').forEach((el) => {
+                    el.textContent = `%${data.doluluk}`;
+                });
+            }
             if (totalEl) {
                 totalEl.textContent = data.total != null
                     ? `Toplam Kayıt: ${formatNumber(data.total)}`
@@ -698,6 +805,97 @@ export function initKresGrupDetailPage() {
         currentSort = initialSort;
         currentDirection = initialDirection === 'asc' ? 'asc' : 'desc';
     }
+
+    function resetCreateForm(form) {
+        form.reset();
+        form.querySelectorAll('[data-kisi-search]').forEach((input) => {
+            input.value = '';
+        });
+        form.querySelectorAll('[name="kisi_id"], [name="basvuran_id"]').forEach((input) => {
+            input.value = '';
+            delete input.dataset.dogumTarihi;
+        });
+        form.querySelectorAll('[data-kisi-picked]').forEach((el) => {
+            el.textContent = el.dataset.kisiPicked === 'kisi_label' ? 'Öğrenci seçilmedi' : 'Seçilmedi';
+        });
+        form.querySelectorAll('[data-kisi-results]').forEach((el) => {
+            el.hidden = true;
+            el.innerHTML = '';
+        });
+        const uyari = form.querySelector('[data-yas-uyari]');
+        if (uyari) {
+            uyari.hidden = true;
+            uyari.textContent = '';
+        }
+        syncYedek(form);
+    }
+
+    function showFormError(form, message) {
+        const uyari = form.querySelector('[data-yas-uyari]');
+        if (!uyari) return;
+        uyari.hidden = false;
+        uyari.textContent = message;
+    }
+
+    async function submitModalForm(form, modal, { pendingLabel, onSuccess }) {
+        const submit = form.querySelector('[type="submit"]');
+        const previous = submit?.textContent || '';
+        if (submit) {
+            submit.disabled = true;
+            submit.textContent = pendingLabel;
+        }
+        try {
+            const { data } = await window.axios.post(form.action, new FormData(form), {
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+            });
+            setModalOpen(modal, false);
+            onSuccess?.();
+            showToast(data.message || 'İşlem tamamlandı.');
+            await loadBasvurular({ durum: currentDurum, page: currentPage, force: true });
+        } catch (error) {
+            const message = validationMessage(error);
+            showToast(message, 'error');
+            if (error?.response?.status === 422) {
+                showFormError(form, message);
+            }
+        } finally {
+            if (submit) {
+                submit.disabled = false;
+                submit.textContent = previous;
+            }
+        }
+    }
+
+    const createForm = createModal?.querySelector('form');
+    createForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const sonuc = kriterUyuyorMu(createForm);
+        const uyari = createForm.querySelector('[data-yas-uyari]');
+        if (!sonuc.uygun) {
+            if (uyari) {
+                uyari.hidden = false;
+                uyari.textContent = sonuc.mesaj;
+            }
+            return;
+        }
+        if (uyari) uyari.hidden = true;
+        submitModalForm(createForm, createModal, {
+            pendingLabel: 'Kaydediliyor…',
+            onSuccess: () => resetCreateForm(createForm),
+        });
+    });
+
+    const durumForm = durumModal?.querySelector('[data-durum-form]');
+    durumForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        submitModalForm(durumForm, durumModal, { pendingLabel: 'Güncelleniyor…' });
+    });
+
+    const silForm = silModal?.querySelector('[data-kres-sil-form]');
+    silForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        submitModalForm(silForm, silModal, { pendingLabel: 'Siliniyor…' });
+    });
 
     loadBasvurular({ durum: currentDurum, page: currentPage, force: true });
 }

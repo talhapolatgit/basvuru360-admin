@@ -6,6 +6,7 @@
     $sort = $sort ?? '';
     $direction = $direction ?? 'desc';
     $canDurum = auth()->user()?->hasYetki('kres.basvuru_durum_guncelle') ?? false;
+    $canSil = auth()->user()?->hasYetki('kres.basvuru_guncelle') ?? false;
     $canKisiGoruntule = auth()->user()?->hasYetki('kisi.goruntule') ?? false;
     $canSms = auth()->user()?->hasYetki('kisi.sms') ?? false;
     $canEposta = auth()->user()?->hasYetki('kisi.eposta') ?? false;
@@ -111,6 +112,7 @@
                                         data-durum-id="{{ $basvuru->durum_id }}"
                                         data-yedek-sira="{{ $basvuru->yedek_sira }}"
                                         data-kisi="{{ $ogrenci?->tam_adi }}"
+                                        data-durum-ad="{{ $basvuru->durum?->ad }}"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                                         Durum Güncelle
@@ -186,6 +188,25 @@
                                     <button type="button" class="action-dropdown-item is-disabled" role="menuitem" disabled aria-disabled="true" title="Bu işlem için yetkiniz yok">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                                         E-posta Gönder
+                                    </button>
+                                @endif
+
+                                @if ($canSil)
+                                    <button
+                                        type="button"
+                                        class="action-dropdown-item action-dropdown-item-danger"
+                                        role="menuitem"
+                                        data-kres-sil-open
+                                        data-url="{{ route('kres.basvurular.destroy', [$okul, $grup, $basvuru]) }}"
+                                        data-kisi="{{ $ogrenci?->tam_adi }}"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        Sil
+                                    </button>
+                                @else
+                                    <button type="button" class="action-dropdown-item action-dropdown-item-danger is-disabled" role="menuitem" disabled aria-disabled="true" title="Bu işlem için yetkiniz yok">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                        Sil
                                     </button>
                                 @endif
                             </div>

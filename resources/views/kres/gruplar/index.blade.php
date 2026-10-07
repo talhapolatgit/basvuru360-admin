@@ -7,7 +7,7 @@
         'ad' => 'Ad',
         'okul' => 'Okul',
         'donem' => 'Dönem',
-        'yas' => 'Yaş Aralığı',
+        'yas' => 'Yaş / Doğum',
         'kontenjan' => 'Kontenjan',
         'yedek' => 'Yedek K.',
         'cinsiyet' => 'Cinsiyet',

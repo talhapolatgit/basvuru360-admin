@@ -203,6 +203,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/kres/kisiler/ara', [KresBasvuruController::class, 'kisiAra'])->middleware('yetki:kres.basvuru_olustur')->name('kres.kisiler.ara');
     Route::post('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular', [KresBasvuruController::class, 'store'])->middleware('yetki:kres.basvuru_olustur')->name('kres.basvurular.store');
+    Route::delete('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular/{kresBasvuru}', [KresBasvuruController::class, 'destroy'])->middleware('yetki:kres.basvuru_guncelle')->name('kres.basvurular.destroy');
     Route::put('/kres/okullar/{kresOkul}/gruplar/{kresGrup}/basvurular/{kresBasvuru}/durum', [KresBasvuruController::class, 'updateDurum'])->middleware('yetki:kres.basvuru_durum_guncelle')->name('kres.basvurular.durum');
 
     // —— Merkezler ——
