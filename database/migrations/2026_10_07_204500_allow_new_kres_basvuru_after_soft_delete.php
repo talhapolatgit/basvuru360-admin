@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,11 +23,16 @@ return new class extends Migration
 
         if (! Schema::hasColumn('kres_basvurulari', 'aktif_kayit_anahtari')) {
             Schema::table('kres_basvurulari', function (Blueprint $table) {
-                $table->string('aktif_kayit_anahtari', 64)
-                    ->nullable()
-                    ->storedAs("IF(deleted_at IS NULL, CONCAT(grup_id, '-', kisi_id), NULL)");
+                $table->string('aktif_kayit_anahtari', 64)->nullable();
             });
         }
+
+        DB::table('kres_basvurulari')
+            ->whereNull('deleted_at')
+            ->whereNull('aktif_kayit_anahtari')
+            ->update([
+                'aktif_kayit_anahtari' => DB::raw("CONCAT(grup_id, '-', kisi_id)"),
+            ]);
 
         if (! Schema::hasIndex('kres_basvurulari', 'kres_basvurulari_aktif_kayit_anahtari_unique', 'unique')) {
             Schema::table('kres_basvurulari', function (Blueprint $table) {

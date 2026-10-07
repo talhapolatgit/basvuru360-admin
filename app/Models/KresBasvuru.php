@@ -30,6 +30,25 @@ class KresBasvuru extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (KresBasvuru $basvuru): void {
+            $basvuru->aktif_kayit_anahtari = $basvuru->deleted_at === null
+                ? $basvuru->grup_id.'-'.$basvuru->kisi_id
+                : null;
+        });
+
+        static::deleted(function (KresBasvuru $basvuru): void {
+            if ($basvuru->isForceDeleting()) {
+                return;
+            }
+
+            static::withTrashed()->whereKey($basvuru->getKey())->update([
+                'aktif_kayit_anahtari' => null,
+            ]);
+        });
+    }
+
     /**
      * @return BelongsTo<KresGrup, $this>
      */
