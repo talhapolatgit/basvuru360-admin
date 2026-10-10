@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * database/data/ilk-veri paketini (tanımlar, ayarlar, tek yönetici) yükler.
+ * database/data/ilk-veri paketini (tanımlar, ayarlar, yönetici ve öğretmen) yükler.
  * Paket `php artisan ilk-veri:disari-aktar` ile üretilir.
  *
  * Kullanım (boş veritabanında):
@@ -89,19 +89,33 @@ class IlkVeriSeeder extends Seeder
             return;
         }
 
-        $sifre = (string) env('ILK_YONETICI_SIFRE', '');
+        $this->sifreYaz($yonetici, (string) env('ILK_YONETICI_SIFRE', ''), 'Yönetici');
+
+        $ogretmen = DB::table('users')->where('email', 'ogretmen@basvuru360.com')->first();
+        if ($ogretmen && (int) $ogretmen->id !== (int) $yonetici->id) {
+            $ogretmenSifre = (string) env('ILK_OGRETMEN_SIFRE', '');
+            $this->sifreYaz(
+                $ogretmen,
+                $ogretmenSifre !== '' ? $ogretmenSifre : 'Ogretmen360!',
+                'Öğretmen',
+            );
+        }
+    }
+
+    private function sifreYaz(object $kullanici, string $sifre, string $etiket): void
+    {
         $uretildi = $sifre === '';
         if ($uretildi) {
             $sifre = Str::password(16, symbols: false);
         }
 
-        DB::table('users')->where('id', $yonetici->id)->update([
+        DB::table('users')->where('id', $kullanici->id)->update([
             'password' => Hash::make($sifre),
             'remember_token' => null,
             'updated_at' => now(),
         ]);
 
-        $this->command?->info("Yönetici: {$yonetici->email}");
+        $this->command?->info("{$etiket}: {$kullanici->email}");
         if ($uretildi) {
             $this->command?->warn("Üretilen şifre (bir kez gösterilir): {$sifre}");
         }

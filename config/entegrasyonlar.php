@@ -32,7 +32,7 @@ return [
         ],
         'yakin_sorgulama' => [
             'ad' => 'Yakın Sorgulama Entegrasyonu',
-            'aciklama' => 'Kişinin 1. derece yakınlarını (eşi, çocukları, anne ve babası) listelemekte kullanılacak sağlayıcı.',
+            'aciklama' => 'Kişinin yakınlarını (eşi ve çocukları) listelemekte kullanılacak sağlayıcı.',
         ],
     ],
 
@@ -53,7 +53,7 @@ return [
                     'etiket' => 'Servis adresi',
                     'tip' => 'text',
                     'zorunlu' => true,
-                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/mesaj/HizliGonder',
+                    'varsayilan' => 'https://servis.xxx.bel.tr/FlexCityUi/rest/json/mesaj/HizliGonder',
                     'placeholder' => 'https://.../FlexCityUi/rest/json/mesaj/HizliGonder',
                 ],
                 'authorization' => [
@@ -176,7 +176,7 @@ return [
                     'etiket' => 'Servis adresi',
                     'tip' => 'text',
                     'zorunlu' => true,
-                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/sbs/FindSbsKisiDtoByNvi',
+                    'varsayilan' => 'https://servis.xxx.bel.tr/FlexCityUi/rest/json/sbs/FindSbsKisiDtoByNvi',
                     'placeholder' => 'https://.../FlexCityUi/rest/json/sbs/FindSbsKisiDtoByNvi',
                 ],
                 'authorization' => [
@@ -210,7 +210,7 @@ return [
                     'etiket' => 'Servis adresi',
                     'tip' => 'text',
                     'zorunlu' => true,
-                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/nvi/FindAllBaseAdresDto',
+                    'varsayilan' => 'https://servis.xxx.bel.tr/FlexCityUi/rest/json/nvi/FindAllBaseAdresDto',
                     'placeholder' => 'https://.../FlexCityUi/rest/json/nvi/FindAllBaseAdresDto',
                 ],
                 'authorization' => [
@@ -244,7 +244,7 @@ return [
                     'etiket' => 'Servis adresi',
                     'tip' => 'text',
                     'zorunlu' => true,
-                    'varsayilan' => 'https://servis.beyoglu.bel.tr/FlexCityUi/rest/json/sbs/FindAllSbsKisiAileBireyleriByNvi',
+                    'varsayilan' => 'https://servis.xxx.bel.tr/FlexCityUi/rest/json/sbs/FindAllSbsKisiAileBireyleriByNvi',
                     'placeholder' => 'https://.../FlexCityUi/rest/json/sbs/FindAllSbsKisiAileBireyleriByNvi',
                 ],
                 'authorization' => [
