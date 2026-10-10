@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
 
 /**
- * Yerel veritabanındaki tanım ve ayar tablolarını, tek yönetici hesabıyla birlikte
- * database/data/ilk-veri altına JSON olarak yazar. IlkVeriSeeder bu paketi yükler.
+ * Yerel veritabanındaki tanım ve ayar tablolarını, yönetici ve öğretmen
+ * hesaplarıyla birlikte database/data/ilk-veri altına JSON olarak yazar.
+ * IlkVeriSeeder bu paketi yükler.
  *
  * Kurs, etkinlik, kreş, kişi, başvuru, soru formu ve log verileri pakete girmez.
  * Entegrasyon şifreleri/anahtarları ve yönetici şifresi boşaltılır.
@@ -20,7 +21,7 @@ class IlkVeriDisariAktar extends Command
 {
     protected $signature = 'ilk-veri:disari-aktar {--kullanici=1 : Pakete alınacak yönetici kullanıcı ID}';
 
-    protected $description = 'Tanım/ayar tablolarını ve tek yönetici hesabını ilk veri paketi olarak dışa aktarır';
+    protected $description = 'Tanım/ayar tablolarını, yönetici ve öğretmen hesaplarını ilk veri paketi olarak dışa aktarır';
 
     /** Yükleme sırası (üst tablolar önce). */
     public const TABLOLAR = [
@@ -92,7 +93,13 @@ class IlkVeriDisariAktar extends Command
         $veri['roller'] = $veri['roller']->whereIn('id', $rolIdleri)->values();
         $veri['rol_yetki'] = $veri['rol_yetki']->whereIn('rol_id', $rolIdleri)->values();
 
-        $veri['users'] = $veri['users']->where('id', $kullaniciId)->map(function ($u) {
+        $ogretmenRolIdleri = $veri['roller']->where('kod', 'ogretmen')->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $paketKullaniciIdleri = array_values(array_unique(array_merge(
+            [$kullaniciId],
+            $veri['kullanici_rol']->whereIn('rol_id', $ogretmenRolIdleri)->pluck('user_id')->map(fn ($id) => (int) $id)->all(),
+        )));
+
+        $veri['users'] = $veri['users']->whereIn('id', $paketKullaniciIdleri)->map(function ($u) {
             $u['password'] = '';
             $u['remember_token'] = null;
 
@@ -100,7 +107,7 @@ class IlkVeriDisariAktar extends Command
         })->values();
         foreach (['kullanici_rol', 'kullanici_merkez', 'kullanici_kurum'] as $tablo) {
             if (isset($veri[$tablo])) {
-                $veri[$tablo] = $veri[$tablo]->where('user_id', $kullaniciId)->values();
+                $veri[$tablo] = $veri[$tablo]->whereIn('user_id', $paketKullaniciIdleri)->values();
             }
         }
         $veri['kullanici_rol'] = $veri['kullanici_rol']->whereIn('rol_id', $rolIdleri)->values();
